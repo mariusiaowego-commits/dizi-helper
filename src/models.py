@@ -1,87 +1,80 @@
-"""数据模型模块"""
-from datetime import date, time, datetime
-from typing import Optional, List
+import datetime as dt
 from enum import Enum
-
+from typing import Optional, List
 from pydantic import BaseModel, Field, field_validator
+from pydantic_settings import BaseSettings
 
 
 class LessonStatus(str, Enum):
-    """课程状态"""
     SCHEDULED = "scheduled"
     ATTENDED = "attended"
     CANCELLED = "cancelled"
 
 
 class Lesson(BaseModel):
-    """课程数据模型"""
     id: Optional[int] = None
-    date: date
-    time: time = Field(default=time(17, 15))
+    date: dt.date
+    time: dt.time = Field(default_factory=lambda: dt.time(17, 15))
     status: LessonStatus = LessonStatus.SCHEDULED
     fee: int = Field(default=600, ge=0)
     fee_paid: bool = False
     is_holiday_conflict: bool = False
     notes: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: Optional[dt.datetime] = None
+    updated_at: Optional[dt.datetime] = None
 
-    @field_validator('time', mode='before')
+    @field_validator('fee')
     @classmethod
-    def parse_time(cls, v):
-        if isinstance(v, str):
-            return datetime.strptime(v, "%H:%M").time()
-        return v
-
-    @field_validator('date', mode='before')
-    @classmethod
-    def parse_date(cls, v):
-        if isinstance(v, str):
-            return datetime.strptime(v, "%Y-%m-%d").date()
+    def fee_must_be_positive(cls, v: int) -> int:
+        if v < 0:
+            raise ValueError('Fee must be non-negative')
         return v
 
 
 class Payment(BaseModel):
-    """缴费数据模型"""
     id: Optional[int] = None
-    payment_date: date
+    payment_date: dt.date
     amount: int = Field(ge=0)
-    lesson_ids: str = ""  # 逗号分隔的课程ID
+    lesson_ids: str = ""
     payment_method: str = "现金"
     notes: Optional[str] = None
-    created_at: Optional[datetime] = None
-
-    @field_validator('payment_date', mode='before')
-    @classmethod
-    def parse_date(cls, v):
-        if isinstance(v, str):
-            return datetime.strptime(v, "%Y-%m-%d").date()
-        return v
-
-    def get_lesson_ids_list(self) -> List[int]:
-        """获取课程ID列表"""
-        if not self.lesson_ids:
-            return []
-        return [int(id_str.strip()) for id_str in self.lesson_ids.split(",") if id_str.strip()]
+    created_at: Optional[dt.datetime] = None
 
 
-class Setting(BaseModel):
-    """配置数据模型"""
-    key: str
-    value: str
-    updated_at: Optional[datetime] = None
-
-
-class MonthlyLessonSummary(BaseModel):
-    """月度课程摘要"""
+class MonthlyLessonPlan(BaseModel):
     year: int
     month: int
+    lessons: List[Lesson]
+    total_lessons: int
+    holiday_conflicts: int
+    total_fee: int
+
+
+class PaymentStatus(BaseModel):
+    month: dt.date
     total_lessons: int
     attended_lessons: int
-    cancelled_lessons: int
-    scheduled_lessons: int
+    unpaid_lessons: int
     total_fee: int
-    paid_fee: int
-    unpaid_fee: int
-    last_lesson_date: Optional[date] = None
-    payment_reminder_date: Optional[date] = None
+    paid_amount: int
+    balance: int
+    last_lesson_date: Optional[dt.date]
+    payment_reminder_date: Optional[dt.date]
+
+
+class Settings(BaseSettings):
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+    reminder_list_name: str = "dizi"
+    obsidian_path: str = "/Users/mt16/Library/Mobile Documents/iCloud~md~obsidian/Documents/"
+    default_fee: int = 600
+    default_time: str = "17:15"
+    default_weekday: int = 5  # 0=Monday, 5=Saturday
+    db_path: str = "data/dizi.db"
+
+    class Config:
+        env_file = ".env"
+        case_sensitive = False
+
+
+settings = Settings()

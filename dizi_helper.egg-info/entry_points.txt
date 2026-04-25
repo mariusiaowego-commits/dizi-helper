@@ -1,0 +1,2 @@
+[console_scripts]
+dizi = src.cli:app
