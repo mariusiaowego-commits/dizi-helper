@@ -1,0 +1,254 @@
+import sqlite3
+import datetime as dt
+from typing import List, Optional, Dict, Any
+from pathlib import Path
+from .models import Lesson, Payment, LessonStatus, settings
+
+
+class Database:
+    def __init__(self, db_path: Optional[str] = None):
+        self.db_path = db_path or settings.db_path
+        self._ensure_db_directory()
+        self._init_tables()
+
+    def _ensure_db_directory(self) -> None:
+        db_path = Path(self.db_path)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    def _get_connection(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _init_tables(self) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+
+            # Lessons table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS lessons (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date DATE NOT NULL,
+                    time TIME NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'scheduled',
+                    fee INTEGER NOT NULL DEFAULT 600,
+                    fee_paid BOOLEAN NOT NULL DEFAULT 0,
+                    is_holiday_conflict BOOLEAN NOT NULL DEFAULT 0,
+                    notes TEXT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # Payments table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    payment_date DATE NOT NULL,
+                    amount INTEGER NOT NULL,
+                    lesson_ids TEXT NOT NULL DEFAULT '',
+                    payment_method TEXT NOT NULL DEFAULT '现金',
+                    notes TEXT,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # Settings table
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+
+            # Create index on lesson date
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_lessons_date ON lessons(date)
+            ''')
+
+            conn.commit()
+
+    def _row_to_lesson(self, row: sqlite3.Row) -> Lesson:
+        return Lesson(
+            id=row['id'],
+            date=dt.date.fromisoformat(row['date']),
+            time=dt.time.fromisoformat(row['time']),
+            status=LessonStatus(row['status']),
+            fee=row['fee'],
+            fee_paid=bool(row['fee_paid']),
+            is_holiday_conflict=bool(row['is_holiday_conflict']),
+            notes=row['notes'],
+            created_at=dt.datetime.fromisoformat(row['created_at']) if row['created_at'] else None,
+            updated_at=dt.datetime.fromisoformat(row['updated_at']) if row['updated_at'] else None,
+        )
+
+    def _row_to_payment(self, row: sqlite3.Row) -> Payment:
+        return Payment(
+            id=row['id'],
+            payment_date=dt.date.fromisoformat(row['payment_date']),
+            amount=row['amount'],
+            lesson_ids=row['lesson_ids'],
+            payment_method=row['payment_method'],
+            notes=row['notes'],
+            created_at=dt.datetime.fromisoformat(row['created_at']) if row['created_at'] else None,
+        )
+
+    # Lesson operations
+    def add_lesson(self, lesson: Lesson) -> Lesson:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO lessons (date, time, status, fee, fee_paid, is_holiday_conflict, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                lesson.date.isoformat(),
+                lesson.time.isoformat(),
+                lesson.status.value,
+                lesson.fee,
+                lesson.fee_paid,
+                lesson.is_holiday_conflict,
+                lesson.notes,
+            ))
+            lesson.id = cursor.lastrowid
+            conn.commit()
+            return self.get_lesson(lesson.id)
+
+    def get_lesson(self, lesson_id: int) -> Optional[Lesson]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM lessons WHERE id = ?', (lesson_id,))
+            row = cursor.fetchone()
+            return self._row_to_lesson(row) if row else None
+
+    def get_lesson_by_date(self, lesson_date: dt.date) -> Optional[Lesson]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM lessons WHERE date = ?', (lesson_date.isoformat(),))
+            row = cursor.fetchone()
+            return self._row_to_lesson(row) if row else None
+
+    def get_lessons_by_month(self, year: int, month: int) -> List[Lesson]:
+        start_date = dt.date(year, month, 1)
+        if month == 12:
+            end_date = dt.date(year + 1, 1, 1)
+        else:
+            end_date = dt.date(year, month + 1, 1)
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM lessons
+                WHERE date >= ? AND date < ?
+                ORDER BY date ASC
+            ''', (start_date.isoformat(), end_date.isoformat()))
+            return [self._row_to_lesson(row) for row in cursor.fetchall()]
+
+    def get_all_lessons(self) -> List[Lesson]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM lessons ORDER BY date ASC')
+            return [self._row_to_lesson(row) for row in cursor.fetchall()]
+
+    def update_lesson(self, lesson: Lesson) -> Optional[Lesson]:
+        if not lesson.id:
+            return None
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE lessons
+                SET date = ?, time = ?, status = ?, fee = ?, fee_paid = ?,
+                    is_holiday_conflict = ?, notes = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            ''', (
+                lesson.date.isoformat(),
+                lesson.time.isoformat(),
+                lesson.status.value,
+                lesson.fee,
+                lesson.fee_paid,
+                lesson.is_holiday_conflict,
+                lesson.notes,
+                lesson.id,
+            ))
+            conn.commit()
+            return self.get_lesson(lesson.id)
+
+    def delete_lesson(self, lesson_id: int) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('DELETE FROM lessons WHERE id = ?', (lesson_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    def cancel_lesson_by_date(self, lesson_date: dt.date) -> bool:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE lessons
+                SET status = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE date = ?
+            ''', (LessonStatus.CANCELLED.value, lesson_date.isoformat()))
+            conn.commit()
+            return cursor.rowcount > 0
+
+    # Payment operations
+    def add_payment(self, payment: Payment) -> Payment:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO payments (payment_date, amount, lesson_ids, payment_method, notes)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (
+                payment.payment_date.isoformat(),
+                payment.amount,
+                payment.lesson_ids,
+                payment.payment_method,
+                payment.notes,
+            ))
+            payment.id = cursor.lastrowid
+            conn.commit()
+            return payment
+
+    def get_payments_by_month(self, year: int, month: int) -> List[Payment]:
+        start_date = dt.date(year, month, 1)
+        if month == 12:
+            end_date = dt.date(year + 1, 1, 1)
+        else:
+            end_date = dt.date(year, month + 1, 1)
+
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM payments
+                WHERE payment_date >= ? AND payment_date < ?
+                ORDER BY payment_date ASC
+            ''', (start_date.isoformat(), end_date.isoformat()))
+            return [self._row_to_payment(row) for row in cursor.fetchall()]
+
+    def get_all_payments(self) -> List[Payment]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM payments ORDER BY payment_date ASC')
+            return [self._row_to_payment(row) for row in cursor.fetchall()]
+
+    # Settings operations
+    def set_setting(self, key: str, value: str) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO settings (key, value, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', (key, value))
+            conn.commit()
+
+    def get_setting(self, key: str, default: Optional[str] = None) -> Optional[str]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT value FROM settings WHERE key = ?', (key,))
+            row = cursor.fetchone()
+            return row['value'] if row else default
+
+
+# Global database instance
+db = Database()
