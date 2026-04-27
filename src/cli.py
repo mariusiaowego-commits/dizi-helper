@@ -174,7 +174,7 @@ def calendar_view(months: int = typer.Argument(3, help="显示几个月，默认
         else:
             current = date(current.year, current.month + 1, 1)
 
-    console.print("\n[dim]图例: [/dim][blue]* 有课[/blue] [green]$ 已缴费[/green] [yellow]! 节假日冲突[/yellow] [red]X 已取消[/red]")
+    console.print("\n[dim]图例:[/dim] [blue]* 有课[/blue] [yellow]! 节假日冲突[/yellow] [red]X 已取消[/red]  |  [green]$ 已缴费[/green]")
 
 
 def print_lesson_table(lessons):
