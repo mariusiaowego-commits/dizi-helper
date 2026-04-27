@@ -149,15 +149,15 @@ def calendar_view(months: int = typer.Argument(3, help="显示几个月，默认
 
             if lesson:
                 if lesson.status == LessonStatus.CANCELLED:
-                    day_str = f"[red]{day:2d}❌[/red]"
+                    day_str = f"[red]{day:2d}X[/red]"
                 elif lesson.is_holiday_conflict:
-                    day_str = f"[yellow]{day:2d}⚠️[/yellow]"
+                    day_str = f"[yellow]{day:2d}![/yellow]"
                 elif lesson.fee_paid:
-                    day_str = f"[green]{day:2d}💰[/green]"
+                    day_str = f"[green]{day:2d}$[/green]"
                 else:
-                    day_str = f"[blue]{day:2d}🎵[/blue]"
+                    day_str = f"[blue]{day:2d}*[/blue]"
             else:
-                day_str = f"{day:2d}  "
+                day_str = f"{day:2d} "
 
             week.append(day_str)
 
@@ -174,7 +174,7 @@ def calendar_view(months: int = typer.Argument(3, help="显示几个月，默认
         else:
             current = date(current.year, current.month + 1, 1)
 
-    console.print("\n[dim]图例: [/dim][blue]🎵 有课[/blue] [green]💰 已缴费[/green] [yellow]⚠️ 节假日冲突[/yellow] [red]❌ 已取消[/red]")
+    console.print("\n[dim]图例:[/dim] [blue]* 有课[/blue] [yellow]! 节假日冲突[/yellow] [red]X 已取消[/red]  |  [green]$ 已缴费[/green]")
 
 
 def print_lesson_table(lessons):
@@ -886,7 +886,7 @@ def practice_calendar(
 
     cal_data = practice_module.get_practice_calendar(year, month_num)
 
-    console.print(Panel(f"[blue]📅 {year}年{month_num}月 练习日历[/blue]"))
+    console.print(Panel(f"[blue]{year}年{month_num}月 练习日历[/blue]"))
 
     cal = calendar.Calendar(firstweekday=0)
     console.print("一  二  三  四  五  六  日")
@@ -903,22 +903,22 @@ def practice_calendar(
         if day_info.get('has_practice'):
             mins = day_info.get('total_minutes', 0)
             if mins >= 60:
-                day_str = f"[green]{day:2d}●[/green]"
+                day_str = f"[green]{day:2d}*[/green]"
             else:
-                day_str = f"[green]{day:2d}○[/green]"
+                day_str = f"[green]{day:2d}-[/green]"
         else:
             day_str = f"{day:2d}  "
 
         week.append(day_str)
 
         if len(week) == 7:
-            console.print("".join(f"{d:<4}" for d in week))
+            console.print("".join(_pad(d) for d in week))
             week = []
 
     if week:
-        console.print("".join(f"{d:<4}" for d in week))
+        console.print("".join(_pad(d) for d in week))
 
-    console.print("\n[dim]图例: ● 60+分钟  ○ 有练习  (空白) 无记录[/dim]")
+    console.print("\n[dim]图例:[/dim] [green]* 60+分钟[/green] [green]- 有练习[/green]  (空白) 无记录")
 
 
 @practice_app.command("stats")
