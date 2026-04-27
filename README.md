@@ -30,6 +30,8 @@ dizi + cal(endar) = dizical
 - 📊 **可视化课表** - 表格视图 + ASCII 日历视图
 - 📝 **Obsidian 导出** - 自动生成月度学习报告
 - 🎵 **练习追踪** - 打卡、统计、热力图、老师每周要求导入
+- 🏷️ **大科目分类** - 支持大科目/小科目灵活分类管理
+- 📝 **练习进展记录** - 每次打卡可附上详细练习进展
 
 ## 🚀 Quick Start
 
@@ -75,10 +77,15 @@ dizical payment history       # 缴费历史
 
 # 练习
 dizical practice log 基本功:20 单吐:15  # 打卡
+dizical practice log 单吐:10 --log "突破5连吐"  # 打卡+记录
 dizical practice today        # 今日练习
 dizical practice week         # 本周练习
 dizical practice calendar 4   # 4月日历
 dizical practice stats 4      # 4月统计
+dizical practice items       # 练习项目库
+dizical practice category list  # 大科目列表
+dizical practice category add 气息练习  # 新增大科目
+dizical practice category set-item 单吐练习 基本功  # 归属小科目
 dizical practice import <csv> # 导入CSV
 
 # 同步
