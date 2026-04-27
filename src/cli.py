@@ -149,15 +149,15 @@ def calendar_view(months: int = typer.Argument(3, help="显示几个月，默认
 
             if lesson:
                 if lesson.status == LessonStatus.CANCELLED:
-                    day_str = f"[red]{day:2d}❌[/red]"
+                    day_str = f"[red]{day:2d}X[/red]"
                 elif lesson.is_holiday_conflict:
-                    day_str = f"[yellow]{day:2d}⚠️[/yellow]"
+                    day_str = f"[yellow]{day:2d}![/yellow]"
                 elif lesson.fee_paid:
-                    day_str = f"[green]{day:2d}💰[/green]"
+                    day_str = f"[green]{day:2d}$[/green]"
                 else:
-                    day_str = f"[blue]{day:2d}🎵[/blue]"
+                    day_str = f"[blue]{day:2d}*[/blue]"
             else:
-                day_str = f"{day:2d}  "
+                day_str = f"{day:2d} "
 
             week.append(day_str)
 
@@ -174,7 +174,7 @@ def calendar_view(months: int = typer.Argument(3, help="显示几个月，默认
         else:
             current = date(current.year, current.month + 1, 1)
 
-    console.print("\n[dim]图例: [/dim][blue]🎵 有课[/blue] [green]💰 已缴费[/green] [yellow]⚠️ 节假日冲突[/yellow] [red]❌ 已取消[/red]")
+    console.print("\n[dim]图例: [/dim][blue]* 有课[/blue] [green]$ 已缴费[/green] [yellow]! 节假日冲突[/yellow] [red]X 已取消[/red]")
 
 
 def print_lesson_table(lessons):
