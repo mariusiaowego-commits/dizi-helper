@@ -900,6 +900,7 @@ def practice_calendar(
         day_date = f"{year:04d}-{month_num:02d}-{day:02d}"
         day_info = cal_data.get(day_date, {})
 
+        # 进展标记+优先显示（独立于练习记录）
         if day_info.get('progress'):
             day_str = f"[cyan]{day:2d}+[/cyan]"
         elif day_info.get('has_practice'):
@@ -920,7 +921,7 @@ def practice_calendar(
     if week:
         console.print("".join(_pad(d) for d in week))
 
-    console.print("\n[dim]图例:[/dim] [cyan]+ 有进展[/cyan] [green]* 60+分钟[/green] [green]- 有练习[/green]  (空白) 无记录")
+    console.print("\n[dim]图例:[/dim] [cyan]+有进展[/cyan] [green]*60+分钟[/green] [green]-有练习[/green]  (空白)无记录")
 
 
 @practice_app.command("stats")
