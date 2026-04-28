@@ -266,8 +266,26 @@ def _item_rename():
     if not new_name:
         _print("  取消")
         return
-    db.update_practice_item_name(iid, new_name)
-    _print(f"  ✅ 「{target['name']}」 → 「{new_name}」")
+    if new_name == target['name']:
+        _print("  名字未变")
+        return
+
+    # 检查新名字是否已被其他小科目使用
+    existing = next((it for it in items if it['name'] == new_name and it['id'] != iid), None)
+    if existing:
+        _print(f"\n  ⚠️  「{new_name}」已存在（id={existing['id']}）")
+        _print(f"  是否合并？「{target['name']}」的数据将并入「{new_name}」")
+        confirm = _input("  确认合并？[y/N]: ").strip().lower()
+        if confirm not in ('y', 'yes'):
+            _print("  取消")
+            return
+        # 删除已存在的项，保留目标项改名
+        db.delete_practice_item(existing['id'])
+        db.update_practice_item_name(iid, new_name)
+        _print(f"  ✅ 「{target['name']}」已合并到「{new_name}」")
+    else:
+        db.update_practice_item_name(iid, new_name)
+        _print(f"  ✅ 「{target['name']}」 → 「{new_name}」")
 
 
 def _do_item():
