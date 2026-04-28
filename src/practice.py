@@ -454,8 +454,7 @@ def get_practice_calendar(year: int, month: int) -> Dict[str, any]:
             calendar[key]['items'] = p['items']
             calendar[key]['log'] = p.get('log')
     
-    for date, note in progress.items():
-        key = date.isoformat()
+    for key, note in progress.items():
         if key in calendar:
             calendar[key]['progress'] = note
     
