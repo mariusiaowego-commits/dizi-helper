@@ -135,9 +135,9 @@ class TelegramNotifier:
         message = f"📅 *{year}年{month}月 课程计划*\n\n{lesson_lines}\n\n📚 共 {total} 节{conflict_text}\n💰 学费合计: {fee} 元"
         return self.send(message)
 
-    def send_payment_overdue_reminder(self, month: int, balance: int, unpaid_lessons: int) -> bool:
+    def send_payment_overdue_reminder(self, month: int, balance: int) -> bool:
         """发送欠费提醒"""
-        message = f"⚠️ *欠费提醒*\n\n{month}月课程尚有未缴费用：\n💰 欠费金额: *{balance}元*\n📚 未缴课次: {unpaid_lessons} 节\n\n请尽快缴费！"
+        message = f"⚠️ *欠费提醒*\n\n{month}月课程尚有未缴费用：\n💰 欠费金额: *{balance}元*\n\n请尽快缴费！"
         return self.send(message)
 
 

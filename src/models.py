@@ -52,12 +52,19 @@ class MonthlyLessonPlan(BaseModel):
 
 class PaymentStatus(BaseModel):
     month: dt.date
-    total_lessons: int
-    attended_lessons: int
-    unpaid_lessons: int
-    total_fee: int
-    paid_amount: int
-    balance: int
+    # 课程统计
+    total_lessons: int           # 当月已安排课程（含取消）
+    attended_lessons: int        # 当月已上课
+    remaining_scheduled: int     # 当月剩余待上课程（SCHEDULED，未取消）
+    cancelled_lessons: int       # 当月已取消
+    # 费用统计
+    total_fee: int               # 当月应缴（attended × fee）
+    estimated_fee: int           # 当月预计缴费（attended + remaining_scheduled，用于月末提醒）
+    paid_amount: int             # 当月已缴费
+    balance: int                 # 待缴余额
+    # 缴费明细（展示用）
+    payment_breakdown: str        # 费用说明
+    # 日期
     last_lesson_date: Optional[dt.date]
     payment_reminder_date: Optional[dt.date]
 
