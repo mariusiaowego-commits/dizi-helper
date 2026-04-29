@@ -28,6 +28,7 @@ payment_app = typer.Typer(help="缴费管理")
 stat_app = typer.Typer(help="统计报表")
 practice_app = typer.Typer(help="练习管理")
 remind_app = typer.Typer(help="提醒管理")
+backup_app = typer.Typer(help="数据备份")
 
 # category 子命令组
 practice_category_app = typer.Typer()
@@ -41,6 +42,7 @@ app.add_typer(lesson_app, name="lesson")
 app.add_typer(payment_app, name="payment")
 app.add_typer(stat_app, name="stat")
 app.add_typer(practice_app, name="practice")
+app.add_typer(backup_app, name="backup")
 
 lesson_manager = LessonManager()
 payment_manager = PaymentManager()
@@ -1236,3 +1238,29 @@ def export_practice(
         console.print(f"[green]✅ 周练习报告已导出: {file_path}[/green]")
     except Exception as e:
         console.print(f"[red]❌ 导出失败: {e}[/red]")
+
+
+# ============== 备份管理命令 ==============
+from .backup import backup_all, list_backups, backup_info
+
+
+@backup_app.command("run")
+def backup_run():
+    """执行数据库备份"""
+    try:
+        results = backup_all()
+        if results:
+            console.print(f"[green]✅ 备份成功，共 {len(results)} 个文件:[/green]")
+            for r in results:
+                console.print(f"  {r.name}")
+        else:
+            console.print("[yellow]⚠️  没有找到需要备份的数据库文件[/yellow]")
+    except Exception as e:
+        console.print(f"[red]❌ 备份失败: {e}[/red]")
+
+
+@backup_app.command("list")
+def backup_list():
+    """列出所有备份"""
+    info = backup_info()
+    console.print(Panel(info, title="数据库备份状态"))

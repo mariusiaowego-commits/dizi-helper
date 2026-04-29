@@ -1,14 +1,15 @@
-# 🎵 竹笛学习助手 dizi-helper - 开发计划
+# 🎵 dizical 竹笛课程管理助手 - 开发计划
 
 ## 📋 项目概述
-竹笛课程管理 + 缴费提醒 + 统计助手，支持 Telegram + Apple Reminders 双通道交互。
+竹笛课程管理 + 缴费提醒 + 练习追踪 + Apple Reminders 双向同步，支持可视化报表和定期数据备份。
 
 **作者**: mtt
 **创建时间**: 2026-04-25
+**最后更新**: 2026-04-29
 
 ---
 
-## 🎯 核心功能
+## 🎯 核心功能（已实现）
 
 ### 1. 课程管理
 - **默认规则**: 每周六 17:15 上课
@@ -20,27 +21,30 @@
 - **缴费时间**: 每月最后一次上课时缴清当月费用
 - **智能提醒**: 自动计算当月最后一个上课日，提前2天提醒
 
-### 3. 通知系统
-- **Telegram Bot**: @hermes_for_mtt_bot (用户后续配置)
-- **通知类型**:
-  - 每月1日: 本月课程计划 + 节假日冲突提醒
-  - 每周六 09:00: 当日上课确认提醒
-  - 每月最后一课前2天: 缴费提醒
-  - 每次上课当天 21:00: 上课确认 + 缴费标记
+### 3. 练习追踪
+- **打卡**: `dizical practice log 单吐:20`
+- **日历视图**: ASCII 日历 + 热力图 + 进展记录
+- **统计**: 月度/周度练习时长统计
+- **项目库**: 大科目/小科目两级结构
+- **每周老师要求**: 批量导入，自动关联周开始日期
+- **practice config TUI**: 增删改查模式管理科目
 
 ### 4. Apple Reminders 双向同步
 - **监控列表**: `dizi`
-- **检查频率**: 每小时一次
 - **支持指令解析**:
   - `取消 5月9日` → 取消课程
   - `加课 5月16日` → 添加课程
   - `缴费 1800` → 记录缴费1800元
   - `改时间 5月9日 到 5月16日` → 调课
 
-### 5. 统计报表
-- 本月/季度/年度统计
-- 支持导出 Markdown 到 Obsidian
-- 路径: `/Users/mt16/Library/Mobile Documents/iCloud~md~obsidian/Documents/`
+### 5. Obsidian 导出
+- 月度报告模板
+- Markdown 格式写入 Obsidian 库
+
+### 6. 练习报告信息图（规划中）
+- 通过 Hermes skill 调用 image generation 能力
+- 将日报/月报汇总生成可视化信息图
+- 风格: 高质量数学讲义 + 手绘教育海报
 
 ---
 
@@ -53,7 +57,8 @@ Python 3.10+
 ├── typer + rich                  # CLI + TUI 界面
 ├── python-telegram-bot[v20]      # Telegram 通知
 ├── chinese-calendar              # 中国节假日识别
-└── remindctl (CLI)               # Apple Reminders 集成
+├── remindctl (CLI)               # Apple Reminders 集成
+└── Hermes Agent                  # Skill / Image Generation / Cron
 ```
 
 ---
@@ -61,7 +66,7 @@ Python 3.10+
 ## 📁 项目结构
 
 ```
-dizi-helper/
+dizical/
 ├── src/
 │   ├── __init__.py
 │   ├── models.py              # Pydantic 数据模型
@@ -69,20 +74,26 @@ dizi-helper/
 │   ├── lesson_manager.py      # 课程管理核心逻辑
 │   ├── payment.py             # 缴费计算逻辑
 │   ├── holiday.py             # 节假日识别
-│   ├── notifier.py            # Telegram 通知封装
+│   ├── practice.py            # 练习追踪
+│   ├── practice_config.py     # 大科目/小科目增删改查 TUI
+│   ├── notifier.py            # 通知格式化
 │   ├── reminders.py           # Apple Reminders 同步 + 指令解析
 │   ├── obsidian.py            # Obsidian Markdown 导出
 │   └── cli.py                 # Typer CLI 入口
-├── data/                      # SQLite 数据文件 (.gitignore)
+├── data/                       # SQLite 数据文件 (.gitignore)
+│   ├── dizi.db                # 课程 + 缴费数据
+│   └── dizical.db             # 练习追踪数据
 ├── tests/
 │   ├── test_lesson.py
 │   ├── test_payment.py
 │   └── test_holiday.py
-├── .env.example               # TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+├── docs/                       # docs/使用指南.md, docs/表结构.md
+├── .env.example
 ├── requirements.txt
 ├── pyproject.toml
 ├── setup.py
-├── DEVELOPMENT_PLAN.md        # 本文档
+├── STATUS.md                   # 当前开发状态
+├── DEVELOPMENT_PLAN.md         # 本文档
 └── README.md
 ```
 
@@ -90,7 +101,9 @@ dizi-helper/
 
 ## 📊 数据库设计
 
-### lessons 表
+### dizi.db - 课程与缴费
+
+#### lessons 表
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | INTEGER PK | 主键 |
@@ -104,7 +117,7 @@ dizi-helper/
 | created_at | DATETIME | 创建时间 |
 | updated_at | DATETIME | 更新时间 |
 
-### payments 表
+#### payments 表
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | id | INTEGER PK | 主键 |
@@ -115,12 +128,54 @@ dizi-helper/
 | notes | TEXT | 备注 |
 | created_at | DATETIME | 创建时间 |
 
-### settings 表
+#### settings 表
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | key | TEXT PK | 配置键 |
 | value | TEXT | 配置值 |
 | updated_at | DATETIME | 更新时间 |
+
+### dizical.db - 练习追踪
+
+#### practice_items 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| name | TEXT | 练习项目名称 |
+| category_id | INTEGER FK | 所属大科目 |
+| created_at | DATETIME | 创建时间 |
+
+#### daily_practices 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| date | DATE | 练习日期 (YYYY-MM-DD) |
+| total_minutes | INTEGER | 总时长 (分钟) |
+| log | TEXT | 详细练习进展 |
+| created_at | DATETIME | 创建时间 |
+
+#### daily_practice_items 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| daily_practice_id | INTEGER FK | 关联每日练习 |
+| practice_item_id | INTEGER FK | 关联练习项目 |
+| minutes | INTEGER | 时长 (分钟) |
+
+#### practice_categories 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| name | TEXT | 大科目名称 |
+| parent_name | TEXT | 保留字段 (统一用 name) |
+
+#### teacher_requirements 表
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | INTEGER PK | 主键 |
+| week_start | DATE | 周开始日期 (周一) |
+| item | TEXT | 练习项目 |
+| requirement | TEXT | 具体要求 |
 
 ---
 
@@ -128,35 +183,42 @@ dizi-helper/
 
 ```bash
 # 课程管理
-dizi lesson generate 2026-05    # 生成5月课程计划
-dizi lesson list                 # 本月课程列表
-dizi lesson list 2026-05         # 指定月份
-dizi lesson add 2026-05-03       # 添加课程
-dizi lesson cancel 2026-05-03    # 取消课程
-dizi lesson reschedule 2026-05-03 2026-05-10  # 调课
-dizi lesson confirm 2026-05-03   # 确认已上课
+dizical lesson generate 2026-05    # 生成5月课程计划
+dizical lesson list                 # 本月课程列表
+dizical lesson list 2026-05         # 指定月份
+dizical lesson add 2026-05-03      # 添加课程
+dizical lesson cancel 2026-05-03   # 取消课程
+dizical lesson reschedule 2026-05-03 2026-05-10  # 调课
+dizical lesson confirm 2026-05-03   # 确认已上课
 
 # 缴费管理
-dizi payment status              # 查看当前应缴状态
-dizi payment record 1800         # 记录缴费1800元(现金)
-dizi payment history             # 缴费历史
+dizical payment status              # 查看当前应缴状态
+dizical payment record 1800         # 记录缴费1800元(现金)
+dizical payment history             # 缴费历史
 
-# 统计报表
-dizi stat monthly                # 本月统计
-dizi stat quarterly              # 季度统计
-dizi stat yearly                 # 年度统计
+# 练习追踪
+dizical practice log 单吐:20        # 打卡
+dizical practice log 单吐:10 --log "突破5连吐"  # 打卡+进展记录
+dizical practice today              # 今日练习
+dizical practice week               # 本周练习
+dizical practice calendar 4         # 4月日历视图
+dizical practice stats 4            # 4月统计
+dizical practice items              # 练习项目库
+dizical practice category list     # 大科目列表
+dizical practice category add 气息练习  # 新增大科目
+dizical practice category set-item 单吐练习 基本功  # 设置小科目归属
+dizical practice config             # 增删改查 TUI（配置管理）
+dizical practice import <csv>               # 导入时长 CSV
+dizical practice import_logs <csv>          # 批量导入进展 log
+dizical practice import-assignments <csv>   # 批量导入每周老师要求
 
-# 提醒系统
-dizi remind monthly              # 手动触发本月课程计划通知
-dizi remind daily                # 手动触发当日上课确认
-dizi remind payment              # 手动触发缴费提醒
+# 同步
+dizical reminders sync             # 同步 Reminders
+dizical obsidian export 4          # 导出4月报告
 
-# Apple Reminders 同步
-dizi reminders check             # 检查'dizi'列表指令
-dizi reminders sync              # 双向同步
-
-# Obsidian 导出
-dizi obsidian export             # 导出本月报告到Obsidian
+# 备份
+dizical backup run                 # 执行数据库备份
+dizical backup list                # 查看备份状态
 ```
 
 ---
@@ -164,34 +226,87 @@ dizi obsidian export             # 导出本月报告到Obsidian
 ## 🧪 开发阶段计划
 
 ### ✅ 第一阶段：核心数据层
-- [ ] 数据模型 (models.py)
-- [ ] 数据库操作封装 (database.py)
-- [ ] 节假日识别 (holiday.py)
+- [x] 数据模型 (models.py)
+- [x] 数据库操作封装 (database.py)
+- [x] 节假日识别 (holiday.py)
 
 ### ✅ 第二阶段：业务逻辑层
-- [ ] 课程管理核心 (lesson_manager.py)
-  - 自动生成某月周六课程
-  - 节假日冲突检测
-  - 添加/取消/调课/确认
-- [ ] 缴费计算逻辑 (payment.py)
-  - 计算当月应缴金额
-  - 找到当月最后一个上课日
-  - 记录缴费
+- [x] 课程管理核心 (lesson_manager.py)
+- [x] 缴费计算逻辑 (payment.py)
+- [x] 练习追踪 (practice.py)
+- [x] practice_config TUI (practice_config.py)
 
 ### ✅ 第三阶段：CLI 界面
-- [ ] Typer CLI 入口 (cli.py)
-- [ ] Rich TUI 美化输出
+- [x] Typer CLI 入口 (cli.py)
+- [x] Rich TUI 美化输出
 
 ### ✅ 第四阶段：通知系统
-- [ ] Telegram 通知封装 (notifier.py)
-- [ ] Apple Reminders 同步 (reminders.py)
-- [ ] 指令解析 (自然语言理解)
+- [x] Telegram 通知封装 (notifier.py)
+- [x] Apple Reminders 同步 (reminders.py)
+- [x] 指令解析 (自然语言理解)
 
 ### ✅ 第五阶段：集成与测试
-- [ ] 单元测试
-- [ ] Obsidian 导出
-- [ ] Cron 任务配置文档
-- [ ] README 完整文档
+- [x] 单元测试 (49 个测试)
+- [x] Obsidian 导出
+- [x] README 完整文档
+- [x] practice_config 增删改查 TUI
+
+### ✅ 第六阶段：数据安全与可视化
+- [x] 数据库自动备份到本地 (`src/backup.py`, `dizical backup run/list`)
+- [x] 练习报告信息图生成 (dizical-report skill via Hermes image generation)
+- [x] 使用指南 (docs/使用指南.md) + 表结构文档 (docs/表结构.md)
+- [x] Datasette 数据库查询方案
+
+---
+
+## 🔧 数据库备份方案（规划）
+
+### 需求
+- 定期备份 `data/dizi.db` 和 `data/dizical.db` 到本地
+- 保留多版本历史备份
+- 备份验证机制
+
+### 实现方案
+1. **备份脚本**: `src/backup.py`
+2. **备份频率**: 每小时一次（通过 Hermes cron）
+3. **备份保留**: 最近 7 天 + 每周日 20:00 额外备份当月版本
+4. **备份位置**: `data/backups/` 目录下
+5. **备份命名**: `{db_name}_{YYYYMMDD_HHMMSS}.db`
+
+---
+
+## 🎨 练习报告信息图方案（规划）
+
+### 需求
+通过 Hermes skill 调用 image generation 能力，将练习数据生成可视化信息图
+
+### 使用方式
+```
+用户: "生成2026年4月练习汇总报告"
+Skill: 获取练习数据 → 生成 image generation prompt → 输出图片
+```
+
+### 信息图内容
+- 月度练习总时长、练习天数
+- 各科目练习时长占比
+- 每日练习热力图
+- 老师每周要求完成情况
+- 进展记录亮点
+
+### 视觉风格
+- 竖版或横版均可
+- 干净的浅色纸张背景
+- 深蓝标题，黑色/深灰正文线条
+- 少量优雅的蓝色、青绿色、金色、红色强调色
+- 圆角卡片、细线边框、编号标签、手绘箭头
+- 局部放大框和总结栏
+- 整体: 美观、平衡、有学术感
+
+### 技术实现
+- 创建 `dizical-report` skill
+- skill 调用 dizical CLI 获取报告数据
+- 生成详细的 image prompt
+- 使用 Hermes image_generate 工具输出
 
 ---
 
@@ -229,42 +344,41 @@ def get_payment_reminder_date(last_lesson_date):
 
 ### .env 文件
 ```env
-TELEGRAM_BOT_TOKEN=your_bot_token_here
-TELEGRAM_CHAT_ID=351549096
 REMINDER_LIST_NAME=dizi
 OBSIDIAN_PATH=/Users/mt16/Library/Mobile Documents/iCloud~md~obsidian/Documents/
 DEFAULT_FEE=600
 DEFAULT_TIME=17:15
-DEFAULT_WEEKDAY=5  # 0=周一, 5=周六
+DEFAULT_WEEKDAY=5
+DB_PATH=data/dizi.db
+DIZICAL_DB_PATH=data/dizical.db
 ```
 
-### Hermes Cron 任务 (后续配置)
+### Hermes Cron 任务（已配置）
 ```bash
 # 每月1日 09:00 - 生成当月课程计划
 0 9 1 * * dizi remind monthly
 
-# 每周六 09:00 - 当日上课提醒
-0 9 * * 5 dizi remind daily
+# 每周日 20:00 - 同步 Reminders
+0 20 * * 0 dizi reminders sync
 
-# 每天 10:00 - 检查是否该缴费提醒
+# 每天 10:00 - 检查缴费提醒
 0 10 * * * dizi remind payment
 
-# 每小时检查 Apple Reminders
-0 * * * * dizi reminders check
-
-# 每天 23:00 - 导出 Obsidian 报告
-0 23 * * * dizi obsidian export
+# 每天 8:00 / 18:00 - Reminders sync
+0 8,18 * * * dizi reminders sync
 ```
 
 ---
 
 ## ✅ 验收标准
 
-1. `dizi lesson generate 2026-05` 能正确生成5月所有周六课程，标记劳动节
-2. `dizi payment status` 能正确计算应缴金额
-3. `dizi reminders check` 能解析 Reminders 中的简单指令
-4. 所有单元测试通过
-5. 代码有完整的类型注解
+1. `dizical lesson generate 2026-05` 能正确生成5月所有周六课程，标记劳动节
+2. `dizical payment status` 能正确计算应缴金额
+3. `dizical reminders sync` 能解析 Reminders 中的简单指令
+4. `dizical practice config` 增删改查 TUI 正常工作
+5. 所有单元测试通过
+6. 数据库每日自动备份
+7. 可通过 skill 生成练习报告信息图
 
 ---
 
