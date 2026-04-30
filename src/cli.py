@@ -707,14 +707,15 @@ def practice_log(
         dizical practice log --date 2026-04-26 基本功:20
         dizical practice log --log "今天单吐终于连上了" 基本功:20
     """
-    from datetime import date as date_type
+    import datetime as dt
 
     items_list = list(items) + list(ctx.args)
 
     if date:
         practice_date = parse_date(date)
     else:
-        practice_date = date_type.today()
+        # 默认补录昨天
+        practice_date = dt.date.today() - dt.timedelta(days=1)
 
     # 解析 items
     parsed = []
@@ -862,25 +863,184 @@ def practice_thisweek():
 
 @practice_app.command("week")
 def practice_week(
-    date_str: str = typer.Argument(..., help="该周任意日期，格式 YYYY-MM-DD"),
+    date_str: Optional[str] = typer.Argument(None, help="该周任意日期，默认本周"),
 ):
-    """查看指定周的练习情况"""
-    week_start = practice_module.get_week_start(parse_date(date_str))
+    """本周练习日历视图"""
+    from datetime import timedelta
+
+    if date_str:
+        week_start = practice_module.get_week_start(parse_date(date_str))
+    else:
+        today = date.today()
+        week_start = practice_module.get_week_start(today)
+
     summary = practice_module.get_week_summary(week_start)
+    days_data = practice_module.get_week_days(week_start)
 
-    console.print(Panel(f"[blue]📅 {week_start} ~ {summary['week_end']} 周练习[/blue]"))
-    console.print(f"练习天数: {summary['practice_days']} 天")
-    console.print(f"总时长: {summary['total_minutes']} 分钟")
+    # ── 头部统计 ──
+    week_num = week_start.isocalendar()[1]
+    total_days = 7
+    practiced_days = summary['practice_days']
+    total_min = summary['total_minutes']
+    pct = practiced_days / total_days * 100
 
+    console.print(f"\n🎵 dizical 练习监控台")
+    console.print(f"📅 {week_start} ~ {summary['week_end']} (第 {week_num} 周)")
+    console.print(f"───────────────────────────────────────────")
+    console.print(f"  本周练习: {practiced_days}/{total_days} 天   ⏱ {total_min} 分钟   📊 {pct:.0f}%")
+
+    # ── 日历网格 ──
+    console.print(f"───────────────────────────────────────────")
+    console.print(f"   一    二    三    四    五    六    日")
+
+    day_cells = []
+    date_labels = []
+    for i in range(7):
+        d = week_start + timedelta(days=i)
+        key = d.isoformat()
+        day_cells.append(days_data[key])
+        date_labels.append(f"{d.month}/{d.day:02d}")
+
+    # 日期行
+    console.print("  " + "  ".join(f"{l:>4}" for l in date_labels))
+
+    # 练习数据行 (合并到一行，7列)
+    row_parts = []
+    for i, (key, day) in enumerate(zip([(week_start + timedelta(days=i)).isoformat() for i in range(7)], day_cells)):
+        if day['is_future']:
+            row_parts.append("   - ")
+        elif day['has_practice']:
+            mins = day['total_minutes']
+            if mins >= 60:
+                row_parts.append(f"[green]{mins:>3}'*[green]")
+            else:
+                row_parts.append(f"[green]{mins:>3}' [green]")
+        elif day['progress']:
+            row_parts.append("[cyan]  +  [cyan]")
+        else:
+            row_parts.append("   - ")
+
+    # 用空格连接，不破坏Rich标签
+    console.print("  " + "  ".join(row_parts))
+
+    # ── 项目分布 ──
     if summary['item_totals']:
-        console.print("\n[bold]各项目时长:[/bold]")
-        table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("项目")
-        table.add_column("时长")
-        for item, minutes in sorted(summary['item_totals'].items(), key=lambda x: -x[1]):
-            table.add_row(item, f"{minutes} 分钟")
-        console.print(table)
+        console.print(f"───────────────────────────────────────────")
+        console.print(f"  📊 项目分布:")
+        total = sum(summary['item_totals'].values())
+        for item, mins in sorted(summary['item_totals'].items(), key=lambda x: -x[1]):
+            pct_i = mins / total * 100 if total > 0 else 0
+            bar_len = int(pct_i / 5)
+            bar = "█" * bar_len + "░" * (20 - bar_len)
+            console.print(f"  {item:>6}: {mins:>3}' ({pct_i:>4.1f}%)  {bar}")
 
+    # ── 每日详情（有练习或进展的天） ──
+    detail_lines = []
+    for i in range(7):
+        d = week_start + timedelta(days=i)
+        key = d.isoformat()
+        day = days_data[key]
+        if day['is_future']:
+            continue
+        if day['has_practice']:
+            items_str = " ".join(f"{it['item']}{it['minutes']}'" for it in day['items'])
+            detail_lines.append(f"  [{d.month}/{d.day:02d}] {day['total_minutes']}' - {items_str}")
+            if day['progress']:
+                detail_lines.append(f"         📝 {day['progress']}")
+        elif day['progress']:
+            detail_lines.append(f"  [{d.month}/{d.day:02d}] (仅进展) {day['progress']}")
+
+    if detail_lines:
+        console.print(f"───────────────────────────────────────────")
+        console.print(f"  📝 每日详情:")
+        for line in detail_lines:
+            console.print(line)
+
+    console.print(f"\n  💡 补录昨天: dizical practice log 基本功:20")
+    console.print(f"  💡 指定日期: dizical practice log -d 2026-04-29 基本功:20\n")
+
+
+@practice_app.command("dashboard")
+def practice_dashboard():
+    """全貌仪表盘"""
+    from . import practice as pm
+
+    today = date.today()
+    year, month = today.year, today.month
+
+    # 本月热力图
+    cal_data = pm.get_practice_calendar(year, month)
+    import calendar
+    cal = calendar.Calendar(firstweekday=0)
+
+    console.print(f"\n📅 {year}年{month}月 练习热力图")
+    console.print("  一   二   三   四   五   六   日")
+
+    week = []
+    for day in cal.itermonthdays(year, month):
+        if day == 0:
+            week.append("    ")
+        else:
+            day_date = f"{year:04d}-{month:02d}-{day:02d}"
+            info = cal_data.get(day_date, {})
+            if info.get('has_practice'):
+                mins = info.get('total_minutes', 0)
+                if mins >= 60:
+                    week.append(f"[green]{day:2d}* [green]")
+                else:
+                    week.append(f"[green]{day:2d}- [green]")
+            elif info.get('progress'):
+                week.append(f"[cyan]{day:2d}+ [cyan]")
+            else:
+                week.append(f" {day:2d}  ")
+
+        if len(week) == 7:
+            console.print("  " + "  ".join(week))
+            week = []
+
+    console.print("  [dim]图例: [green]* 60+分钟[green] [green]- 有练习[green] [cyan]+ 有进展[cyan]  空白: 无记录[/dim]")
+
+    # 本月统计
+    summary = pm.get_month_summary(year, month)
+    total_days = summary['total_days']
+    practiced = summary['practice_days']
+    total_min = summary['total_minutes']
+    console.print(f"\n  📊 本月: {practiced}/{total_days} 天 ({practiced/total_days*100:.0f}%)  "
+                  f"⏱ {total_min} 分钟 ({total_min//60}h {total_min%60}m)")
+
+    # 项目分布
+    if summary['item_totals']:
+        total = sum(summary['item_totals'].values())
+        console.print(f"\n  📊 项目累计:")
+        for item, mins in sorted(summary['item_totals'].items(), key=lambda x: -x[1]):
+            pct = mins / total * 100
+            bar_len = int(pct / 5)
+            bar = "█" * bar_len + "░" * (20 - bar_len)
+            console.print(f"  {item:>8}: {mins:>3}' ({pct:>5.1f}%)  {bar}")
+
+    # 近8周趋势
+    console.print(f"\n  📈 近8周趋势:")
+    import datetime as dtt
+    week_starts = []
+    for w in range(7, -1, -1):
+        w_start = pm.get_week_start(today - dtt.timedelta(weeks=w))
+        ws_summary = pm.get_week_summary(w_start)
+        week_starts.append((w_start, ws_summary['total_minutes'], ws_summary['practice_days']))
+
+    max_min = max(m for _, m, _ in week_starts) if week_starts else 1
+    # 趋势条形图（每列高度=时长比例，12行高度）
+    for row in range(11, -1, -1):
+        line = "  "
+        for _, m, _ in week_starts:
+            if m == 0:
+                line += "  "
+            else:
+                h = int(m / max_min * 12)
+                line += "█" if h >= row else " "
+        console.print(line)
+    console.print("  " + "".join(f"W{(ws.isocalendar()[1] % 100):02d}" for ws, _, _ in week_starts))
+
+    console.print()
 
 @practice_app.command("calendar")
 def practice_calendar(

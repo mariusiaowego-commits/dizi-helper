@@ -172,6 +172,45 @@ def get_week_summary(week_start: dt.date) -> Dict:
     }
 
 
+def get_week_days(week_start: dt.date) -> Dict[str, Dict]:
+    """
+    获取某周每天的练习明细（用于日历网格渲染）
+    返回: {日期str: {date, has_practice, total_minutes, items, progress, is_today, is_future}, ...}
+    """
+    week_end = week_start + dt.timedelta(days=6)
+    today = dt.date.today()
+
+    practices = db.get_daily_practices_in_range(week_start, week_end)
+    progress = db.get_progress_from_log_in_range(week_start, week_end)
+
+    # 构建每天的记录（7天必须有值）
+    days = {}
+    for i in range(7):
+        d = week_start + dt.timedelta(days=i)
+        days[d.isoformat()] = {
+            'date': d,
+            'has_practice': False,
+            'total_minutes': 0,
+            'items': [],
+            'progress': None,
+            'is_today': d == today,
+            'is_future': d > today,
+        }
+
+    for p in practices:
+        key = p['date'].isoformat()
+        if key in days:
+            days[key]['has_practice'] = True
+            days[key]['total_minutes'] = p['total_minutes']
+            days[key]['items'] = p['items']
+
+    for key, note in progress.items():
+        if key in days:
+            days[key]['progress'] = note
+
+    return days
+
+
 def get_month_summary(year: int, month: int) -> Dict:
     """获取某月的练习汇总"""
     start_date = dt.date(year, month, 1)
