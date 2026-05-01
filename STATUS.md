@@ -1,16 +1,16 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-04-29 09:38
-**当前阶段**: 功能开发完成，持续迭代中
+**最后更新**: 2026-05-01 15:21
+**当前阶段**: 功能开发完成，Obsidian 使用指南格式修复完毕，无待提交改动
 
 ---
 
 ## 📂 项目位置
 
-- **main 分支 (干净)**: `/Users/mt16/dev/dizical/` (git worktree)
-- **hermes 分支 (开发中)**: `/Users/mt16/dev/dizical/.worktrees/hermes-c82e9a4a/`
-- **Git 模式**: worktree 模式，main 分支保持干净
-- **remote**: origin/main 指向 `f591684`（与 main 完全同步）
+- **main 分支 (开发中)**: `/Users/mt16/dev/dizical/` (有未提交改动)
+- **hermes 分支 (当前会话)**: `/Users/mt16/dev/dizical/.worktrees/hermes-d81fea2b/`
+- **Git 模式**: worktree 模式，main 分支有未 commit 的 practice_query.py 开发中
+- **remote**: origin/main 无法连接（HTTPS 443 超时，需切 SSH）
 
 ---
 
@@ -64,6 +64,7 @@ dizical practice category list      # 大科目列表
 dizical practice category add 气息  # 新增大科目
 dizical practice category set-item 单吐练习 基本功  # 设置小科目归属
 dizical practice config             # 增删改查 TUI（配置管理）
+dizical practice query              # 交互式练习查询 TUI
 dizical practice import <csv>               # 导入时长 CSV
 dizical practice import_logs <csv>         # 批量导入进展 log
 dizical practice import-assignments <csv>  # 批量导入每周老师要求
@@ -84,19 +85,27 @@ dizical obsidian export 4          # 导出4月报告
 
 ---
 
-## 🔄 最近提交 (2026-04-28)
+## 🔄 最近提交 (2026-05-01)
 
 | Commit | 内容 |
 |--------|------|
-| `f591684` | revert: 恢复Unicode边框，文档改用无边框纯文本样式 |
-| `2f77f03` | fix: ASCII边框替代UnicodeBoxDrawing，对齐更稳 |
-| `e1aaa8d` | docs: 更新README，补充practice config和架构说明 |
-| `3bc16d7` | fix: 小科目合并时同步迁移历史练习记录 |
-| `b0ea655` | fix: 小科目改名冲突时二次确认合并 |
-| `f4aac5b` | practice_config: 增删改查模式，支持单条和批量操作 |
-| `a4cfbe2` | refactor(practice_config): 改写为单次线性问答流程 |
+| `ed31c5a` | Merge branch 'feat/assignments-query' |
+| `8ce16a2` | docs: 添加prompt参数化方案文档和4月练习报告excalidraw草稿 |
+| `fd691b5` | feat: practice assignments 查询每周老师要求（明细+汇总） (#14) |
 
----
+## 📦 待提交改动（main worktree）
+
+| 文件 | 说明 |
+|------|------|
+| 无 | 所有代码已提交并同步 |
+
+## 🔄 最近提交 (2026-05-01)
+
+|| Commit | 内容 ||
+||--------|------||
+|| `ed31c5a` | Merge branch 'feat/assignments-query' ||
+|| `8ce16a2` | docs: 添加prompt参数化方案文档和4月练习报告excalidraw草稿 ||
+|| `fd691b5` | feat: practice assignments 查询每周老师要求（明细+汇总） (#14) ||
 
 ## 🚀 下一步开发计划
 
@@ -138,6 +147,7 @@ dizical practice stats 4
 - 提交信息格式: `feat: xxx` / `fix: xxx` / `docs: xxx` / `chore: xxx`
 - Git worktree 模式：功能开发在 `.worktrees/hermes-xxx` 分支，测试通过后合到 main
 - PR 流程：改代码 → 本地调试 → 报结果 → 用户确认 → 再提 PR
+- **开发收尾**：每次 session 结束前更新 `STATUS.md` 和 `DEVELOPMENT_PLAN.md`，保持后续接手 agent 可读
 
 ---
 

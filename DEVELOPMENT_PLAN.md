@@ -5,7 +5,7 @@
 
 **作者**: mtt
 **创建时间**: 2026-04-25
-**最后更新**: 2026-04-29
+**最后更新**: 2026-05-01 15:21
 
 ---
 
@@ -76,6 +76,7 @@ dizical/
 │   ├── holiday.py             # 节假日识别
 │   ├── practice.py            # 练习追踪
 │   ├── practice_config.py     # 大科目/小科目增删改查 TUI
+│   ├── practice_query.py      # 交互式练习查询 TUI（今日/本周/月历/历史/搜索）
 │   ├── notifier.py            # 通知格式化
 │   ├── reminders.py           # Apple Reminders 同步 + 指令解析
 │   ├── obsidian.py            # Obsidian Markdown 导出
@@ -208,6 +209,7 @@ dizical practice category list     # 大科目列表
 dizical practice category add 气息练习  # 新增大科目
 dizical practice category set-item 单吐练习 基本功  # 设置小科目归属
 dizical practice config             # 增删改查 TUI（配置管理）
+dizical practice query              # 交互式练习查询 TUI（今日/本周/月历/历史/搜索）
 dizical practice import <csv>               # 导入时长 CSV
 dizical practice import_logs <csv>          # 批量导入进展 log
 dizical practice import-assignments <csv>   # 批量导入每周老师要求
@@ -239,6 +241,7 @@ dizical backup list                # 查看备份状态
 ### ✅ 第三阶段：CLI 界面
 - [x] Typer CLI 入口 (cli.py)
 - [x] Rich TUI 美化输出
+- [x] practice_query.py 交互式练习查询 TUI
 
 ### ✅ 第四阶段：通知系统
 - [x] Telegram 通知封装 (notifier.py)
@@ -389,3 +392,7 @@ DIZICAL_DB_PATH=data/dizical.db
 - 数据库操作使用参数化查询，防止 SQL 注入
 - 所有对外接口有异常处理和重试机制
 - 配置通过 pydantic-settings 统一管理
+
+---
+
+**开发收尾**：每次 session 结束前更新 `STATUS.md` 和 `DEVELOPMENT_PLAN.md`，保持后续接手 agent 可读。
