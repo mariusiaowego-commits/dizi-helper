@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-01 14:55
-**当前阶段**: 功能开发中，practice query TUI 待 commit
+**最后更新**: 2026-05-01 15:21
+**当前阶段**: 功能开发完成，Obsidian 使用指南格式修复完毕，无待提交改动
 
 ---
 
@@ -97,8 +97,15 @@ dizical obsidian export 4          # 导出4月报告
 
 | 文件 | 说明 |
 |------|------|
-| `src/practice_query.py` | 新文件：交互式练习查询 TUI（今日/本周/月历热力图/历史浏览/模糊搜索） |
-| `src/cli.py` | +7行：新增 `practice query` 命令入口 |
+| 无 | 所有代码已提交并同步 |
+
+## 🔄 最近提交 (2026-05-01)
+
+|| Commit | 内容 ||
+||--------|------||
+|| `ed31c5a` | Merge branch 'feat/assignments-query' ||
+|| `8ce16a2` | docs: 添加prompt参数化方案文档和4月练习报告excalidraw草稿 ||
+|| `fd691b5` | feat: practice assignments 查询每周老师要求（明细+汇总） (#14) ||
 
 ## 🚀 下一步开发计划
 
