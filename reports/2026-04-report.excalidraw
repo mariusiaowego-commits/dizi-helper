@@ -1,0 +1,465 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "hermes-agent",
+  "elements": [
+    {
+      "type": "rectangle",
+      "id": "title_bg",
+      "x": 0, "y": 0, "width": 900, "height": 70,
+      "fillStyle": "solid", "backgroundColor": "#343740",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "text", "id": "title_text",
+      "x": 20, "y": 18, "width": 400, "height": 40,
+      "text": "2026年4月 竹笛练习报告",
+      "fontSize": 28, "fontFamily": 1,
+      "strokeColor": "#ffffff",
+      "originalText": "2026年4月 竹笛练习报告",
+      "autoResize": true
+    },
+    {
+      "type": "text", "id": "title_sub",
+      "x": 680, "y": 24, "width": 200, "height": 28,
+      "text": "27天 / 715分钟",
+      "fontSize": 18, "fontFamily": 1,
+      "strokeColor": "#a5d8ff",
+      "originalText": "27天 / 715分钟",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "s1",
+      "x": 20, "y": 90, "width": 200, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#a5d8ff",
+      "boundElements": [{ "id": "t_s1", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_s1",
+      "x": 25, "y": 100, "width": 190, "height": 60,
+      "text": "练习天数\n27 / 30 天", "fontSize": 22, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "s1", "originalText": "练习天数\n27 / 30 天",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "s2",
+      "x": 240, "y": 90, "width": 200, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#b2f2bb",
+      "boundElements": [{ "id": "t_s2", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_s2",
+      "x": 245, "y": 100, "width": 190, "height": 60,
+      "text": "总时长\n11小时55分", "fontSize": 22, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "s2", "originalText": "总时长\n11小时55分",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "s3",
+      "x": 460, "y": 90, "width": 200, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#d0bfff",
+      "boundElements": [{ "id": "t_s3", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_s3",
+      "x": 465, "y": 100, "width": 190, "height": 60,
+      "text": "日均时长\n26分钟", "fontSize": 22, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "s3", "originalText": "日均时长\n26分钟",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "s4",
+      "x": 680, "y": 90, "width": 200, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#ffd8a8",
+      "boundElements": [{ "id": "t_s4", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_s4",
+      "x": 685, "y": 100, "width": 190, "height": 60,
+      "text": "最高连续\n7天（本周）", "fontSize": 22, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "s4", "originalText": "最高连续\n7天（本周）",
+      "autoResize": true
+    },
+
+    {
+      "type": "text", "id": "weekly_title",
+      "x": 20, "y": 190, "width": 200, "height": 30,
+      "text": "周练习量（分钟）",
+      "fontSize": 18, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "周练习量（分钟）",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "w1",
+      "x": 20, "y": 230, "width": 200, "height": 140,
+      "roundness": { "type": 2 },
+      "fillStyle": "solid", "backgroundColor": "#e8f4fd",
+      "boundElements": [{ "id": "t_w1", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_w1",
+      "x": 25, "y": 240, "width": 190, "height": 110,
+      "text": "第15周\n4/06-4/12\n\n132分钟\n6/7天", "fontSize": 16, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "w1", "originalText": "第15周\n4/06-4/12\n\n132分钟\n6/7天",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "w2",
+      "x": 240, "y": 230, "width": 200, "height": 140,
+      "roundness": { "type": 2 },
+      "fillStyle": "solid", "backgroundColor": "#e8f4fd",
+      "boundElements": [{ "id": "t_w2", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_w2",
+      "x": 245, "y": 240, "width": 190, "height": 110,
+      "text": "第16周\n4/13-4/19\n\n171分钟\n6/7天", "fontSize": 16, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "w2", "originalText": "第16周\n4/13-4/19\n\n171分钟\n6/7天",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "w3",
+      "x": 460, "y": 230, "width": 200, "height": 140,
+      "roundness": { "type": 2 },
+      "fillStyle": "solid", "backgroundColor": "#d0f5d8",
+      "boundElements": [{ "id": "t_w3", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_w3",
+      "x": 465, "y": 240, "width": 190, "height": 110,
+      "text": "第17周\n4/20-4/26\n\n193分钟\n7/7天", "fontSize": 16, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "w3", "originalText": "第17周\n4/20-4/26\n\n193分钟\n7/7天",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "w4",
+      "x": 680, "y": 230, "width": 200, "height": 140,
+      "roundness": { "type": 2 },
+      "fillStyle": "solid", "backgroundColor": "#e8f4fd",
+      "boundElements": [{ "id": "t_w4", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_w4",
+      "x": 685, "y": 240, "width": 190, "height": 110,
+      "text": "第18周\n4/27-5/03\n\n90分钟\n3/7天", "fontSize": 16, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "w4", "originalText": "第18周\n4/27-5/03\n\n90分钟\n3/7天",
+      "autoResize": true
+    },
+
+    {
+      "type": "text", "id": "proj_title",
+      "x": 20, "y": 390, "width": 200, "height": 30,
+      "text": "项目时长分布",
+      "fontSize": 18, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "项目时长分布",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "pbar1_bg",
+      "x": 20, "y": 430, "width": 860, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#e8e8e8",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "rectangle", "id": "pbar1",
+      "x": 20, "y": 430, "width": 420, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#a5d8ff",
+      "strokeWidth": 0, "roughness": 0,
+      "boundElements": [{ "id": "t_pb1", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_pb1",
+      "x": 25, "y": 432, "width": 300, "height": 28,
+      "text": "基本功  208分钟  29.1%",
+      "fontSize": 15, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "基本功  208分钟  29.1%",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "pbar2_bg",
+      "x": 20, "y": 470, "width": 860, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#e8e8e8",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "rectangle", "id": "pbar2",
+      "x": 20, "y": 470, "width": 366, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#b2f2bb",
+      "strokeWidth": 0, "roughness": 0,
+      "boundElements": [{ "id": "t_pb2", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_pb2",
+      "x": 25, "y": 472, "width": 300, "height": 28,
+      "text": "歌曲 - 吹  181分钟  25.3%",
+      "fontSize": 15, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "歌曲 - 吹  181分钟  25.3%",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "pbar3_bg",
+      "x": 20, "y": 510, "width": 860, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#e8e8e8",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "rectangle", "id": "pbar3",
+      "x": 20, "y": 510, "width": 182, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#d0bfff",
+      "strokeWidth": 0, "roughness": 0,
+      "boundElements": [{ "id": "t_pb3", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_pb3",
+      "x": 25, "y": 512, "width": 300, "height": 28,
+      "text": "上课  90分钟  12.6%",
+      "fontSize": 15, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "上课  90分钟  12.6%",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "pbar4_bg",
+      "x": 20, "y": 550, "width": 860, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#e8e8e8",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "rectangle", "id": "pbar4",
+      "x": 20, "y": 550, "width": 180, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#ffd8a8",
+      "strokeWidth": 0, "roughness": 0,
+      "boundElements": [{ "id": "t_pb4", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_pb4",
+      "x": 25, "y": 552, "width": 300, "height": 28,
+      "text": "歌曲 - 小节  89分钟  12.4%",
+      "fontSize": 15, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "歌曲 - 小节  89分钟  12.4%",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "pbar5_bg",
+      "x": 20, "y": 590, "width": 860, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#e8e8e8",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "rectangle", "id": "pbar5",
+      "x": 20, "y": 590, "width": 83, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#c3fae8",
+      "strokeWidth": 0, "roughness": 0,
+      "boundElements": [{ "id": "t_pb5", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_pb5",
+      "x": 25, "y": 592, "width": 300, "height": 28,
+      "text": "唱茉莉花（二）  41分钟  5.7%",
+      "fontSize": 15, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "唱茉莉花（二）  41分钟  5.7%",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "pbar6_bg",
+      "x": 20, "y": 630, "width": 860, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#e8e8e8",
+      "strokeWidth": 0, "roughness": 0
+    },
+    {
+      "type": "rectangle", "id": "pbar6",
+      "x": 20, "y": 630, "width": 46, "height": 32,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#fff3bf",
+      "strokeWidth": 0, "roughness": 0,
+      "boundElements": [{ "id": "t_pb6", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_pb6",
+      "x": 25, "y": 632, "width": 300, "height": 28,
+      "text": "其他  65分钟  9.1%",
+      "fontSize": 15, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "其他  65分钟  9.1%",
+      "autoResize": true
+    },
+
+    {
+      "type": "text", "id": "note_title",
+      "x": 20, "y": 685, "width": 200, "height": 28,
+      "text": "本月重点",
+      "fontSize": 18, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "本月重点",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "note1",
+      "x": 20, "y": 720, "width": 265, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#fff3bf",
+      "boundElements": [{ "id": "t_n1", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_n1",
+      "x": 25, "y": 725, "width": 255, "height": 70,
+      "text": "全勤第17周\n7天练习，193分钟\n本周最佳", "fontSize": 14, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "note1", "originalText": "全勤第17周\n7天练习，193分钟\n本周最佳",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "note2",
+      "x": 305, "y": 720, "width": 265, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#d0bfff",
+      "boundElements": [{ "id": "t_n2", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_n2",
+      "x": 310, "y": 725, "width": 255, "height": 70,
+      "text": "上课2次\n4/18、4/25\n共90分钟", "fontSize": 14, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "note2", "originalText": "上课2次\n4/18、4/25\n共90分钟",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "note3",
+      "x": 590, "y": 720, "width": 290, "height": 80,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#c3fae8",
+      "boundElements": [{ "id": "t_n3", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_n3",
+      "x": 595, "y": 725, "width": 280, "height": 70,
+      "text": "新增茉莉花（二）\n开始唱谱+吹奏\n预习老师要求", "fontSize": 14, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "note3", "originalText": "新增茉莉花（二）\n开始唱谱+吹奏\n预习老师要求",
+      "autoResize": true
+    },
+
+    {
+      "type": "text", "id": "assign_title",
+      "x": 20, "y": 820, "width": 200, "height": 28,
+      "text": "本月老师要求（4周）",
+      "fontSize": 18, "fontFamily": 1,
+      "strokeColor": "#1e1e1e",
+      "originalText": "本月老师要求（4周）",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "a1",
+      "x": 20, "y": 855, "width": 200, "height": 100,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#a5d8ff",
+      "boundElements": [{ "id": "t_a1", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_a1",
+      "x": 25, "y": 860, "width": 190, "height": 90,
+      "text": "第15周 4/11\n回娘家：♩=74,78\n采茶扑蝶：P256\n小节反复", "fontSize": 13, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "a1", "originalText": "第15周 4/11\n回娘家：♩=74,78\n采茶扑蝶：P256\n小节反复",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "a2",
+      "x": 240, "y": 855, "width": 200, "height": 100,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#b2f2bb",
+      "boundElements": [{ "id": "t_a2", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_a2",
+      "x": 245, "y": 860, "width": 190, "height": 90,
+      "text": "第16周 4/18\n单吐：♩=82,84,86\n回娘家：连线连贯\n采茶扑蝶：全按作低音2", "fontSize": 13, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "a2", "originalText": "第16周 4/18\n单吐：♩=82,84,86\n回娘家：连线连贯\n采茶扑蝶：全按作低音2",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "a3",
+      "x": 460, "y": 855, "width": 200, "height": 100,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#ffd8a8",
+      "boundElements": [{ "id": "t_a3", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_a3",
+      "x": 465, "y": 860, "width": 190, "height": 90,
+      "text": "第17周 4/25\n单吐：高音防掉，背谱\n回娘家：倒过来分句\n采茶扑蝶：76,80,84", "fontSize": 13, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "a3", "originalText": "第17周 4/25\n单吐：高音防掉，背谱\n回娘家：倒过来分句\n采茶扑蝶：76,80,84",
+      "autoResize": true
+    },
+
+    {
+      "type": "rectangle", "id": "a4",
+      "x": 680, "y": 855, "width": 200, "height": 100,
+      "roundness": { "type": 3 },
+      "fillStyle": "solid", "backgroundColor": "#d0bfff",
+      "boundElements": [{ "id": "t_a4", "type": "text" }]
+    },
+    {
+      "type": "text", "id": "t_a4",
+      "x": 685, "y": 860, "width": 190, "height": 90,
+      "text": "第18周 5/01\n茉莉花（二）预习\n唱+分析小拍子\n分句，先点后串", "fontSize": 13, "fontFamily": 1,
+      "strokeColor": "#1e1e1e", "textAlign": "center", "verticalAlign": "middle",
+      "containerId": "a4", "originalText": "第18周 5/01\n茉莉花（二）预习\n唱+分析小拍子\n分句，先点后串",
+      "autoResize": true
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff"
+  }
+}
