@@ -241,7 +241,7 @@ class PracticeQueryTUI:
                 self.stdscr.addstr(row, 14, f"{mins:>4}分 ", curses.color_pair(Colors.DIM))
                 self.stdscr.addstr(row, 21, bar_str, curses.color_pair(bar_color))
                 items_str = ' '.join(f"{x['item']}{x['minutes']}" for x in d['items'][:4])
-                self.stdscr.addstr(row, 36, f" {items_str[:self.w-38]}")
+                self.stdscr.addstr(row, 44, f" {items_str[:self.w-46]}")
             else:
                 self._attr(row, 14, "  休息", Colors.DIM)
             row += 1
