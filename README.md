@@ -99,6 +99,7 @@ dizical practice config         # 增删改查模式管理大科目/小科目
 dizical practice import <csv>             # 导入练习时长CSV
 dizical practice import_logs <csv>       # 批量导入进展log（Date,Log）
 dizical practice import-assignments <csv> # 批量导入每周老师要求（WeekStart,Item,Requirement）
+dizical practice assign -d 2026-05-05 单吐练习:♩=82 -i img.jpg  # 录入本周要求（含配图）
 dizical practice assignments             # 查询每周老师要求（明细+汇总）
 dizical practice report -y 2026 -m 3 --style academic  # 生成月报图片
 
