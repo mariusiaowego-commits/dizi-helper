@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
 **最后更新**: 2026-05-04
-**当前阶段**: 每周老师要求录入体验优化 Phase 1 完成 → Phase 2 待开始
+**当前阶段**: Phase 1b 图片存储完成 → Phase 2 待开始（快捷别名/模板复用/模糊匹配）
 
 ---
 
@@ -67,6 +67,8 @@ dizical practice config             # 增删改查 TUI（配置管理）
 dizical practice query              # 交互式练习查询 TUI
 dizical practice import <csv>               # 导入时长 CSV
 dizical practice import_logs <csv>         # 批量导入进展 log
+dizical practice assign -d <周一> <项目:要求> [-i <图片路径>]  # 录入每周老师要求（含配图）
+dizical practice assignments             # 查询每周老师要求
 dizical practice import-assignments <csv>  # 批量导入每周老师要求
 
 # 同步
@@ -89,14 +91,16 @@ dizical obsidian export 4          # 导出4月报告
 
 | 文件 | 说明 |
 |------|------|
-| 无 | 所有代码已提交并同步，worktree 与 main 完全同步 |
+| 无 | 所有代码已提交并同步，main 最新 `885a9bd` |
 
 ## 🔄 最近提交 (2026-05-04)
 
 | Commit | 内容 |
 |--------|------|
-| `6cf14b0` | feat(practice): assign 支持增量追加 + 确认打印 + --show-items |
-| `63ca137` | Merge branch 'hermes/hermes-eb075c87' |
+| `885a9bd` | Merge pull request #20 from mariusiaowego-commits/feature/assign-image-v2 |
+| `21ed7e3` | docs: README 补充 assign 命令（含配图示例） |
+| `eceb8d2` | docs: 补充 assign/assignments 命令及图片功能说明 |
+| `ca11dce` | feat(assign): 支持老师要求配图存储（-i/--image），修复查询当前周范围bug |
 
 ## 🚀 下一步开发计划
 
