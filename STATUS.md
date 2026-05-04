@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-03 15:25
-**当前阶段**: 遗留问题修复 — STATUS.md/DEVELOPMENT_PLAN.md 日期修正，worktree/main 同步
+**最后更新**: 2026-05-04
+**当前阶段**: 每周老师要求录入体验优化 Phase 1 完成 → Phase 2 待开始
 
 ---
 
@@ -91,13 +91,12 @@ dizical obsidian export 4          # 导出4月报告
 |------|------|
 | 无 | 所有代码已提交并同步，worktree 与 main 完全同步 |
 
-## 🔄 最近提交 (2026-05-02)
+## 🔄 最近提交 (2026-05-04)
 
 | Commit | 内容 |
 |--------|------|
-| `3d8eae8` | fix: TUI 进度条 █ → = (macOS BSD curses 无 ACS_BLOCK) |
-| `413bb89` | fix: 恢复 █ 填充符，cli/rich 进度条保持 █，TUI 用 = |
-| `74abed2` | fix: 进度条填充满字符 # → = |
+| `6cf14b0` | feat(practice): assign 支持增量追加 + 确认打印 + --show-items |
+| `63ca137` | Merge branch 'hermes/hermes-eb075c87' |
 
 ## 🚀 下一步开发计划
 
