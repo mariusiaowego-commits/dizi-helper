@@ -450,12 +450,26 @@ class Database:
     # Weekly assignment operations
     def save_weekly_assignment(self, week_start_date: dt.date, items: List[Dict], notes: Optional[str] = None) -> None:
         import json
+        # 增量追加：查询现有 items，合并新旧（按 item 名称去重），再保存
+        existing = self.get_weekly_assignment(week_start_date)
+        if existing:
+            # 按 item 名称去重：新items覆盖旧requirement，旧items保留
+            existing_map = {it['item']: it for it in existing['items']}
+            for new_item in items:
+                existing_map[new_item['item']] = new_item
+            merged_items = list(existing_map.values())
+        else:
+            merged_items = items
+
+        # 保留 notes（首次录入时保存，后续追加时保留原有 notes 除非明确传入）
+        final_notes = notes if notes is not None else (existing['notes'] if existing else None)
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT OR REPLACE INTO weekly_assignments (week_start_date, items, notes)
                 VALUES (?, ?, ?)
-            ''', (week_start_date.isoformat(), json.dumps(items, ensure_ascii=False), notes))
+            ''', (week_start_date.isoformat(), json.dumps(merged_items, ensure_ascii=False), final_notes))
             conn.commit()
 
     def get_weekly_assignment(self, week_start_date: dt.date) -> Optional[Dict]:

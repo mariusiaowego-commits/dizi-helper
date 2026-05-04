@@ -1008,21 +1008,40 @@ def practice_assign(
     ctx: typer.Context,
     date: str = typer.Option(None, "--date", "-d", help="周开始日期（周一），格式 YYYY-MM-DD"),
     notes: Optional[str] = typer.Option(None, "--notes", "-n", help="老师补充说明"),
+    show_items: bool = typer.Option(False, "--show-items", help="录入前列出已有练习项目供补全"),
     items: Annotated[list[str], typer.Argument(help="练习项目和要求，格式 项目:要求")] = [],
 ):
-    """录入每周老师要求
+    """录入每周老师要求（支持增量追加，漏了可以再执行追加）
 
     示例:
         dizical practice assign 单吐练习:♩=82,84,86各两天 回娘家:连线小节♩=78
         dizical practice assign -d 2026-04-20 单吐练习:♩=82,84,86各两天
+        dizical practice assign -d 2026-04-20 回娘家:连线小节♩=78  # 增量追加，不会覆盖单吐练习
+        dizical practice assign --show-items  # 先看有哪些项目，再录入
     """
+    from . import practice as pm
+
     items_list = list(items) + list(ctx.args)
+
+    # --show-items: 先列出已有项目
+    if show_items:
+        all_items = pm.db.get_practice_items(active_only=False)
+        if all_items:
+            item_names = sorted(set(it['name'] for it in all_items))
+            console.print(f"[blue]已有练习项目 ({len(item_names)} 个)：[/blue]")
+            for name in item_names:
+                console.print(f"  • {name}")
+        else:
+            console.print("[yellow]暂无练习项目[/yellow]")
+        # --show-items 只展示，不录入
+        if not items_list:
+            return
 
     if date:
         week_start = parse_date(date)
     else:
         # 自动推算：取最近一次已上课的下一天作为 WeekStart
-        inferred = practice_module.get_last_attended_lesson_date_next()
+        inferred = pm.get_last_attended_lesson_date_next()
         if inferred:
             week_start = inferred
             console.print(f"[blue]ℹ️  自动推算 WeekStart: {week_start}（上次课后次日）[/blue]")
@@ -1041,8 +1060,13 @@ def practice_assign(
             parsed.append({'item': item_name.strip(), 'requirement': req.strip()})
 
     if parsed:
-        practice_module.save_weekly_assignment(week_start, parsed, notes)
-        console.print(f"[green]✅ 已录入 {week_start} 的每周要求[/green]")
+        # 增量追加
+        pm.save_weekly_assignment(week_start, parsed, notes)
+        # 确认打印
+        item_names = [p['item'] for p in parsed]
+        console.print(f"[green]✅ 已录入 {week_start} 这周：[/green]")
+        for name in item_names:
+            console.print(f"  • {name}")
 
 
 @practice_app.command("assignments")
