@@ -448,7 +448,7 @@ class Database:
             conn.commit()
 
     # Weekly assignment operations
-    def save_weekly_assignment(self, week_start_date: dt.date, items: List[Dict], notes: Optional[str] = None) -> None:
+    def save_weekly_assignment(self, week_start_date: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
         import json
         # 增量追加：查询现有 items，合并新旧（按 item 名称去重），再保存
         existing = self.get_weekly_assignment(week_start_date)
@@ -464,12 +464,19 @@ class Database:
         # 保留 notes（首次录入时保存，后续追加时保留原有 notes 除非明确传入）
         final_notes = notes if notes is not None else (existing['notes'] if existing else None)
 
+        # 保留 images（后续追加时合并，不覆盖已有图片）
+        if images is not None:
+            existing_images = existing['images'] if existing else []
+            merged_images = existing_images + [img for img in images if img not in existing_images]
+        else:
+            merged_images = existing['images'] if existing else []
+
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT OR REPLACE INTO weekly_assignments (week_start_date, items, notes)
-                VALUES (?, ?, ?)
-            ''', (week_start_date.isoformat(), json.dumps(merged_items, ensure_ascii=False), final_notes))
+                INSERT OR REPLACE INTO weekly_assignments (week_start_date, items, notes, images)
+                VALUES (?, ?, ?, ?)
+            ''', (week_start_date.isoformat(), json.dumps(merged_items, ensure_ascii=False), final_notes, json.dumps(merged_images, ensure_ascii=False)))
             conn.commit()
 
     def get_weekly_assignment(self, week_start_date: dt.date) -> Optional[Dict]:
@@ -483,7 +490,8 @@ class Database:
                     'id': row['id'],
                     'week_start_date': dt.date.fromisoformat(row['week_start_date']),
                     'items': json.loads(row['items']),
-                    'notes': row['notes']
+                    'notes': row['notes'],
+                    'images': json.loads(row['images']) if row['images'] else []
                 }
             return None
 
@@ -500,7 +508,8 @@ class Database:
                 'id': row['id'],
                 'week_start_date': dt.date.fromisoformat(row['week_start_date']),
                 'items': json.loads(row['items']),
-                'notes': row['notes']
+                'notes': row['notes'],
+                'images': json.loads(row['images']) if row['images'] else []
             } for row in cursor.fetchall()]
 
     # Daily practice operations

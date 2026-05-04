@@ -8,6 +8,7 @@ dizical.egg-info/entry_points.txt
 dizical.egg-info/requires.txt
 dizical.egg-info/top_level.txt
 src/__init__.py
+src/backup.py
 src/cli.py
 src/config.py
 src/database.py
@@ -19,7 +20,9 @@ src/obsidian.py
 src/payment.py
 src/practice.py
 src/practice_config.py
+src/practice_query.py
 src/reminders.py
+src/report_templates.py
 tests/__init__.py
 tests/test_holiday.py
 tests/test_lesson.py
