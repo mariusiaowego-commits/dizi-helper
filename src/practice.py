@@ -129,7 +129,7 @@ def save_progress(date: dt.date, note: str) -> None:
     db.save_progress_to_log(date, note)
 
 
-def save_weekly_assignment(week_start: dt.date, items: List[Dict], notes: Optional[str] = None) -> None:
+def save_weekly_assignment(week_start: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
     """
     保存每周老师要求
     items: [{"item": "单吐练习", "requirement": "♩=82,84,86 各两天"}, ...]
@@ -138,7 +138,7 @@ def save_weekly_assignment(week_start: dt.date, items: List[Dict], notes: Option
     for item in items:
         db.add_practice_item(item['item'])
 
-    db.save_weekly_assignment(week_start, items, notes)
+    db.save_weekly_assignment(week_start, items, notes, images)
 
 
 def query_assignments(
@@ -157,13 +157,13 @@ def query_assignments(
     }, ...]
     """
     if weeks is not None:
-        end_date = dt.date.today()
+        end_date = dt.date.today() + dt.timedelta(weeks=1)
         start_date = end_date - dt.timedelta(weeks=weeks)
     elif start and end:
         start_date, end_date = start, end
     else:
-        # 默认过去 4 周
-        end_date = dt.date.today()
+        # 默认过去 4 周（多往前看一周，覆盖当前所在周）
+        end_date = dt.date.today() + dt.timedelta(weeks=1)
         start_date = end_date - dt.timedelta(weeks=4)
 
     return db.get_weekly_assignments_in_range(start_date, end_date)

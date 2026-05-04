@@ -1009,6 +1009,7 @@ def practice_assign(
     date: str = typer.Option(None, "--date", "-d", help="周开始日期（周一），格式 YYYY-MM-DD"),
     notes: Optional[str] = typer.Option(None, "--notes", "-n", help="老师补充说明"),
     show_items: bool = typer.Option(False, "--show-items", help="录入前列出已有练习项目供补全"),
+    img: list[str] = typer.Option([], "--image", "-i", help="老师要求配图路径，可多次指定"),
     items: Annotated[list[str], typer.Argument(help="练习项目和要求，格式 项目:要求")] = [],
 ):
     """录入每周老师要求（支持增量追加，漏了可以再执行追加）
@@ -1018,6 +1019,7 @@ def practice_assign(
         dizical practice assign -d 2026-04-20 单吐练习:♩=82,84,86各两天
         dizical practice assign -d 2026-04-20 回娘家:连线小节♩=78  # 增量追加，不会覆盖单吐练习
         dizical practice assign --show-items  # 先看有哪些项目，再录入
+        dizical practice assign -d 2026-05-05 单吐练习:♩=82 -i ~/photos/req.jpg
     """
     from . import practice as pm
 
@@ -1061,12 +1063,14 @@ def practice_assign(
 
     if parsed:
         # 增量追加
-        pm.save_weekly_assignment(week_start, parsed, notes)
+        pm.save_weekly_assignment(week_start, parsed, notes, list(img) if img else None)
         # 确认打印
         item_names = [p['item'] for p in parsed]
         console.print(f"[green]✅ 已录入 {week_start} 这周：[/green]")
         for name in item_names:
             console.print(f"  • {name}")
+        if img:
+            console.print(f"[green]📷 配图 {len(list(img))} 张已保存[/green]")
 
 
 @practice_app.command("assignments")
@@ -1143,6 +1147,8 @@ def practice_assignments(
         if a.get('notes'):
             notes_preview = a['notes'].replace('\n', ' ')[:44]
             out(f"  {' ' * len(week_str)}  {'📝':<12}  {notes_preview}")
+        if a.get('images'):
+            out(f"  {' ' * len(week_str)}  {'📷':<12}  {len(a['images'])} 张配图")
         out("")
 
     out(f"  💡 补录: dizical practice assign -d {assignments[-1]['week_start_date']} 项目:要求")
