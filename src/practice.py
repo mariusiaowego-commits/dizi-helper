@@ -62,6 +62,66 @@ def parse_practice_input(text: str) -> List[Dict[str, any]]:
     return results
 
 
+def _similarity(a: str, b: str) -> float:
+    """
+    计算两个字符串的相似度（0.0 ~ 1.0）。
+    同时考虑子串匹配和编辑距离。
+    """
+    a_lower = a.lower()
+    b_lower = b.lower()
+    # 完全相同
+    if a_lower == b_lower:
+        return 1.0
+    # 子串 / 超串匹配
+    if a_lower in b_lower:
+        return 0.85
+    if b_lower in a_lower:
+        return 0.80
+    # 包含任一字符
+    if any(c in b_lower for c in a_lower):
+        return 0.5
+    # 编辑距离（简单版：长度差过大直接排除）
+    if abs(len(a) - len(b)) > max(len(a), len(b)) * 0.5:
+        return 0.0
+    # 公共字符占比
+    common = sum(1 for c in a_lower if c in b_lower)
+    return common / max(len(a), len(b)) * 0.4
+
+
+def find_similar_items(name: str, threshold: float = 0.3) -> List[Tuple[int, str, float]]:
+    """
+    查找与 name 相似的已有小科目。
+    返回 [(id, name, similarity), ...]，按相似度降序。
+    threshold 以下的不返回。
+    """
+    all_items = db.get_practice_items(active_only=False)
+    scored = []
+    for item in all_items:
+        score = _similarity(name, item['name'])
+        if score >= threshold:
+            scored.append((item['id'], item['name'], score))
+    scored.sort(key=lambda x: x[2], reverse=True)
+    return scored
+
+
+def resolve_practice_item(item_name: str) -> Tuple[bool, str]:
+    """
+    将用户输入的 item_name 解析为确定的已有小科目名称。
+    返回 (cancelled, resolved_name)：
+      - cancelled=True 表示用户取消
+      - resolved_name 为最终确认的名称（可能是新建的）
+    调用方负责打印候选列表并收集用户选择。
+    """
+    all_items = db.get_practice_items(active_only=False)
+    # 精确匹配 → 直接使用，不弹窗
+    for item in all_items:
+        if item['name'] == item_name:
+            return False, item['name']
+    # 查相似
+    similar = find_similar_items(item_name)
+    return False, item_name  # 调用方应根据 similar 决定是否弹窗
+
+
 def save_practice(date: dt.date, items: List[Dict], log: Optional[str] = None) -> int:
     """
     保存每日练习记录

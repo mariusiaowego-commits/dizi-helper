@@ -262,7 +262,7 @@ dizical backup list                # 查看备份状态
 
 ---
 
-## 🔧 数据库备份方案（规划）
+## 🔧 数据库备份方案（已实现）
 
 ### 需求
 - 定期备份 `data/dizi.db` 和 `data/dizical.db` 到本地
@@ -271,10 +271,39 @@ dizical backup list                # 查看备份状态
 
 ### 实现方案
 1. **备份脚本**: `src/backup.py`
-2. **备份频率**: 每小时一次（通过 Hermes cron）
-3. **备份保留**: 最近 7 天 + 每周日 20:00 额外备份当月版本
-4. **备份位置**: `data/backups/` 目录下
-5. **备份命名**: `{db_name}_{YYYYMMDD_HHMMSS}.db`
+2. **备份频率**: 手动触发（`dizical backup run`）+ 可配置 cron
+3. **备份保留**: 本地 `data/backups/` 最多 7 个每日备份
+4. **备份验证**: `_verify_backup()` — sqlite3 连接读取表列表验证完整性
+5. **iCloud 冗余**: `_sync_to_icloud()` — 每次备份自动同步到 `/Users/mt16/Documents/TQ/01-Personal/0101-Family/010101-YoYo/dizical-backups/`
+6. **备份命名**: `{db_name}_daily_{YYYYMMDD_HHMMSS}.db`
+
+### CLI 命令
+```bash
+dizical backup run   # 执行备份（本地 + iCloud）
+dizical backup list  # 查看备份状态
+```
+
+---
+
+## 🎯 Phase 2：练习录入防误录（已实现）
+
+### 问题
+用户执行 `dizical practice log 单吐练:20` 时，如果拼写稍有出入，系统会直接新建一个小科目，导致数据库积累大量近似重复项。
+
+### 实现方案
+1. **相似度算法** `_similarity(a, b)`：完全匹配=1.0，子串=0.85/0.80，包含=0.5，公共字符占比
+2. **查找相似** `find_similar_items(name, threshold=0.3)`：返回按相似度降序排列的候选列表
+3. **CLI 拦截**：`practice_log` 在写入前对每个非精确匹配的 item 弹窗确认
+
+### 用户流程
+```
+用户输入: dizical practice log 单吐练:20
+系统: 未找到完全匹配的小科目「单吐练」。以下小科目与你的输入相似：
+  [1] 单吐练习（相似度：高）
+  [2] 单吐（相似度：高）
+  [3] 新建小科目「单吐练」
+请选择 [1/2/3]，或直接回车取消：
+```
 
 ---
 

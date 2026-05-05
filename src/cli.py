@@ -12,6 +12,7 @@ _RICH_TAG = _re.compile(r"\[/?(?:red|green|blue|yellow|magenta|dim|bold|cyan)\]"
 from .lesson_manager import LessonManager
 from .payment import PaymentManager
 from .models import LessonStatus
+from .database import db
 
 app = typer.Typer(help="🎵 竹笛学习助手 - 课程管理与缴费提醒")
 console = Console()
@@ -930,11 +931,11 @@ from . import practice as practice_module
 @practice_app.command("log")
 def practice_log(
     ctx: typer.Context,
-    date: str = typer.Option(None, "--date", "-d", help="日期，格式 YYYY-MM-DD，默认今天"),
+    date: str = typer.Option(None, "--date", "-d", help="日期，格式 YYYY-MM-DD，默认昨天"),
     log: Optional[str] = typer.Option(None, "--log", "-l", help="详细练习记录/进展"),
     items: Annotated[list[str], typer.Argument(help="练习内容，格式 项目:分钟")] = [],
 ):
-    """记录每日练习
+    """记录每日练习（支持模糊匹配，防止误建小科目）
 
     示例:
         dizical practice log 基本功:20 单吐:15 采茶扑蝶:10
@@ -951,7 +952,7 @@ def practice_log(
         # 默认补录昨天
         practice_date = dt.date.today() - dt.timedelta(days=1)
 
-    # 解析 items
+    # 解析 items（初步解析，还未写入 DB）
     parsed = []
     for part in items_list:
         if ':' in part:
@@ -963,15 +964,67 @@ def practice_log(
                 console.print(f"[red]❌ 无效时长: {mins}[/red]")
                 return
 
-    if parsed or log:
-        total = practice_module.save_practice(practice_date, parsed, log=log)
-        msg = f"已记录 {practice_date} 练习: {total} 分钟"
-        if log:
-            msg += f"\n📝 {log}"
-        console.print(f"[green]✅ {msg}[/green]")
-    else:
+    if not parsed and not log:
         console.print("[yellow]请提供练习内容或记录，如: dizical practice log '基本功:20' --log '今天有进步'[/yellow]")
         return
+
+    # ── Phase 2: 模糊匹配 + 确认拦截 ────────────────────────────────
+    resolved_items = []
+    for entry in parsed:
+        raw_name = entry['item']
+        # 精确匹配 → 直接收录
+        all_items = db.get_practice_items(active_only=False)
+        exact = next((it['name'] for it in all_items if it['name'] == raw_name), None)
+        if exact:
+            resolved_items.append({'item': exact, 'minutes': entry['minutes']})
+            continue
+
+        # 模糊匹配
+        similar = practice_module.find_similar_items(raw_name)
+        if not similar:
+            # 无相似 → 直接新建
+            resolved_items.append({'item': raw_name, 'minutes': entry['minutes']})
+            continue
+
+        # 有相似 → 打印候选并等待用户选择
+        console.print(f"\n[yellow]未找到完全匹配的小科目「{raw_name}」。[/yellow]")
+        console.print("以下小科目与你的输入相似：")
+        for i, (_, name, score) in enumerate(similar[:5], 1):
+            label = "高" if score >= 0.8 else "中" if score >= 0.5 else "低"
+            console.print(f"  [{i}] {name}（相似度：{label}）")
+        console.print(f"  [{len(similar)+1}] 新建小科目「{raw_name}」")
+
+        choice = None
+        while choice is None:
+            user_input = console.input("\n请选择 [1-{}/Enter取消]: ".format(len(similar)+1))
+            if user_input.strip() == "":
+                console.print("[dim]已取消本次录入[/dim]")
+                return
+            try:
+                idx = int(user_input.strip())
+                if 1 <= idx <= len(similar) + 1:
+                    choice = idx
+                else:
+                    console.print(f"[red]请输入 1~{len(similar)+1} 或直接回车[/red]")
+            except ValueError:
+                console.print(f"[red]请输入数字 1~{len(similar)+1} 或直接回车[/red]")
+
+        if choice <= len(similar):
+            resolved_name = similar[choice - 1][1]
+            console.print(f"[dim]  → 关联已有科目：{resolved_name}[/dim]")
+        else:
+            resolved_name = raw_name
+            console.print(f"[dim]  → 新建科目：{resolved_name}[/dim]")
+
+        resolved_items.append({'item': resolved_name, 'minutes': entry['minutes']})
+
+    # 写入 DB
+    total = practice_module.save_practice(practice_date, resolved_items, log=log)
+    msg = f"已记录 {practice_date} 练习: {total} 分钟"
+    if log:
+        msg += f"\n📝 {log}"
+    console.print(f"[green]✅ {msg}[/green]")
+    return
 
 
 @practice_app.command("note")
@@ -1809,13 +1862,18 @@ from .backup import backup_all, list_backups, backup_info
 
 @backup_app.command("run")
 def backup_run():
-    """执行数据库备份"""
+    """执行数据库备份（本地 + iCloud 双重冗余）"""
     try:
         results = backup_all()
         if results:
-            console.print(f"[green]✅ 备份成功，共 {len(results)} 个文件:[/green]")
+            console.print(f"[green]✅ 备份成功，共 {len(results)} 个文件:[/green]\n")
             for r in results:
-                console.print(f"  {r.name}")
+                p = r["path"]
+                console.print(f"  📦 {p.name}")
+                console.print(f"     本地: {p}")
+                console.print(f"     {r['verify_msg']}")
+                console.print(f"     {r['icloud_msg']}")
+                console.print()
         else:
             console.print("[yellow]⚠️  没有找到需要备份的数据库文件[/yellow]")
     except Exception as e:
