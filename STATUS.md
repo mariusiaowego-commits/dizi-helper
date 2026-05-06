@@ -1,15 +1,19 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-05
-**当前阶段**: Phase 2 完成（练习录入防误录） → Phase 3 待开始
+**最后更新**: 2026-05-06
+**当前阶段**: Phase 2 完成（练习录入防误录） → Phase 3 练习报告信息图（规划中）
+
+**历史分支**:
+- `hermes/hermes-a761b8a5` — 当前会话 worktree（本次开发）
+- `hermes/hermes-eb075c87` — 已废弃
 
 ---
 
 ## 📂 项目位置
 
 - **main 分支 (生产)**: `/Users/mt16/dev/dizical/`
-- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-eb075c87/`
-- **Git 模式**: worktree 模式，hermes/hermes-eb075c87 与 main 完全同步
+- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-a761b8a5/`
+- **Git 模式**: worktree 模式，hermes/hermes-a761b8a5 与 main 完全同步
 - **remote**: origin/main 已切 SSH，正常连接
 
 ---
