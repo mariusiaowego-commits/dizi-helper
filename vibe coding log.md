@@ -34,6 +34,18 @@
 
 ---
 
+## 2026-05-07 (Thu)
+
+### 修复 thisweek TypeError bug
+- **现象**: `dizical practice thisweek` 报错 `TypeError: string indices must be integers`
+- **根因**: `daily_practices.items` 字段存了旧格式 `["单吐练习", "回娘家", ...]`（string list）而非标准格式 `[{item: '单吐练习', minutes: N}, ...]`
+- **修复**:
+  - `src/database.py`: 新增 `_normalize_items()` 辅助方法，`get_daily_practice` / `get_daily_practices_in_range` 读取时自动 normalize
+  - DB: 修复 2026-05-07 那条坏数据
+- **PR**: #24 合入 main
+
+---
+
 ## 2026-01-28 (已归档数据)
 
 项目 | 金额

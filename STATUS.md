@@ -1,10 +1,10 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-06
+**最后更新**: 2026-05-07
 **当前阶段**: Phase 3 完成（练习报告信息图已生成）
 
 **历史分支**:
-- `hermes/hermes-a761b8a5` — 当前会话 worktree（本次开发）
+- `fix/src-import-error` — items 格式兼容修复，已合并 #24
 - `hermes/hermes-eb075c87` — 已废弃
 
 ---
@@ -95,16 +95,17 @@ dizical obsidian export 4          # 导出4月报告
 
 | 文件 | 说明 |
 |------|------|
-| 无 | 所有代码已提交并同步，main 最新 `885a9bd` |
+| 无 | 所有代码已提交并同步，main 最新 `a2a7d93` |
 
-## 🔄 最近提交 (2026-05-04)
+## 📊 最近提交 (2026-05-07)
 
 | Commit | 内容 |
 |--------|------|
-| `885a9bd` | Merge pull request #20 from mariusiaowego-commits/feature/assign-image-v2 |
-| `21ed7e3` | docs: README 补充 assign 命令（含配图示例） |
-| `eceb8d2` | docs: 补充 assign/assignments 命令及图片功能说明 |
-| `ca11dce` | feat(assign): 支持老师要求配图存储（-i/--image），修复查询当前周范围bug |
+| `a2a7d93` | fix: items 格式兼容 + threading.sleep 修复 (#24) |
+| `a526ea2` | fix: stop auto-creating uncategorized practice items on save |
+| `64779f2` | feat(kid-ui): PIN-protected praise tab, ZCOOL KuaiLe font, iPad UX (#22) |
+| `4ac6e6f` | fix: 修复 ModuleNotFoundError: No module named 'src' (#23) |
+| `44be8f8` | feat: add dizical-kid web app for 7-year-old iPad interface |
 
 ## 🚀 下一步开发计划
 
