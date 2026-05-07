@@ -92,13 +92,14 @@ class TestPaymentManagerAdvanced(TestCase):
         self.lesson_manager.generate_monthly_lessons(2026, 5)
         status = self.payment_manager.get_monthly_payment_status(2026, 5)
 
-        # 部分缴费
-        partial_amount = status.total_fee // 2
+        # 部分缴费：用 estimated_fee（全额 = scheduled * fee_per_lesson）
+        # 因为当月课程尚未上课，total_fee=0，余额基于 estimated_fee 计算
+        partial_amount = status.estimated_fee // 2
         self.payment_manager.record_payment(partial_amount)
 
         new_status = self.payment_manager.get_monthly_payment_status(2026, 5)
         self.assertEqual(new_status.paid_amount, partial_amount)
-        self.assertEqual(new_status.balance, status.total_fee - partial_amount)
+        self.assertEqual(new_status.balance, status.estimated_fee - partial_amount)
 
     def test_payment_history(self):
         """测试缴费历史查询"""
@@ -130,8 +131,8 @@ class TestPaymentManagerAdvanced(TestCase):
         self.lesson_manager.generate_monthly_lessons(2026, 5)
         status = self.payment_manager.get_monthly_payment_status(2026, 5)
 
-        # 缴清所有费用
-        self.payment_manager.record_payment(status.total_fee)
+        # 缴清所有费用：用 estimated_fee（因为当月课程尚未上课，余额基于 estimated_fee）
+        self.payment_manager.record_payment(status.estimated_fee)
 
         if status.payment_reminder_date:
             self.assertFalse(self.payment_manager.should_send_reminder(status.payment_reminder_date))
@@ -144,14 +145,15 @@ class TestPaymentManagerAdvanced(TestCase):
         self.assertIn("缴费提醒", message)
         self.assertIn("本月课程", message)
         self.assertIn("已上课", message)
-        self.assertIn("应缴总额", message)
+        self.assertIn("预计缴费", message)
         self.assertIn("已缴金额", message)
 
     def test_reminder_message_when_paid(self):
         """测试已缴费时的提醒消息"""
         self.lesson_manager.generate_monthly_lessons(2026, 5)
         status = self.payment_manager.get_monthly_payment_status(2026, 5)
-        self.payment_manager.record_payment(status.total_fee)
+        # 缴清：用 estimated_fee（因为当月课程尚未上课，余额基于 estimated_fee）
+        self.payment_manager.record_payment(status.estimated_fee)
 
         message = self.payment_manager.get_reminder_message(2026, 5)
         self.assertIn("已缴清", message)
