@@ -4,6 +4,7 @@ import os
 import sys
 import socket
 import webbrowser
+import time
 import threading
 from pathlib import Path
 
@@ -54,7 +55,7 @@ def start(
 
     if open_browser:
         def open_browser_delayed():
-            threading.sleep(1.5)
+            time.sleep(1.5)
             webbrowser.open(f"http://localhost:{port}")
         threading.Thread(target=open_browser_delayed, daemon=True).start()
 

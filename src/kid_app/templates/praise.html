@@ -4,7 +4,75 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>表扬海报 - 竹笛助手</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body {
+      background: #FFF8F0;
+      font-family: 'ZCOOL KuaiLe', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    }
+    .card h2 { font-size: 28px; }
+    .praise-type {
+      display: block;
+      width: 100%;
+      padding: 20px;
+      margin: 10px 0;
+      border: 2px solid #E0E0E0;
+      border-radius: 16px;
+      background: white;
+      font-size: 22px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.2s;
+    }
+    textarea {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: 2px solid #E0E0E0;
+      font-size: 18px;
+      font-family: inherit;
+      resize: none;
+      margin: 10px 0;
+    }
+    /* PIN overlay */
+    #pinOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,248,240,0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+    }
+    #pinOverlay h2 { font-size: 32px; color: #FF6B6B; margin-bottom: 12px; }
+    #pinOverlay p { color: #7F8C8D; font-size: 20px; margin-bottom: 20px; text-align: center; }
+    #pinInput {
+      width: 200px;
+      padding: 16px;
+      font-size: 28px;
+      text-align: center;
+      border: 3px solid #4ECDC4;
+      border-radius: 16px;
+      outline: none;
+      letter-spacing: 8px;
+    }
+    #pinError {
+      color: #FF6B6B;
+      font-size: 18px;
+      margin-top: 12px;
+      min-height: 24px;
+    }
+    .pin-kid-hint {
+      margin-top: 24px;
+      font-size: 18px;
+      color: #7F8C8D;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
   <div class="nav">
@@ -15,79 +83,114 @@
     <a href="/praise" class="active">⭐ 表扬</a>
   </div>
 
-  <div class="card">
-    <h2>🌟 生成表扬海报</h2>
-    <p style="color:#7F8C8D;font-size:14px;margin-bottom:12px;">选择表扬类型，爸爸点击生成</p>
-
-    <button class="praise-type" onclick="selectType('streak7')">
-      🔥 连续7天练习达成！
-    </button>
-    <button class="praise-type" onclick="selectType('streak30')">
-      🏆 连续30天练习达成！
-    </button>
-    <button class="praise-type" onclick="selectType('teacher')">
-      👏 老师表扬！
-    </button>
-    <button class="praise-type" onclick="selectType('dad')">
-      💪 爸爸觉得你练得真好！
-    </button>
-    <button class="praise-type" onclick="selectType('monthly')">
-      📅 完成月度练习目标！
-    </button>
-
-    <div id="customMsg" style="display:none;margin-top:16px;">
-      <label style="font-size:16px;font-weight:bold;display:block;margin-bottom:8px;">自定义鼓励语（可选）：</label>
-      <textarea id="praiseText" rows="2" placeholder="例如：吐音越来越清晰了，继续加油！"></textarea>
+  <!-- PIN overlay: shown when dad_pin is set -->
+  <div id="pinOverlay" style="{{PIN_OVERLAY_DISPLAY}}">
+    <h2>🔒 爸爸妈妈专区</h2>
+    <p>请输入 PIN 解锁表扬海报生成</p>
+    <input type="password" id="pinInput" maxlength="8" placeholder="••••" autocomplete="off">
+    <div id="pinError"></div>
+    <div class="pin-kid-hint">
+      小朋友想要表扬海报<br>请找爸爸妈妈帮忙生成哦 😊
     </div>
+  </div>
 
-    <button class="btn btn-primary btn-block" style="margin-top:16px;padding:16px;font-size:20px;" onclick="generatePraise()">
-      ✨ 生成表扬海报
-    </button>
+  <!-- Main content: always rendered, hidden behind PIN if has_pin=true -->
+  <div id="praiseContent" style="{{PRAISE_CONTENT_DISPLAY}}">
+    <div class="card">
+      <h2>🌟 生成表扬海报</h2>
+      <p style="color:#7F8C8D;font-size:16px;margin-bottom:14px;">选择表扬类型，点击生成海报</p>
 
-    <div id="result" style="display:none;margin-top:16px;text-align:center;">
-      <img id="praiseImg" style="max-width:100%;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
-      <p id="praiseMsg" style="margin-top:8px;color:#7F8C8D;font-size:14px;"></p>
-      <a id="downloadLink" href="#" download style="display:inline-block;margin-top:12px;padding:10px 20px;background:#4ECDC4;color:white;border-radius:20px;text-decoration:none;">保存图片</a>
-    </div>
+      <button class="praise-type" onclick="selectType('streak7', this)">
+        🔥 连续7天练习达成！
+      </button>
+      <button class="praise-type" onclick="selectType('streak30', this)">
+        🏆 连续30天练习达成！
+      </button>
+      <button class="praise-type" onclick="selectType('teacher', this)">
+        👏 老师表扬！
+      </button>
+      <button class="praise-type" onclick="selectType('dad', this)">
+        💪 爸爸觉得你练得真好！
+      </button>
+      <button class="praise-type" onclick="selectType('monthly', this)">
+        📅 完成月度练习目标！
+      </button>
 
-    <div id="loading" class="loading" style="display:none;">
-      🎨 海报生成中，请稍候...
+      <div id="customMsg" style="display:none;margin-top:16px;">
+        <label style="font-size:18px;font-weight:bold;display:block;margin-bottom:8px;">自定义鼓励语（可选）：</label>
+        <textarea id="praiseText" rows="2" placeholder="例如：吐音越来越清晰了，继续加油！"></textarea>
+      </div>
+
+      <button class="btn btn-primary btn-block" style="margin-top:16px;padding:18px;font-size:22px;" onclick="openHermesAgent()">
+        🤖 打开 Hermes Agent 生成表扬海报
+      </button>
+
+      <div id="result" style="display:none;margin-top:16px;text-align:center;">
+        <img id="praiseImg" style="max-width:100%;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+        <p id="praiseMsg" style="margin-top:8px;color:#7F8C8D;font-size:14px;"></p>
+        <a id="downloadLink" href="#" download style="display:inline-block;margin-top:12px;padding:10px 20px;background:#4ECDC4;color:white;border-radius:20px;text-decoration:none;">保存图片</a>
+      </div>
+
+      <div id="loading" class="loading" style="display:none;">
+        🎨 海报生成中，请稍候...
+      </div>
     </div>
   </div>
 
   <script>
+    // PIN verification for praise page
+    const hasPin = '{{pin_locked}}' === 'true';
+    if (hasPin) {
+      const overlay = document.getElementById('pinOverlay');
+      const content = document.getElementById('praiseContent');
+      const pinInput = document.getElementById('pinInput');
+
+      pinInput.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter') {
+          const pin = pinInput.value;
+          const res = await fetch('/api/verify-pin', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({pin})
+          });
+          if (res.ok) {
+            overlay.style.display = 'none';
+            content.style.display = 'block';
+          } else {
+            document.getElementById('pinError').textContent = 'PIN 不对哦，再试一次 😊';
+            pinInput.value = '';
+          }
+        }
+      });
+    }
+
     let selectedType = null;
 
-    function selectType(type) {
+    function selectType(type, btn) {
       selectedType = type;
       document.querySelectorAll('.praise-type').forEach(b => b.classList.remove('selected'));
-      event.target.classList.add('selected');
+      btn.classList.add('selected');
       document.getElementById('customMsg').style.display = 'block';
       document.getElementById('result').style.display = 'none';
     }
 
-    async function generatePraise() {
+    function openHermesAgent() {
       if (!selectedType) { alert('请先选择表扬类型'); return; }
-      document.getElementById('loading').style.display = 'block';
-      document.getElementById('result').style.display = 'none';
-      
       let customText = document.getElementById('praiseText').value;
-      let res = await fetch('/api/praise', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({type: selectedType, custom: customText, child_name: '{{child_name}}'})
-      });
-      let json = await res.json();
-      document.getElementById('loading').style.display = 'none';
-      
-      if (json.image_url) {
-        document.getElementById('praiseImg').src = json.image_url;
-        document.getElementById('praiseMsg').textContent = json.message || '';
-        document.getElementById('downloadLink').href = json.image_url;
-        document.getElementById('result').style.display = 'block';
-      } else if (json.error) {
-        alert('生成失败：' + json.error);
-      }
+      let typeLabels = {
+        'streak7': '连续7天练习达成',
+        'streak30': '连续30天练习达成',
+        'teacher': '老师表扬',
+        'dad': '爸爸觉得你练得真好',
+        'monthly': '完成月度练习目标'
+      };
+      let label = typeLabels[selectedType] || selectedType;
+      let childName = '{{child_name}}';
+      let prompt = `Generate a praise poster for ${childName}: ${label}`;
+      if (customText) prompt += `. Custom message: ${customText}`;
+      prompt += '. Reply with the image file path or URL.';
+      let url = `http://localhost:2222/new?prompt=${encodeURIComponent(prompt)}`;
+      window.open(url, '_blank');
     }
   </script>
 </body>
