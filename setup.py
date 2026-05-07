@@ -1,9 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="dizi-helper",
+    name="dizical",
     version="0.1.0",
     packages=find_packages(),
+    package_dir={"src": "src"},
     include_package_data=True,
     install_requires=[
         "pydantic>=2.0.0",
