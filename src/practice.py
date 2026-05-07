@@ -131,10 +131,6 @@ def save_practice(date: dt.date, items: List[Dict], log: Optional[str] = None) -
     """
     total = sum(item['minutes'] for item in items)
 
-    # 确保所有练习项目都在项目库里
-    for item in items:
-        db.add_practice_item(item['item'])
-
     db.save_daily_practice(date, items, total, log)
     return total
 
@@ -194,10 +190,6 @@ def save_weekly_assignment(week_start: dt.date, items: List[Dict], notes: Option
     保存每周老师要求
     items: [{"item": "单吐练习", "requirement": "♩=82,84,86 各两天"}, ...]
     """
-    # 确保所有练习项目都在项目库里
-    for item in items:
-        db.add_practice_item(item['item'])
-
     db.save_weekly_assignment(week_start, items, notes, images)
 
 
