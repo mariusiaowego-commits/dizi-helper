@@ -188,7 +188,7 @@ class TestPaymentManager(TestCase):
         status = self.payment_manager.get_monthly_payment_status(2026, 5)
         self.assertEqual(status.month, date(2026, 5, 1))
         self.assertGreater(status.total_lessons, 0)
-        self.assertGreater(status.estimated_fee, 0)
+        self.assertGreater(status.total_fee, 0)
         self.assertEqual(status.paid_amount, 0)
 
     def test_record_payment(self):
@@ -203,8 +203,7 @@ class TestPaymentManager(TestCase):
         self.lesson_manager.generate_monthly_lessons(2026, 5)
         status_before = self.payment_manager.get_monthly_payment_status(2026, 5)
 
-        # 用 estimated_fee 缴清（因为当月课程尚未上课，余额基于 estimated_fee）
-        self.payment_manager.record_payment(status_before.estimated_fee)
+        self.payment_manager.record_payment(status_before.total_fee)
         status_after = self.payment_manager.get_monthly_payment_status(2026, 5)
 
         self.assertEqual(status_after.balance, 0)
@@ -214,7 +213,7 @@ class TestPaymentManager(TestCase):
         self.lesson_manager.generate_monthly_lessons(2026, 5)
         message = self.payment_manager.get_reminder_message(2026, 5)
         self.assertIn("缴费提醒", message)
-        self.assertIn("预计缴费", message)
+        self.assertIn("应缴总额", message)
 
 
 class TestHolidayChecker(TestCase):
