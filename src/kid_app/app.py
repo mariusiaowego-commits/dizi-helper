@@ -94,58 +94,13 @@ async def api_log(request: Request):
     return JSONResponse({"ok": True, "total": total})
 
 # ─── API: 表扬海报生成 ─────────────────────────────────────────────────────
+# 已下线：图片生成需在 Hermes Agent 对话窗口进行，见 /praise 页面
 @app.post("/api/praise")
 async def api_praise(request: Request):
-    body = json.loads(await request.body())
-    ptype = body.get("type")
-    custom = body.get("custom", "")
-    cname = body.get("child_name", child_name())
-
-    extra = custom if custom else {
-        "teacher": "Teacher praised you!",
-        "dad": "Dad thinks you did great!",
-    }.get(ptype, "Well done!")
-
-    prompts = {
-        "streak7": (
-            "A celebratory badge for " + cname + " completing a 7-day bamboo flute practice streak. "
-            "Show a flame icon, vibrant orange/red colors, Chinese-inspired decorative border, "
-            "achievement text, warm encouraging atmosphere. Child-friendly, colorful, cartoon style."
-        ),
-        "streak30": (
-            "A golden trophy illustration for " + cname + " achieving a 30-day bamboo flute practice streak. "
-            "Show a gold trophy, sparkles, ribbon banner, celebratory confetti, warm golden tones, "
-            "child-friendly cartoon style."
-        ),
-        "teacher": (
-            "A cheerful encouragement card for " + cname + " receiving teacher praise for bamboo flute practice. "
-            "Show a friendly teacher character, musical notes, warm pastel colors, encouraging smiley face, "
-            "child-friendly cartoon style. Include text: " + extra
-        ),
-        "dad": (
-            "A warm encouragement card from dad to " + cname + " for excellent bamboo flute practice. "
-            "Show a happy child playing flute, musical notes floating around, warm golden light, "
-            "loving supportive atmosphere, child-friendly cartoon style. Include text: " + extra
-        ),
-        "monthly": (
-            "A monthly achievement certificate for " + cname + " completing monthly bamboo flute practice goals. "
-            "Show a certificate with ribbon seals, star decorations, bamboo flute icon, celebratory confetti, "
-            "warm celebratory atmosphere, child-friendly cartoon style."
-        ),
-    }
-
-    prompt = prompts.get(ptype, prompts["dad"])
-
-    try:
-        from src.kid_app import images as kid_images
-        image_url = kid_images.generate(prompt, ptype, cname)
-        return JSONResponse({
-            "ok": True,
-            "image_url": image_url,
-            "message": "Generated! " + cname + "'s praise poster is ready"
-        })
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    return JSONResponse({
+        "ok": False,
+        "error": "Praise poster generation has moved to Hermes Agent. Open /praise and click '打开 Hermes Agent'."
+    }, status_code=410)
 
 # ─── 页面路由 ───────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
@@ -158,7 +113,7 @@ def prepare_page():
     ws = week_start_of(today)
     assign = db.get_weekly_assignment(ws)
 
-    assign_html = "<li>No requirements this week</li>"
+    assign_html = "<li>还没录本周要求 💭 告诉爸爸帮你加上哦</li>"
     if assign and assign.get("items"):
         assign_html = ""
         for it in assign["items"]:
@@ -171,18 +126,15 @@ def prepare_page():
         for it in y_practice["items"]:
             if it["minutes"] < 10:
                 suggestions_list.append(
-                    "Yesterday <strong>" + it["item"] + "</strong> only " + str(it["minutes"]) + " min, practice more today!"
+                    "昨天" + it["item"] + "只练了" + str(it["minutes"]) + "分钟，今天加油多练一会儿呀！💪"
                 )
 
     if not suggestions_list:
-        suggestions_html = "<li>Keep going!</li>"
+        suggestions_html = "<li>太棒啦！今天继续保持 ✨</li>"
     else:
         suggestions_html = ""
         for s in suggestions_list:
             suggestions_html += "<li>" + s + "</li>"
-
-    today_p = db.get_daily_practice(today)
-    practiced = "Done today!" if today_p and today_p.get("total_minutes", 0) > 0 else "Not yet today"
 
     weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -193,7 +145,6 @@ def prepare_page():
         weekday=weekday_names[today.weekday()],
         assign_html=assign_html,
         suggestions=suggestions_html,
-        practiced=practiced,
         streak=streak_days(),
     )
 
@@ -318,6 +269,29 @@ def report_page():
         cal_html=cal_html,
     )
 
+# ─── PIN 验证 ───────────────────────────────────────────────────────────────
+def get_setting(key, default=""):
+    try:
+        return db.get_setting(key) or default
+    except:
+        return default
+
+@app.post("/api/verify-pin")
+async def api_verify_pin(request: Request):
+    body = json.loads(await request.body())
+    pin = body.get("pin", "")
+    stored_pin = get_setting("dad_pin")
+    if stored_pin and pin == stored_pin:
+        return JSONResponse({"ok": True, "role": "dad"})
+    return JSONResponse({"ok": False}, status_code=401)
+
 @app.get("/praise", response_class=HTMLResponse)
 def praise_page():
-    return render("praise", child_name=child_name())
+    has_pin = bool(get_setting("dad_pin"))
+    return render(
+        "praise",
+        child_name=child_name(),
+        pin_locked="true" if has_pin else "false",
+        PIN_OVERLAY_DISPLAY="display:flex" if has_pin else "display:none",
+        PRAISE_CONTENT_DISPLAY="display:block" if not has_pin else "display:none",
+    )
