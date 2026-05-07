@@ -1,2 +1,3 @@
 [console_scripts]
 dizical = src.cli:app
+dizical-kid = src.kid_app.__main__:kid_app

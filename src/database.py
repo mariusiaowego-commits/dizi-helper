@@ -523,6 +523,21 @@ class Database:
             ''', (date.isoformat(), json.dumps(items, ensure_ascii=False), total_minutes, log))
             conn.commit()
 
+    @staticmethod
+    def _normalize_items(raw) -> List[Dict]:
+        """
+        兼容旧数据格式：将 ['item1', 'item2'] 字符串列表
+        规范化为 [{'item': 'item1', 'minutes': 0}, ...]
+        正常格式直接返回。
+        """
+        import json
+        items = json.loads(raw) if isinstance(raw, str) else raw
+        if not items:
+            return []
+        if items and isinstance(items[0], str):
+            return [{'item': name, 'minutes': 0} for name in items]
+        return items
+
     def get_daily_practice(self, date: dt.date) -> Optional[Dict]:
         import json
         with self._get_connection() as conn:
@@ -533,7 +548,7 @@ class Database:
                 return {
                     'id': row['id'],
                     'date': dt.date.fromisoformat(row['date']),
-                    'items': json.loads(row['items']),
+                    'items': self._normalize_items(row['items']),
                     'total_minutes': row['total_minutes'],
                     'log': row['log']
                 }
@@ -551,7 +566,7 @@ class Database:
             return [{
                 'id': row['id'],
                 'date': dt.date.fromisoformat(row['date']),
-                'items': json.loads(row['items']),
+                'items': self._normalize_items(row['items']),
                 'total_minutes': row['total_minutes'],
                 'log': row['log']
             } for row in cursor.fetchall()]
