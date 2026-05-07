@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>练习打卡 - 竹笛助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .timer-big { font-size: 72px; font-weight: bold; text-align: center; color: #FF6B6B; padding: 20px 0; }
+    .time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
+    .time-btn { padding: 10px 16px; border: 2px solid #4ECDC4; background: white; border-radius: 20px; font-size: 16px; cursor: pointer; }
+    .time-btn.selected { background: #4ECDC4; color: white; }
+    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; margin: 12px 0; }
+    .item-btn { padding: 14px 6px; background: #4ECDC4; color: white; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; text-align: center; }
+    .item-btn:active { transform: scale(0.95); }
+    .item-btn.selected { background: #FF6B6B; }
+    .start-btn { display: block; width: 100%; padding: 18px; background: #FF6B6B; color: white; border: none; border-radius: 20px; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 16px; }
+    .today-stat { text-align: center; color: #7F8C8D; font-size: 16px; margin-top: 8px; }
+    .confirm-area { display: none; text-align: center; margin-top: 20px; }
+    .confirm-area.show { display: block; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="/prepare">🏠 准备</a>
+    <a href="/practice" class="active">🎵 练习</a>
+    <a href="/achievements">🏆 成就</a>
+    <a href="/report">📊 报告</a>
+    <a href="/praise">⭐ 表扬</a>
+  </div>
+
+  <div class="card">
+    <h2 style="color:#FF6B6B;">🎵 选择练习项目</h2>
+    {{items_html}}
+    <div class="today-stat">今日已练习: {{today_mins}} 分钟</div>
+  </div>
+
+  <div class="card" id="timer-card" style="display:none;">
+    <h2 style="color:#4ECDC4;">⏱️ 计时器</h2>
+    <div class="timer-big" id="timer-display">00:00</div>
+    <div class="time-btns">
+      <button class="time-btn" onclick="setDuration(5)">5分钟</button>
+      <button class="time-btn selected" onclick="setDuration(10)">10分钟</button>
+      <button class="time-btn" onclick="setDuration(15)">15分钟</button>
+      <button class="time-btn" onclick="setDuration(20)">20分钟</button>
+      <button class="time-btn" onclick="setDuration(30)">30分钟</button>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-secondary" id="startBtn" onclick="toggleTimer()">开始</button>
+      <button class="btn btn-primary" onclick="finishEarly()">提前结束</button>
+    </div>
+    <div class="confirm-area" id="confirmArea">
+      <p style="font-size:20px;margin-bottom:12px;">练了 <strong id="confirmMins">0</strong> 分钟！</p>
+      <button class="start-btn" onclick="submitPractice()">✅ 打卡完成</button>
+    </div>
+  </div>
+
+  <script>
+    let selectedItem = null;
+    let duration = 10;
+    let elapsed = 0;
+    let timerInterval = null;
+    let started = false;
+
+    function selectItem(name) {
+      document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
+      event.target.classList.add('selected');
+      selectedItem = name;
+      document.getElementById('timer-card').style.display = 'block';
+      document.getElementById('timer-card').scrollIntoView({behavior: 'smooth'});
+      resetTimer();
+    }
+
+    function setDuration(mins) {
+      duration = mins;
+      document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+      event.target.classList.add('selected');
+      if (!started) resetTimer();
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      started = false;
+      elapsed = 0;
+      document.getElementById('timer-display').textContent = '00:00';
+      document.getElementById('startBtn').textContent = '开始';
+      document.getElementById('confirmArea').classList.remove('show');
+    }
+
+    function toggleTimer() {
+      if (started) {
+        clearInterval(timerInterval);
+        started = false;
+        document.getElementById('startBtn').textContent = '继续';
+      } else {
+        started = true;
+        document.getElementById('startBtn').textContent = '暂停';
+        timerInterval = setInterval(() => {
+          elapsed++;
+          let m = Math.floor(elapsed / 60).toString().padStart(2,'0');
+          let s = (elapsed % 60).toString().padStart(2,'0');
+          document.getElementById('timer-display').textContent = m + ':' + s;
+          if (elapsed >= duration * 60) {
+            clearInterval(timerInterval);
+            document.getElementById('confirmArea').classList.add('show');
+          }
+        }, 1000);
+      }
+    }
+
+    function finishEarly() {
+      clearInterval(timerInterval);
+      started = false;
+      document.getElementById('confirmMins').textContent = elapsed;
+      document.getElementById('confirmArea').classList.add('show');
+    }
+
+    async function submitPractice() {
+      if (!selectedItem || elapsed === 0) return;
+      let date = new Date().toISOString().split('T')[0];
+      let res = await fetch('/api/log', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({date, item: selectedItem, minutes: elapsed, log: ''})
+      });
+      let json = await res.json();
+      if (json.ok) {
+        alert('打卡成功！');
+        location.reload();
+      }
+    }
+  </script>
+</body>
+</html>

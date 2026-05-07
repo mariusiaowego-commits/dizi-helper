@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>练习准备 - 竹笛助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { background: #FFF8F0; }
+    .greeting { font-size: 28px; font-weight: bold; text-align: center; padding: 10px 0; color: #FF6B6B; }
+    .date-info { text-align: center; color: #7F8C8D; font-size: 16px; margin-bottom: 16px; }
+    .section-title { font-size: 18px; color: #4ECDC4; margin: 16px 0 8px; font-weight: bold; }
+    .check-item { display: flex; align-items: center; gap: 14px; padding: 16px 0; border-bottom: 1px solid #F0F0F0; font-size: 20px; }
+    .check-item:last-child { border-bottom: none; }
+    .check-circle { width: 40px; height: 40px; border-radius: 50%; border: 3px solid #4ECDC4; background: white; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
+    .check-circle.done { background: #4ECDC4; }
+    .check-circle.done::after { content: "✓"; color: white; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 20px; }
+    .start-btn { display: block; width: 100%; padding: 18px; background: #FF6B6B; color: white; border: none; border-radius: 20px; font-size: 22px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+    .streak-bar { display: flex; align-items: center; justify-content: center; gap: 8px; background: #FFF0E0; padding: 10px; border-radius: 12px; margin-bottom: 12px; font-size: 18px; color: #FF6B35; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="/prepare" class="active">🏠 准备</a>
+    <a href="/practice">🎵 练习</a>
+    <a href="/achievements">🏆 成就</a>
+    <a href="/report">📊 报告</a>
+    <a href="/praise">⭐ 表扬</a>
+  </div>
+
+  <div class="greeting">{{child_name}}，准备练习啦！</div>
+  <div class="date-info">{{weekday}} · {{today_str}}</div>
+
+  <div class="streak-bar">🔥 连续练习 {{streak}} 天</div>
+
+  <div class="card">
+    <h2>🎯 练习前检查</h2>
+    <div class="check-item">
+      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
+      <span>谱架摆好了吗？</span>
+    </div>
+    <div class="check-item">
+      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
+      <span>小镜子竖好了吗？</span>
+    </div>
+    <div class="check-item">
+      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
+      <span>笛膜检查一下，贴好了吗？</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📋 本周老师要求</h2>
+    <ul style="padding-left: 20px; font-size: 18px; line-height: 2;">
+      {{assign_html}}
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>💡 今日建议</h2>
+    <ul style="padding-left: 20px; font-size: 18px; line-height: 2;">
+      {{suggestions}}
+    </ul>
+  </div>
+
+  <div style="padding: 8px 0; text-align: center; color: #7F8C8D;">{{practiced}}</div>
+
+  <a href="/practice"><button class="start-btn">准备好了！开始练习 🎵</button></a>
+
+  <script>
+    // 页面加载时检查准备状态
+    const checked = JSON.parse(localStorage.getItem('prepChecked') || '[]');
+    document.querySelectorAll('.check-circle').forEach((el, i) => {
+      if (checked.includes(i)) el.classList.add('done');
+    });
+    document.querySelectorAll('.check-circle').forEach((el, i) => {
+      el.addEventListener('click', () => {
+        if (el.classList.contains('done')) {
+          checked.splice(checked.indexOf(i), 1);
+        } else {
+          checked.push(i);
+        }
+        localStorage.setItem('prepChecked', JSON.stringify(checked));
+      });
+    });
+    // 每天自动重置
+    const today = new Date().toDateString();
+    if (localStorage.getItem('prepDate') !== today) {
+      localStorage.setItem('prepChecked', '[]');
+      localStorage.setItem('prepDate', today);
+    }
+  </script>
+</body>
+</html>

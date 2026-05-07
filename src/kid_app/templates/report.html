@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>练习报告 - 竹笛助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="nav">
+    <a href="/prepare">🏠 准备</a>
+    <a href="/practice">🎵 练习</a>
+    <a href="/achievements">🏆 成就</a>
+    <a href="/report" class="active">📊 报告</a>
+    <a href="/praise">⭐ 表扬</a>
+  </div>
+
+  <div class="card">
+    <h2>{{month_str}} 练习报告</h2>
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <div style="flex:1;text-align:center;padding:12px;background:#E8F5E9;border-radius:12px;">
+        <div style="font-size:28px;font-weight:bold;color:#27AE60;">{{total_mins}}</div>
+        <div style="font-size:13px;color:#7F8C8D;">总练习分钟</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:12px;background:#FFF8E1;border-radius:12px;">
+        <div style="font-size:28px;font-weight:bold;color:#F57C00;">{{practice_days}}</div>
+        <div style="font-size:13px;color:#7F8C8D;">练习天数</div>
+      </div>
+    </div>
+    <div style="margin-bottom:8px;font-weight:bold;color:#7F8C8D;">日</div>
+    <div class="cal-grid">{{cal_html}}</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:#7F8C8D;flex-wrap:wrap;">
+      <span style="width:16px;height:16px;background:#E8F5E9;border-radius:4px;display:inline-block;"></span> 少量
+      <span style="width:16px;height:16px;background:#FFF8E1;border-radius:4px;display:inline-block;"></span> 中等
+      <span style="width:16px;height:16px;background:#FFEBEE;border-radius:4px;display:inline-block;"></span> 充足
+    </div>
+  </div>
+</body>
+</html>

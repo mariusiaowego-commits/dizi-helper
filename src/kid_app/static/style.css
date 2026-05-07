@@ -1,0 +1,226 @@
+/* dizical 儿童版统一样式 */
+:root {
+  --bg: #FFF8F0;
+  --card: #FFFFFF;
+  --primary: #FF6B6B;
+  --secondary: #4ECDC4;
+  --accent: #FFE66D;
+  --text: #2C3E50;
+  --text-light: #7F8C8D;
+  --streak: #FF6B35;
+  --success: #27AE60;
+  --radius: 16px;
+  --shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 18px;
+  min-height: 100vh;
+  padding: 16px;
+}
+
+/* 顶部导航 */
+.nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.nav a {
+  flex: 1;
+  min-width: 60px;
+  padding: 10px 8px;
+  background: var(--card);
+  border-radius: var(--radius);
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 14px;
+  box-shadow: var(--shadow);
+  transition: transform 0.1s;
+}
+.nav a:active { transform: scale(0.96); }
+.nav a.active { background: var(--primary); color: white; }
+
+/* 卡片 */
+.card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card h2 {
+  font-size: 22px;
+  margin-bottom: 12px;
+  color: var(--primary);
+}
+
+/* 准备页 checklist */
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #F0F0F0;
+  font-size: 20px;
+}
+.check-item:last-child { border-bottom: none; }
+.check-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 3px solid var(--secondary);
+  background: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.check-btn.done {
+  background: var(--secondary);
+  border-color: var(--secondary);
+}
+
+/* 练习项目按钮网格 */
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.item-btn {
+  padding: 16px 8px;
+  background: var(--secondary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.1s;
+  text-align: center;
+}
+.item-btn:active { transform: scale(0.95); }
+.item-btn.selected {
+  background: var(--primary);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+/* 计时器 */
+.timer-display {
+  font-size: 64px;
+  font-weight: bold;
+  text-align: center;
+  color: var(--primary);
+  padding: 20px;
+}
+.timer-btns {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.timer-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 30px;
+  font-size: 18px;
+  cursor: pointer;
+  background: var(--secondary);
+  color: white;
+}
+.timer-btn.active { background: var(--primary); }
+
+/* 成就页 */
+.streak-num {
+  font-size: 80px;
+  font-weight: bold;
+  color: var(--streak);
+  text-align: center;
+}
+.badge {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 14px;
+  margin: 6px;
+}
+.badge.flame { background: #FFF0E0; color: var(--streak); }
+.badge.star { background: #FFF8DC; color: #DAA520; }
+.badge.star2 { background: #E8F5E9; color: var(--success); }
+.badge.strong { background: #E3F2FD; color: #1976D2; }
+
+/* 月历 */
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  text-align: center;
+}
+.cal-day {
+  padding: 8px 4px;
+  border-radius: 8px;
+  font-size: 14px;
+  min-height: 50px;
+}
+.cal-day.empty { background: transparent; }
+.cal-day.low { background: #E8F5E9; color: var(--success); }
+.cal-day.mid { background: #FFF8E1; color: #F57C00; }
+.cal-day.high { background: #FFEBEE; color: var(--primary); }
+.cal-day.today { border: 3px solid var(--primary); font-weight: bold; }
+
+/* 表扬海报页 */
+.praise-type {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin: 8px 0;
+  border: 2px solid #E0E0E0;
+  border-radius: var(--radius);
+  background: white;
+  font-size: 18px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s;
+}
+.praise-type:hover { border-color: var(--primary); }
+.praise-type.selected { border-color: var(--primary); background: #FFF8F0; }
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 2px solid #E0E0E0;
+  font-size: 16px;
+  resize: none;
+  margin: 8px 0;
+}
+
+/* 通用按钮 */
+.btn {
+  display: inline-block;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 30px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.1s;
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--primary); color: white; }
+.btn-secondary { background: var(--secondary); color: white; }
+.btn-block { display: block; width: 100%; }
+
+/* loading */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-light);
+  font-size: 20px;
+}

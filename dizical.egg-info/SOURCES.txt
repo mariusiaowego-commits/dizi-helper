@@ -23,6 +23,12 @@ src/practice_config.py
 src/practice_query.py
 src/reminders.py
 src/report_templates.py
+src/kid_app/__init__.py
+src/kid_app/__main__.py
+src/kid_app/app.py
+src/kid_app/images.py
+src/kid_app/routes/__init__.py
+src/kid_app/routes/prepare.py
 tests/__init__.py
 tests/test_holiday.py
 tests/test_lesson.py

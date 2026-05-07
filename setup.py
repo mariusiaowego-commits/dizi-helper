@@ -14,8 +14,17 @@ setup(
         "python-dateutil>=2.8.2",
         "python-dotenv>=1.0.0",
         "wcwidth>=0.2.13",
+        "fastapi>=0.100.0",
+        "uvicorn>=0.20.0",
+        "python-multipart>=0.0.6",
     ],
     author="mtt",
     description="竹笛课程管理 + 缴费提醒 + 统计助手",
     python_requires=">=3.10",
+    entry_points={
+        "console_scripts": [
+            "dizical=src.cli:app",
+            "dizical-kid=src.kid_app.__main__:kid_app",
+        ],
+    },
 )

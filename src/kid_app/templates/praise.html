@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>表扬海报 - 竹笛助手</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="nav">
+    <a href="/prepare">🏠 准备</a>
+    <a href="/practice">🎵 练习</a>
+    <a href="/achievements">🏆 成就</a>
+    <a href="/report">📊 报告</a>
+    <a href="/praise" class="active">⭐ 表扬</a>
+  </div>
+
+  <div class="card">
+    <h2>🌟 生成表扬海报</h2>
+    <p style="color:#7F8C8D;font-size:14px;margin-bottom:12px;">选择表扬类型，爸爸点击生成</p>
+
+    <button class="praise-type" onclick="selectType('streak7')">
+      🔥 连续7天练习达成！
+    </button>
+    <button class="praise-type" onclick="selectType('streak30')">
+      🏆 连续30天练习达成！
+    </button>
+    <button class="praise-type" onclick="selectType('teacher')">
+      👏 老师表扬！
+    </button>
+    <button class="praise-type" onclick="selectType('dad')">
+      💪 爸爸觉得你练得真好！
+    </button>
+    <button class="praise-type" onclick="selectType('monthly')">
+      📅 完成月度练习目标！
+    </button>
+
+    <div id="customMsg" style="display:none;margin-top:16px;">
+      <label style="font-size:16px;font-weight:bold;display:block;margin-bottom:8px;">自定义鼓励语（可选）：</label>
+      <textarea id="praiseText" rows="2" placeholder="例如：吐音越来越清晰了，继续加油！"></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-block" style="margin-top:16px;padding:16px;font-size:20px;" onclick="generatePraise()">
+      ✨ 生成表扬海报
+    </button>
+
+    <div id="result" style="display:none;margin-top:16px;text-align:center;">
+      <img id="praiseImg" style="max-width:100%;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+      <p id="praiseMsg" style="margin-top:8px;color:#7F8C8D;font-size:14px;"></p>
+      <a id="downloadLink" href="#" download style="display:inline-block;margin-top:12px;padding:10px 20px;background:#4ECDC4;color:white;border-radius:20px;text-decoration:none;">保存图片</a>
+    </div>
+
+    <div id="loading" class="loading" style="display:none;">
+      🎨 海报生成中，请稍候...
+    </div>
+  </div>
+
+  <script>
+    let selectedType = null;
+
+    function selectType(type) {
+      selectedType = type;
+      document.querySelectorAll('.praise-type').forEach(b => b.classList.remove('selected'));
+      event.target.classList.add('selected');
+      document.getElementById('customMsg').style.display = 'block';
+      document.getElementById('result').style.display = 'none';
+    }
+
+    async function generatePraise() {
+      if (!selectedType) { alert('请先选择表扬类型'); return; }
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('result').style.display = 'none';
+      
+      let customText = document.getElementById('praiseText').value;
+      let res = await fetch('/api/praise', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type: selectedType, custom: customText, child_name: '{{child_name}}'})
+      });
+      let json = await res.json();
+      document.getElementById('loading').style.display = 'none';
+      
+      if (json.image_url) {
+        document.getElementById('praiseImg').src = json.image_url;
+        document.getElementById('praiseMsg').textContent = json.message || '';
+        document.getElementById('downloadLink').href = json.image_url;
+        document.getElementById('result').style.display = 'block';
+      } else if (json.error) {
+        alert('生成失败：' + json.error);
+      }
+    }
+  </script>
+</body>
+</html>
