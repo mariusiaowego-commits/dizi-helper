@@ -569,10 +569,31 @@ class Database:
         import json
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('''
-                INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log)
-                VALUES (?, ?, ?, ?)
-            ''', (date.isoformat(), json.dumps(items, ensure_ascii=False), total_minutes, log))
+            # 读取已有记录（同一日期多次录入需合并，而非替换）
+            cursor.execute('SELECT items, log FROM daily_practices WHERE date = ?', (date.isoformat(),))
+            row = cursor.fetchone()
+            if row:
+                existing_items = json.loads(row[0]) if row[0] else []
+                existing_log = row[1] or ''
+                # 合并 items：同名累加分钟数，不同则追加
+                item_map = {it['item']: it for it in existing_items}
+                for it in items:
+                    if it['item'] in item_map:
+                        item_map[it['item']]['minutes'] += it['minutes']
+                    else:
+                        item_map[it['item']] = it
+                merged_items = list(item_map.values())
+                merged_total = sum(it['minutes'] for it in merged_items)
+                merged_log = (existing_log + '\n' + log).strip() if log else existing_log
+                cursor.execute('''
+                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log)
+                    VALUES (?, ?, ?, ?)
+                ''', (date.isoformat(), json.dumps(merged_items, ensure_ascii=False), merged_total, merged_log))
+            else:
+                cursor.execute('''
+                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log)
+                    VALUES (?, ?, ?, ?)
+                ''', (date.isoformat(), json.dumps(items, ensure_ascii=False), total_minutes, log))
             conn.commit()
 
     @staticmethod
