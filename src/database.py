@@ -137,6 +137,8 @@ class Database:
                 cursor.execute('ALTER TABLE practice_items ADD COLUMN category_id INTEGER REFERENCES practice_categories(id)')
             if 'sort_order' not in item_columns:
                 cursor.execute('ALTER TABLE practice_items ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0')
+            if 'is_archived' not in item_columns:
+                cursor.execute('ALTER TABLE practice_items ADD COLUMN is_archived BOOLEAN NOT NULL DEFAULT 0')
 
             # Create indexes
             cursor.execute('''
@@ -383,13 +385,19 @@ class Database:
                 return row['id']
             return cursor.lastrowid
 
-    def get_practice_items(self, active_only: bool = True) -> List[Dict]:
+    def get_practice_items(self, active_only: bool = True, include_archived: bool = False) -> List[Dict]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
+            where = []
             if active_only:
-                cursor.execute('SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id WHERE pi.is_active = 1 ORDER BY pc.sort_order, pi.sort_order, pi.name')
-            else:
-                cursor.execute('SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id ORDER BY pc.sort_order, pi.sort_order, pi.name')
+                where.append('pi.is_active = 1')
+            if not include_archived:
+                where.append('pi.is_archived = 0')
+            sql = 'SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id'
+            if where:
+                sql += ' WHERE ' + ' AND '.join(where)
+            sql += ' ORDER BY pc.sort_order, pi.sort_order, pi.name'
+            cursor.execute(sql)
             return [dict(row) for row in cursor.fetchall()]
 
     def update_practice_item_category(self, item_id: int, category_id: Optional[int]) -> None:
@@ -420,6 +428,18 @@ class Database:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('UPDATE practice_items SET sort_order = ? WHERE id = ?', (sort_order, item_id))
+            conn.commit()
+
+    def archive_practice_item(self, item_id: int) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE practice_items SET is_archived = 1 WHERE id = ?', (item_id,))
+            conn.commit()
+
+    def unarchive_practice_item(self, item_id: int) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE practice_items SET is_archived = 0 WHERE id = ?', (item_id,))
             conn.commit()
 
     def merge_practice_item(self, from_id: int, to_id: int, from_name: str, to_name: str) -> None:

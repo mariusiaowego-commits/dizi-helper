@@ -78,10 +78,23 @@ def api_practice_day(date_str: str):
 
 # ─── API: 练习项目列表 ─────────────────────────────────────────────────────
 @app.get("/api/items")
-def api_items():
-    items = db.get_practice_items(active_only=True)
+def api_items(include_archived: bool = False):
+    items = db.get_practice_items(active_only=True, include_archived=include_archived)
     categories = practice_module.get_categories()
     return JSONResponse({"items": items, "categories": categories})
+
+
+# ─── API: 归档 / 取消归档练习项目 ───────────────────────────────────────────
+@app.post("/api/items/{item_id}/archive")
+async def api_archive_item(item_id: int):
+    db.archive_practice_item(item_id)
+    return JSONResponse({"ok": True})
+
+
+@app.post("/api/items/{item_id}/unarchive")
+async def api_unarchive_item(item_id: int):
+    db.unarchive_practice_item(item_id)
+    return JSONResponse({"ok": True})
 
 # ─── API: 打卡 ─────────────────────────────────────────────────────────────
 @app.post("/api/log")
@@ -189,7 +202,7 @@ def prepare_page():
 
 @app.get("/practice", response_class=HTMLResponse)
 def practice_page():
-    items = db.get_practice_items(active_only=True)
+    items = db.get_practice_items(active_only=True, include_archived=False)
     categories = practice_module.get_categories()
 
     cat_map = {c["id"]: c["name"] for c in categories}
