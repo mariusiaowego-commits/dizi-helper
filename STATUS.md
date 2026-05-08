@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
 **最后更新**: 2026-05-08
-**当前阶段**: Kid Interface Phase 1 完成（feat/kid-ui-refresh 已合并）
+**当前阶段**: Kid Interface Phase 1 完成（feat/kid-ui-refresh 已合并）+ Timer Bug 修复
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI 改进：badge图片/praise返回按钮/练习记录删除/sort_order，已合并
@@ -101,10 +101,11 @@ dizical obsidian export 4          # 导出4月报告
 - [x] 设计变量抽离 design-tokens.css
 - [x] 成就徽章 emoji → GPT-4o 生成图片 badge（4个）
 
-## 📊 最近提交 (2026-05-07)
+## 📊 最近提交 (2026-05-08)
 
 | Commit | 内容 |
 |--------|------|
+| `a90e6f6` | fix(kid-ui): timer elapsed seconds vs minutes confusion |
 | `a2a7d93` | fix: items 格式兼容 + threading.sleep 修复 (#24) |
 | `a526ea2` | fix: stop auto-creating uncategorized practice items on save |
 | `64779f2` | feat(kid-ui): PIN-protected praise tab, ZCOOL KuaiLe font, iPad UX (#22) |
