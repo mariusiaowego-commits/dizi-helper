@@ -469,9 +469,9 @@ def _do_archive():
     _print("  a 归档小科目  u 取消归档  q 返回")
     op = _input("  选择: ").strip().lower()
     if op == 'a':
-        _archive_toggle(switch_to=True)
+        _archive_choose(switch_to=True)
     elif op == 'u':
-        _archive_toggle(switch_to=False)
+        _archive_choose(switch_to=False)
     else:
         _print("  返回")
 
