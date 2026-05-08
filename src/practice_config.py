@@ -204,8 +204,8 @@ def _archive_choose(switch_to: bool):
         remaining = [it for it in db.get_practice_items(active_only=False) if it.get('is_archived')]
         _print(f"\n  当前已归档 {len(remaining)} 个")
 
-        _input("\n  ▶ 回车继续操作，q 返回上级: ").strip()
-        if _input("").lower() == 'q':
+        ch = _input("\n  ▶ 回车继续操作，q 返回上级: ").strip()
+        if ch.lower() == 'q':
             return
 
 
@@ -368,20 +368,31 @@ def _category_sort():
         except ValueError:
             _print("  ⚠️  无效ID")
             continue
+
         cat_ids = {c['id'] for c in categories}
-        for cid in ids:
-            if cid not in cat_ids:
-                _print(f"  ⚠️  ID {cid} 不存在")
-                break
-        else:
-            for i, cid in enumerate(ids, start=1):
-                c = next(c for c in categories if c['id'] == cid)
-                update_category(cid, c['name'], sort_order=i)
-            _print(f"  ✅ 已更新顺序")
-            if _input("\n  ▶ 回车返回: ").strip().lower() == 'q':
-                return
+        # 验证：重复ID
+        if len(ids) != len(set(ids)):
+            dupes = [x for x in ids if ids.count(x) > 1]
+            _print(f"  ⚠️  ID 列表有重复: {set(dupes)}")
+            continue
+        # 验证：覆盖完整性
+        missing = cat_ids - set(ids)
+        if missing:
+            names = [next(c['name'] for c in categories if c['id'] == m) for m in missing]
+            _print(f"  ⚠️  遗漏了 {len(missing)} 个大科目: {', '.join(names)}")
+            continue
+        if len(ids) != len(cat_ids):
+            _print(f"  ⚠️  ID数量不对（应有 {len(cat_ids)} 个）")
+            continue
+
+        for i, cid in enumerate(ids, start=1):
+            c = next(c for c in categories if c['id'] == cid)
+            update_category(cid, c['name'], sort_order=i)
+        _print(f"  ✅ 已更新顺序")
+
+        if _input("\n  ▶ 回车返回: ").strip().lower() == 'q':
             return
-        continue
+        return
 
 
 # ─────────────────────────────────────────
