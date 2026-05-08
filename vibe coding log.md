@@ -11,25 +11,18 @@
 - **PRD 编写**：`PRD-kid-interface-v0.1.md` 已保存到 Obsidian
 - **问题追踪**：发现 9 个 issues，P0 bugs 在 `feat/kid-ui-refresh` 修复中
 
-### Kid Interface 发现的问题（9个）
-| # | 页面 | 问题 |
-|---|------|------|
-| 1 | practice | 打卡后无进度记录显示 |
-| 2 | practice | 重复打卡不拦截 |
-| 3 | practice | 打卡成功提示不够明确 |
-| 4 | achievements | 无打卡记录时显示空白 |
-| 5 | achievements | 进度条动画缺失 |
-| 6 | prepare | 准备页内容静态 |
-| 7 | prepare | 每日一练卡片缺失 |
-| 8 | praise | 鼓励页静态 |
-| 9 | praise | 鼓励语无个性化 |
-
-### 文档
-- PRD: `tqob/05 Coding/project-dizical/PRD-kid-interface-v0.1.md`
+### 本次 session 补充（12:08 PM）
+- **Bug 修复**：`/prepare` 本周作业查不到
+  - 根因：家长5/2（周六）录入，存 `week_start_date=2026-05-02`，孩子周一打开 App 查本周一（5/4），精确匹配查不到
+  - 修复：新增 `database.get_weekly_assignment_for_week(anchor_date)` 方法，查 ≤ anchor_date 的最近一条记录
+  - 改 `kid_app/app.py` 的 `/prepare` 路由调用新方法
+  - commit `1e81d04`，已 push 到 `origin/feat/kid-ui-refresh`
+- **本周判定逻辑改进**：以"包含今天的那周"为锚点，不再强依赖周一为存储基准
+- kid_app 服务端口 8765，重启验证 `curl /prepare` 返回"回娘家"
 
 ### 分支
 - worktree: `hermes/hermes-3bb46bdd`
-- 功能分支: `feat/kid-ui-refresh`
+- 功能分支: `feat/kid-ui-refresh`（已 push）
 
 ---
 
