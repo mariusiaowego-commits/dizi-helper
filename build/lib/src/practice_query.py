@@ -70,8 +70,6 @@ def _fuzzy_match(text: str, pattern: str) -> bool:
     """简单模糊匹配（子串 + 首字母）"""
     if not pattern:
         return True
-    if text is None:
-        return False
     text = text.lower()
     pat = pattern.lower()
     # 检查所有字符按顺序出现
@@ -84,7 +82,7 @@ def _fuzzy_match(text: str, pattern: str) -> bool:
 
 # ── 主 TUI 类 ─────────────────────────────────────────────
 class PracticeQueryTUI:
-    VIEWS = ['today', 'homework', 'week', 'month', 'history']
+    VIEWS = ['today', 'week', 'month', 'history']
 
     def __init__(self, stdscr: curses.window):
         self.stdscr = stdscr
@@ -129,8 +127,6 @@ class PracticeQueryTUI:
         view = self.VIEWS[self.view_idx]
         if view == 'today':
             self._draw_today()
-        elif view == 'homework':
-            self._draw_homework()
         elif view == 'week':
             self._draw_week()
         elif view == 'month':
@@ -196,40 +192,6 @@ class PracticeQueryTUI:
 
         row += 1
         self._draw_prompt(row, "  [→] 本周  [↑/↓] 查历史  ")
-
-    def _draw_homework(self) -> None:
-        """专门展示老师本周要求"""
-        assignment = db.get_weekly_assignment(self.week_start)
-        row = 3
-        week_label = f" 本周作业 {_fmt_week(self.week_start)} "
-        self._center(row, week_label, Colors.HIGHLIGHT, bold=True)
-        row += 2
-
-        if not assignment:
-            self._center(row, "  暂无本周作业  ", Colors.DIM)
-            row += 2
-            self._draw_prompt(row, "  [←]今日  [→]本周  [Q]退出  ")
-            return
-
-        # 作业明细
-        items = assignment.get('items', [])
-        if items:
-            self._hline(row, 2, '─', Colors.HIGHLIGHT)
-            row += 1
-            for it in items:
-                item_name = it.get('item', '')
-                requirement = it.get('requirement', '')
-                # 大字显示练习项目
-                if item_name:
-                    self._attr(row, 4, f"🎯 {item_name}", Colors.HIGHLIGHT, bold=True)
-                    row += 1
-                if requirement:
-                    req_lines = requirement.split('\n')
-                    for ln in req_lines:
-                        self.stdscr.addstr(row, 6, ln[:self.w - 8], curses.color_pair(Colors.DIM))
-                        row += 1
-                row += 1
-        self._draw_prompt(row, "  [←]今日  [→]本周  [Q]退出  ")
 
     def _draw_week(self) -> None:
         row = 3
@@ -465,8 +427,8 @@ class PracticeQueryTUI:
         elif key == ord('/'):
             self._do_search()
         elif key in (ord('h'), ord('H')):
-            if view != 'homework':
-                self.view_idx = 1  # 切到作业视图
+            if view in ('today', 'week'):
+                self.view_idx = 1  # 切到week显示作业
         elif key in (ord('q'), ord('Q'), 27):
             return True
         return False
@@ -480,7 +442,7 @@ class PracticeQueryTUI:
         self.stdscr.clrtoeol()
         curses.echo()
         try:
-            self.stdscr.nodelay(False)
+            curses.nodelay(self.stdscr, False)
             s = self.stdscr.getstr(row, 14, 30).decode('utf-8', errors='replace')
             self.search_pattern = s.strip()
         except curses.error:

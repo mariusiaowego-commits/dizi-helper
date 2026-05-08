@@ -16,32 +16,31 @@ from src.database import db
 from src import practice as practice_module
 
 # ─── App ───────────────────────────────────────────────────────────────────
-app = FastAPI(title="Bamboo Flute Practice")
+app = FastAPI(title="\U0001F3B5 竹笛练习助手")
 
 static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
 # ─── 模板渲染 ───────────────────────────────────────────────────────────────
-def render(tpl, **kwargs):
-    path = Path(__file__).parent / "templates" / (tpl + ".html")
+def render(tpl: str, **kwargs) -> str:
+    path = Path(__file__).parent / "templates" / f"{tpl}.html"
     html = path.read_text(encoding="utf-8")
     for k, v in kwargs.items():
-        placeholder = "{{" + k + "}}"
-        html = html.replace(placeholder, str(v))
+        html = html.replace(f"{{{{{k}}}}}", str(v))
     return html
 
 # ─── 数据 helpers ───────────────────────────────────────────────────────────
-def child_name():
+def child_name() -> str:
     try:
         return db.get_setting("child_name") or "YoYo"
     except:
         return "YoYo"
 
-def week_start_of(today):
+def week_start_of(today: dt.date) -> dt.date:
     return today - dt.timedelta(days=today.weekday())
 
-def streak_days():
+def streak_days() -> int:
     today = dt.date.today()
     days = 0
     d = today
@@ -54,28 +53,11 @@ def streak_days():
             break
     return days
 
-def total_practice_minutes():
-    practices = db.get_daily_practices_in_range(dt.date(2020, 1, 1), dt.date.today())
+def total_practice_minutes() -> int:
+    practices = db.get_daily_practices_in_range(
+        dt.date(2020, 1, 1), dt.date.today()
+    )
     return sum(p["total_minutes"] for p in practices)
-
-# ─── API: 某日练习明细 ─────────────────────────────────────────────────────
-@app.get("/api/practices/{date_str}")
-def api_practice_day(date_str: str):
-    """返回指定日期的练习明细"""
-    try:
-        day = dt.date.fromisoformat(date_str)
-    except ValueError:
-        return JSONResponse({"error": "无效日期格式"}, status_code=400)
-    practice = db.get_daily_practice(day)
-    if not practice:
-        return JSONResponse({"date": date_str, "items": [], "total_minutes": 0, "log": ""})
-    # items 是列表: [{"item": "...", "minutes": N}, ...]
-    return JSONResponse({
-        "date": date_str,
-        "items": practice.get("items", []),
-        "total_minutes": practice.get("total_minutes", 0),
-        "log": practice.get("log", "")
-    })
 
 # ─── API: 练习项目列表 ─────────────────────────────────────────────────────
 @app.get("/api/items")
@@ -94,6 +76,7 @@ async def api_log(request: Request):
     log_note = body.get("log", "")
 
     date = dt.date.fromisoformat(date_str) if date_str else dt.date.today()
+
     existing = db.get_daily_practice(date)
     items = []
     if existing and existing.get("items"):
@@ -110,16 +93,39 @@ async def api_log(request: Request):
 
     total = sum(it["minutes"] for it in items)
     db.save_daily_practice(date, items, total, log_note)
+
     return JSONResponse({"ok": True, "total": total})
 
 # ─── API: 表扬海报生成 ─────────────────────────────────────────────────────
-# 已下线：图片生成需在 Hermes Agent 对话窗口进行，见 /praise 页面
 @app.post("/api/praise")
 async def api_praise(request: Request):
-    return JSONResponse({
-        "ok": False,
-        "error": "Praise poster generation has moved to Hermes Agent. Open /praise and click '打开 Hermes Agent'."
-    }, status_code=410)
+    body = json.loads(await request.body())
+    ptype = body.get("type")
+    custom = body.get("custom", "")
+    cname = body.get("child_name", child_name())
+
+    # 构建 prompt
+    prompts = {
+        "streak7": f"A celebratory badge for {cname} completing a 7-day bamboo flute practice streak. Show a flame icon, vibrant orange/red colors, Chinese-inspired decorative border, achievement text '7天连续练习', warm encouraging atmosphere. Child-friendly, colorful, cartoon style.",
+        "streak30": f"A golden trophy illustration for {cname} achieving a 30-day bamboo flute practice streak. Show a gold trophy, sparkles, ribbon banner with '30天连续练习', celebratory confetti, warm golden tones, child-friendly cartoon style.",
+        "teacher": f"A cheerful encouragement card for {cname} receiving teacher praise for bamboo flute practice. Show a friendly teacher character, musical notes, warm pastel colors, Chinese text '{custom or "老师表扬你啦！"}', encouraging smiley face, child-friendly cartoon style.",
+        "dad": f"A warm encouragement card from dad to {cname} for excellent bamboo flute practice. Show a happy child playing flute, musical notes floating around, warm golden light, Chinese text '{custom or "爸爸觉得你练得真棒！"}', loving supportive atmosphere, child-friendly cartoon style.",
+        "monthly": f"A monthly achievement certificate for {cname} completing monthly bamboo flute practice goals. Show a certificate with ribbon seals, star decorations, bamboo flute icon, Chinese text '月度练习目标完成', celebratory confetti, warm celebratory atmosphere, child-friendly cartoon style.",
+    }
+
+    prompt = prompts.get(ptype, prompts["dad"])
+
+    # 调用 Hermes image generation
+    try:
+        from src.kid_app import images as kid_images
+        image_url = kid_images.generate(prompt, ptype, cname)
+        return JSONResponse({
+            "ok": True,
+            "image_url": image_url,
+            "message": f"生成成功！{cname} 的表扬海报已生成"
+        })
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
 
 # ─── 页面路由 ───────────────────────────────────────────────────────────────
 @app.get("/", response_class=HTMLResponse)
@@ -132,38 +138,32 @@ def prepare_page():
     ws = week_start_of(today)
     assign = db.get_weekly_assignment(ws)
 
-    assign_html = "<li>还没录本周要求 💭 告诉爸爸帮你加上哦</li>"
+    assign_html = ""
     if assign and assign.get("items"):
-        assign_html = ""
         for it in assign["items"]:
-            assign_html += "<li><strong>" + it["item"] + "</strong>: " + it["requirement"] + "</li>"
+            assign_html += f"<li><strong>{it['item']}</strong>：{it['requirement']}</li>"
+    if not assign_html:
+        assign_html = "<li>暂无本周要求</li>"
 
     yesterday = today - dt.timedelta(days=1)
     y_practice = db.get_daily_practice(yesterday)
-    suggestions_list = []
+    suggestions = []
     if y_practice and y_practice.get("items"):
         for it in y_practice["items"]:
             if it["minutes"] < 10:
-                suggestions_list.append(
-                    "昨天" + it["item"] + "只练了" + str(it["minutes"]) + "分钟，今天加油多练一会儿呀！💪"
-                )
+                suggestions.append(f"昨天 <strong>{it['item']}</strong> 只练了 {it['minutes']} 分钟，今天可以多练一会儿")
 
-    if not suggestions_list:
-        suggestions_html = "<li>太棒啦！今天继续保持 ✨</li>"
-    else:
-        suggestions_html = ""
-        for s in suggestions_list:
-            suggestions_html += "<li>" + s + "</li>"
-
-    weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    today_p = db.get_daily_practice(today)
+    practiced = "✅ 今日已完成" if today_p and today_p.get("total_minutes", 0) > 0 else "⏳ 还未打卡"
 
     return render(
         "prepare",
         child_name=child_name(),
-        today_str=today.strftime("%m/%d"),
-        weekday=weekday_names[today.weekday()],
+        today_str=today.strftime("%m月%d日"),
+        weekday=["周一","周二","周三","周四","周五","周六","周日"][today.weekday()],
         assign_html=assign_html,
-        suggestions=suggestions_html,
+        suggestions="\n".join(f"<li>{s}</li>" for s in suggestions) if suggestions else "<li>继续加油！</li>",
+        practiced=practiced,
         streak=streak_days(),
     )
 
@@ -176,21 +176,18 @@ def practice_page():
     by_cat = {}
     for it in items:
         cid = it.get("category_id")
-        cat = cat_map.get(cid, "Other")
-        if cat not in by_cat:
-            by_cat[cat] = []
-        by_cat[cat].append(it["name"])
+        cat = cat_map.get(cid, "其他")
+        by_cat.setdefault(cat, []).append(it["name"])
 
     items_html = ""
     for cat, names in by_cat.items():
-        items_html += "<h3 style='font-size:16px;color:#4ECDC4;margin:12px 0 6px;'>" + cat + "</h3>"
-        items_html += "<div class='item-grid'>"
+        items_html += f"<h3 style='font-size:16px;color:#4ECDC4;margin:12px 0 6px;'>{cat}</h3><div class=\"item-grid\">"
         for name in names:
-            items_html += "<button class='item-btn' onclick=\"selectItem('" + name + "')\">" + name + "</button>"
+            items_html += f'<button class="item-btn" onclick="selectItem(\'{name}\')">{name}</button>'
         items_html += "</div>"
 
     if not items_html:
-        items_html = "<p style='color:#7F8C8D;text-align:center;'>No practice items. Ask dad to add via dizical practice config</p>"
+        items_html = "<p style='color:#7F8C8D;text-align:center;'>暂无练习项目，请爸爸先用 dizical practice config 添加</p>"
 
     today = dt.date.today()
     today_p = db.get_daily_practice(today)
@@ -217,19 +214,20 @@ def achievements_page():
 
     badges = []
     if streak >= 3:
-        badges.append(("fire", str(streak) + " days", "flame"))
+        badges.append(("🔥", f"连续{streak}天", "flame"))
     if streak >= 7:
-        badges.append(("star", str(streak) + " day streak!", "star"))
+        badges.append(("🌟", f"连续{streak}天达成", "star"))
     if total_mins >= 60:
-        badges.append(("medal", "Practice Pro", "star2"))
+        badges.append(("⭐", "练习达人", "star2"))
     if week_mins >= 60:
-        badges.append(("flex", "Week Star", "strong"))
+        badges.append(("💪", "本周之星", "strong"))
 
-    badge_html = ""
-    for icon, label, cls in badges:
-        badge_html += "<div class='badge " + cls + "'>" + icon + "<br><small>" + label + "</small></div>"
+    badge_html = "".join(
+        f'<div class="badge {cls}">{icon}<br><small>{label}</small></div>'
+        for icon, label, cls in badges
+    )
     if not badge_html:
-        badge_html = "<p style='color:#7F8C8D;text-align:center;'>No badges yet, keep going!</p>"
+        badge_html = "<p style='color:#7F8C8D;text-align:center;'>还没有徽章，继续加油！</p>"
 
     return render(
         "achievements",
@@ -257,60 +255,38 @@ def report_page():
 
     cal_html = ""
     for _ in range(start.weekday()):
-        cal_html += "<div class='cal-day empty'></div>"
+        cal_html += "<div class=\"cal-day empty\"></div>"
     for d in range(1, end.day + 1):
         day_date = dt.date(today.year, today.month, d)
         key = day_date.isoformat()
         p = practices.get(key)
         mins = p["total_minutes"] if p else 0
+        cls = "cal-day"
+        label = str(d)
         if mins == 0:
             cls = "cal-day"
-            label = str(d)
         elif mins < 20:
             cls = "cal-day low"
-            label = str(d) + "<br><small>" + str(mins) + "m</small>"
+            label = f"{d}<br><small>{mins}m</small>"
         elif mins < 40:
             cls = "cal-day mid"
-            label = str(d) + "<br><small>" + str(mins) + "m</small>"
+            label = f"{d}<br><small>{mins}m</small>"
         else:
             cls = "cal-day high"
-            label = str(d) + "<br><small>" + str(mins) + "m</small>"
+            label = f"{d}<br><small>{mins}m</small>"
         if day_date == today:
             cls += " today"
-        cal_html += "<div class='" + cls + "' data-date='" + key + "'>" + label + "</div>"
+        cal_html += f'<div class="{cls}">{label}</div>'
 
     return render(
         "report",
         child_name=child_name(),
-        month_str=today.strftime("%Y/%m"),
+        month_str=today.strftime("%Y年%m月"),
         total_mins=str(data["total_minutes"]),
         practice_days=str(data["practice_days"]),
         cal_html=cal_html,
     )
 
-# ─── PIN 验证 ───────────────────────────────────────────────────────────────
-def get_setting(key, default=""):
-    try:
-        return db.get_setting(key) or default
-    except:
-        return default
-
-@app.post("/api/verify-pin")
-async def api_verify_pin(request: Request):
-    body = json.loads(await request.body())
-    pin = body.get("pin", "")
-    stored_pin = get_setting("dad_pin")
-    if stored_pin and pin == stored_pin:
-        return JSONResponse({"ok": True, "role": "dad"})
-    return JSONResponse({"ok": False}, status_code=401)
-
 @app.get("/praise", response_class=HTMLResponse)
 def praise_page():
-    has_pin = bool(get_setting("dad_pin"))
-    return render(
-        "praise",
-        child_name=child_name(),
-        pin_locked="true" if has_pin else "false",
-        PIN_OVERLAY_DISPLAY="display:flex" if has_pin else "display:none",
-        PRAISE_CONTENT_DISPLAY="display:block" if not has_pin else "display:none",
-    )
+    return render("praise", child_name=child_name())

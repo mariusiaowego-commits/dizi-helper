@@ -38,5 +38,54 @@
       <span style="width:16px;height:16px;background:#FFEBEE;border-radius:4px;display:inline-block;"></span> 充足
     </div>
   </div>
+
+  <!-- 当天明细区域 -->
+  <div id="dayDetail" class="card" style="display:none;margin-top:12px;">
+    <h3 id="detailDate" style="color:#FF6B6B;margin-bottom:12px;"></h3>
+    <div id="detailItems" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    <div id="detailLog" style="margin-top:10px;font-size:14px;color:#7F8C8D;"></div>
+    <div id="detailEmpty" style="color:#BDC3C7;font-size:15px;"></div>
+  </div>
 </body>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.cal-day:not(.empty)').forEach(function(cell) {
+    cell.style.cursor = 'pointer';
+    cell.addEventListener('click', function() {
+      var date = this.getAttribute('data-date');
+      if (!date) return;
+      // 移除其他选中态
+      document.querySelectorAll('.cal-day.selected').forEach(function(c){ c.classList.remove('selected'); });
+      this.classList.add('selected');
+      // 加载明细
+      var detailDiv = document.getElementById('dayDetail');
+      detailDiv.style.display = 'block';
+      document.getElementById('detailDate').textContent = date;
+      document.getElementById('detailItems').innerHTML = '';
+      document.getElementById('detailLog').textContent = '';
+      document.getElementById('detailEmpty').textContent = '加载中...';
+      fetch('/api/practices/' + date)
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          if (data.total_minutes === 0 || (Array.isArray(data.items) && data.items.length === 0)) {
+            document.getElementById('detailEmpty').textContent = '这一天没有练习记录';
+            document.getElementById('detailItems').innerHTML = '';
+            document.getElementById('detailLog').textContent = '';
+          } else {
+            document.getElementById('detailEmpty').textContent = '';
+            var itemsHtml = '';
+            data.items.forEach(function(it) {
+              itemsHtml += '<span style="background:#E8F5E9;padding:6px 12px;border-radius:20px;font-size:14px;">' + it.item + ' ' + it.minutes + '分钟</span>';
+            });
+            document.getElementById('detailItems').innerHTML = itemsHtml;
+            document.getElementById('detailLog').textContent = data.log || '';
+          }
+        })
+        .catch(function() {
+          document.getElementById('detailEmpty').textContent = '加载失败';
+        });
+    });
+  });
+});
+</script>
 </html>

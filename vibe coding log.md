@@ -1,5 +1,38 @@
 # dizical vibe coding log
 
+## 2026-05-08 (Fri) — Kid Interface Session
+
+### 工作内容
+- **practice_query TUI bugs 修复**：
+  - `curses.nodelay` 模式导致 CPU 高占用
+  - `_fuzzy_match` 返回 None 未处理
+  - h 键导航到 homework view
+- **Kid iPad 界面 review**：测试 5 个页面（prepare/practice/achievements/report/praise）
+- **PRD 编写**：`PRD-kid-interface-v0.1.md` 已保存到 Obsidian
+- **问题追踪**：发现 9 个 issues，P0 bugs 在 `feat/kid-ui-refresh` 修复中
+
+### Kid Interface 发现的问题（9个）
+| # | 页面 | 问题 |
+|---|------|------|
+| 1 | practice | 打卡后无进度记录显示 |
+| 2 | practice | 重复打卡不拦截 |
+| 3 | practice | 打卡成功提示不够明确 |
+| 4 | achievements | 无打卡记录时显示空白 |
+| 5 | achievements | 进度条动画缺失 |
+| 6 | prepare | 准备页内容静态 |
+| 7 | prepare | 每日一练卡片缺失 |
+| 8 | praise | 鼓励页静态 |
+| 9 | praise | 鼓励语无个性化 |
+
+### 文档
+- PRD: `tqob/05 Coding/project-dizical/PRD-kid-interface-v0.1.md`
+
+### 分支
+- worktree: `hermes/hermes-3bb46bdd`
+- 功能分支: `feat/kid-ui-refresh`
+
+---
+
 ## 2026-04-30 (Thu)
 
 ### 每周老师要求导入

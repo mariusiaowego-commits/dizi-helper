@@ -1,18 +1,18 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-06
-**当前阶段**: Phase 3 完成（练习报告信息图已生成）
+**最后更新**: 2026-05-08
+**当前阶段**: Kid Interface 开发中（feat/kid-ui-refresh 分支）
 
 **历史分支**:
-- `hermes/hermes-a761b8a5` — 当前会话 worktree（本次开发）
-- `hermes/hermes-eb075c87` — 已废弃
+- `hermes/hermes-3bb46bdd` — 当前会话 worktree（本次开发）
+- `hermes/hermes-a761b8a5` — 已废弃
 
 ---
 
 ## 📂 项目位置
 
 - **main 分支 (生产)**: `/Users/mt16/dev/dizical/`
-- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-a761b8a5/`
+- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-3bb46bdd/`
 - **Git 模式**: worktree 模式，hermes/hermes-a761b8a5 与 main 完全同步
 - **remote**: origin/main 已切 SSH，正常连接
 
@@ -95,7 +95,31 @@ dizical obsidian export 4          # 导出4月报告
 
 | 文件 | 说明 |
 |------|------|
-| 无 | 所有代码已提交并同步，main 最新 `885a9bd` |
+| 无 | Kid Interface 工作在 feat/kid-ui-refresh 分支 |
+
+## 👧 Kid Interface 开发（feat/kid-ui-refresh）
+
+### 本次 Session 完成
+- [x] practice_query TUI bugs 修复：`curses.nodelay`、`_fuzzy_match None`、h键→homework view
+- [x] Kid iPad 界面全面 review（5个页面测试：prepare/practice/achievements/report/praise）
+- [x] 发现 9 个 issues，编写 `PRD-kid-interface-v0.1.md` 并保存到 Obsidian
+- [x] P0 critical bugs 修复中（`feat/kid-ui-refresh` 分支）
+
+### Review 发现的问题（9个）
+| # | 页面 | 问题 |
+|---|------|------|
+| 1 | practice | 打卡后无进度记录显示 |
+| 2 | practice | 重复打卡不拦截 |
+| 3 | practice | 打卡成功提示不够明确 |
+| 4 | achievements | 无打卡记录时显示空白 |
+| 5 | achievements | 进度条动画缺失 |
+| 6 | prepare | 准备页内容静态 |
+| 7 | prepare | 每日一练卡片缺失 |
+| 8 | praise | 鼓励页静态 |
+| 9 | praise | 鼓励语无个性化 |
+
+### PRD 文档
+- `PRD-kid-interface-v0.1.md` → Obsidian: `tqob/05 Coding/project-dizical/PRD-kid-interface-v0.1.md`
 
 ## 🔄 最近提交 (2026-05-04)
 
