@@ -87,7 +87,7 @@
   <div id="pinOverlay" style="{{PIN_OVERLAY_DISPLAY}}">
     <h2>🔒 爸爸妈妈专区</h2>
     <p>请输入 PIN 解锁表扬海报生成</p>
-    <input type="password" id="pinInput" maxlength="8" placeholder="••••" autocomplete="off">
+    <input type="text" id="pinInput" maxlength="8" placeholder="••••" autocomplete="off" inputmode="numeric">
     <div id="pinError"></div>
     <div class="pin-kid-hint">
       小朋友想要表扬海报<br>请找爸爸妈妈帮忙生成哦 😊
@@ -145,14 +145,13 @@
       const content = document.getElementById('praiseContent');
       const pinInput = document.getElementById('pinInput');
 
-      pinInput.addEventListener('keydown', async (e) => {
-        if (e.key === 'Enter') {
-          const pin = pinInput.value;
-          const res = await fetch('/api/verify-pin', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({pin})
-          });
+      function verifyPin() {
+        const pin = pinInput.value;
+        fetch('/api/verify-pin', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({pin})
+        }).then(res => {
           if (res.ok) {
             overlay.style.display = 'none';
             content.style.display = 'block';
@@ -160,6 +159,12 @@
             document.getElementById('pinError').textContent = 'PIN 不对哦，再试一次 😊';
             pinInput.value = '';
           }
+        });
+      }
+
+      pinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          verifyPin();
         }
       });
     }

@@ -31,6 +31,7 @@
 
   <div class="card">
     <h2 style="color:#FF6B6B;">🎵 选择练习项目</h2>
+    <input type="text" id="itemFilter" placeholder="🔍 搜索..." style="width:100%;padding:12px;border-radius:12px;border:2px solid #E0E0E0;font-size:16px;margin-bottom:12px;" oninput="filterItems(this.value)">
     {{items_html}}
     <div class="today-stat">今日已练习: {{today_mins}} 分钟</div>
   </div>
@@ -56,6 +57,29 @@
   </div>
 
   <script>
+    // Short completion chime (base64 WAV of a pleasant two-tone ding)
+    function playChime() {
+      try {
+        new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQYMTYq9n6p7IQQ5jcOyp5mMZEA3YK3b4LyDeEBpp9XjtnVJUJLU4s2zak1ToNXm4qd2UFmn1eXeqHFWYqrc5cClcF5sreDnw5B0YW2s4OPGj3hmcLDl5cB/dGVysujnxH13aHS07enGf3dqdrTu6sR6eGx4tO/qw3l9b3q18OnBdn9xe7bx6sB4gHF9ufLqwHWAdn+69OvAdoF3gL316r53gnmCefTrvneDeoN69e28d4N7g3n17rx3hHyEevXuuneFfIV79u67d4Z9hXv27rt3h3yGfPbuuneHfod99u67d4h+h3z27rt3iH+Hffbuu3eIf4d99u67d4hA').play();
+      } catch(e) {}
+    }
+
+    // Filter practice items by search query
+    function filterItems(q) {
+      q = q.trim().toLowerCase();
+      document.querySelectorAll('.item-btn').forEach(btn => {
+        btn.style.display = (q === '' || btn.textContent.toLowerCase().includes(q)) ? '' : 'none';
+      });
+      // Also filter category headings
+      document.querySelectorAll('.item-grid').forEach(grid => {
+        const hasVisible = Array.from(grid.querySelectorAll('.item-btn')).some(b => b.style.display !== 'none');
+        const prev = grid.previousElementSibling;
+        if (prev && prev.tagName === 'H3') {
+          prev.style.display = hasVisible ? '' : 'none';
+        }
+      });
+    }
+
     let selectedItem = null;
     let duration = 10;
     let elapsed = 0;
@@ -103,6 +127,7 @@
           if (elapsed >= duration * 60) {
             clearInterval(timerInterval);
             document.getElementById('confirmArea').classList.add('show');
+            playChime();
           }
         }, 1000);
       }
@@ -125,8 +150,10 @@
       });
       let json = await res.json();
       if (json.ok) {
-        alert('打卡成功！');
-        location.reload();
+        let confirmArea = document.getElementById('confirmArea');
+        confirmArea.classList.add('celebrate');
+        document.querySelector('.confirm-area p').innerHTML = '🎉 打卡成功！太棒啦！';
+        setTimeout(() => { location.reload(); }, 1800);
       }
     }
   </script>

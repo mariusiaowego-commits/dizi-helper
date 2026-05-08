@@ -224,3 +224,12 @@ textarea {
   color: var(--text-light);
   font-size: 20px;
 }
+
+/* celebration animation for check-in success */
+@keyframes celebrate {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+.celebrate {
+  animation: celebrate 0.6s ease 3;
+}
