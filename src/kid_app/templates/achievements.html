@@ -5,14 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>我的成就 - 竹笛助手</title>
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { padding-bottom: 80px; }
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: flex; gap: 4px;
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      background: var(--card, #fff); box-shadow: 0 -2px 12px rgba(0,0,0,0.1); z-index: 100;
+    }
+    .nav a {
+      flex: 1; min-width: 0; padding: 8px 4px; background: transparent; border-radius: 16px;
+      text-align: center; text-decoration: none; color: #7F8C8D; font-size: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .nav a:active { transform: scale(0.95); }
+    .nav a.active { background: var(--primary, #FF6B6B); color: white; }
+    .nav-icon { font-size: 20px; }
+  </style>
 </head>
 <body>
   <div class="nav">
-    <a href="/prepare">🏠 准备</a>
-    <a href="/practice">🎵 练习</a>
-    <a href="/achievements" class="active">🏆 成就</a>
-    <a href="/report">📊 报告</a>
-    <a href="/praise">⭐ 表扬</a>
+    <a href="/prepare" class="nav-item"><span class="nav-icon">🏠</span><span>准备</span></a>
+    <a href="/practice" class="nav-item"><span class="nav-icon">🎵</span><span>练习</span></a>
+    <a href="/achievements" class="nav-item active"><span class="nav-icon">🏆</span><span>成就</span></a>
+    <a href="/report" class="nav-item"><span class="nav-icon">📊</span><span>报告</span></a>
+    <a href="/praise" class="nav-item"><span class="nav-icon">⭐</span><span>表扬</span></a>
   </div>
 
   <div class="card" style="text-align:center;">

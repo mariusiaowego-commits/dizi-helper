@@ -32,20 +32,30 @@ def _show_current():
     _print("\n─── 大科目 ───")
     if categories:
         for c in sorted(categories, key=lambda x: x['sort_order']):
-            related = [i['name'] for i in items if i.get('category_id') == c['id']]
-            cats_str = '、'.join(related) if related else '（无）'
+            related = [i for i in items if i.get('category_id') == c['id']]
+            cats_parts = []
+            for i in related:
+                tag = "📁" if i.get('is_archived') else ""
+                cats_parts.append(i['name'] + tag)
+            cats_str = '、'.join(cats_parts) if cats_parts else '（无）'
             _print(f"  [{c['id']}] {c['name']}  →  {cats_str}")
     else:
         _print("  （空）")
 
-    uncategorized = [i['name'] for i in items if not i.get('category_id')]
+    uncategorized = [i for i in items if not i.get('category_id')]
     _print("\n─── 无归属小科目 ───")
     if uncategorized:
-        for name in uncategorized:
-            item = next(i for i in items if i['name'] == name)
-            _print(f"  [{item['id']}] {name}")
+        for item in uncategorized:
+            tag = " 📁" if item.get('is_archived') else ""
+            _print(f"  [{item['id']}] {item['name']}{tag}")
     else:
         _print("  （空）")
+
+    archived = [i for i in items if i.get('is_archived')]
+    if archived:
+        _print(f"\n─── 已归档小科目 ({len(archived)} 个) ───")
+        for item in archived:
+            _print(f"  [{item['id']}] {item['name']}")
 
 
 def _show_menu():
@@ -56,6 +66,7 @@ def _show_menu():
     _print("║  1 大科目 - 增/删/改/重排序          ║")
     _print("║  2 小科目 - 增/删/改                 ║")
     _print("║  3 归属关系 - 设置/取消              ║")
+    _print("║  4 归档 - 小科目归档/取消归档         ║")
     _print("║  0 退出                             ║")
     _print("╚══════════════════════════════════════╝")
 
@@ -373,6 +384,65 @@ def _do_relation():
 
 
 # ─────────────────────────────────────────
+# 归档
+# ─────────────────────────────────────────
+
+def _archive_toggle(switch_to: bool):
+    """切换小科目归档状态"""
+    items = db.get_practice_items(active_only=False)
+    if not items:
+        _print("  （无小科目）")
+        return
+    label = "归档" if switch_to else "取消归档"
+    candidates = [it for it in items if bool(it.get('is_archived')) == (not switch_to)]
+    if not candidates:
+        _print(f"  没有需要{label}的小科目")
+        return
+    _print(f"\n  当前未{label}的小科目：")
+    for it in candidates:
+        cat_name = next((c['name'] for c in get_categories() if c['id'] == it.get('category_id')), None)
+        tag = f" → {cat_name}" if cat_name else ""
+        _print(f"  [{it['id']}] {it['name']}{tag}")
+    _print("  多个ID用空格分隔，直接回车返回")
+    sid = _input(f"  输入要{label}的小科目ID: ").strip()
+    if not sid:
+        _print("  取消")
+        return
+    try:
+        ids = [int(x) for x in sid.split()]
+    except ValueError:
+        _print("  无效ID")
+        return
+    for iid in ids:
+        target = next((it for it in candidates if it['id'] == iid), None)
+        if not target:
+            _print(f"  ⚠️  ID {iid} 不存在，跳过")
+            continue
+        if switch_to:
+            db.archive_practice_item(iid)
+            _print(f"  ✅ 「{target['name']}」已归档")
+        else:
+            db.unarchive_practice_item(iid)
+            _print(f"  ✅ 「{target['name']}」已取消归档")
+
+    # 显示结果
+    remaining = [it for it in db.get_practice_items(active_only=False) if it.get('is_archived')]
+    _print(f"\n  当前已归档 {len(remaining)} 个小科目")
+
+
+def _do_archive():
+    _print("\n─── 归档操作 ───")
+    _print("  a 归档小科目  u 取消归档  q 返回")
+    op = _input("  选择: ").strip().lower()
+    if op == 'a':
+        _archive_toggle(switch_to=True)
+    elif op == 'u':
+        _archive_toggle(switch_to=False)
+    else:
+        _print("  返回")
+
+
+# ─────────────────────────────────────────
 # 主循环
 # ─────────────────────────────────────────
 
@@ -395,5 +465,7 @@ def launch():
             _do_item()
         elif choice == '3':
             _do_relation()
+        elif choice == '4':
+            _do_archive()
         else:
-            _print("  无效选择，请输入 0-3")
+            _print("  无效选择，请输入 0-4")

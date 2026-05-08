@@ -8,7 +8,22 @@
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
   <style>
-    body { background: #FFF8F0; font-family: 'ZCOOL KuaiLe', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+    body { background: #FFF8F0; font-family: 'ZCOOL KuaiLe', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; padding-bottom: 80px; }
+    /* Fixed bottom nav */
+    .nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      display: flex; gap: 4px;
+      margin-bottom: 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      background: var(--card, #fff); box-shadow: 0 -2px 12px rgba(0,0,0,0.1); z-index: 100;
+    }
+    .nav a {
+      flex: 1; min-width: 0; padding: 8px 4px; background: transparent; border-radius: 16px;
+      text-align: center; text-decoration: none; color: #7F8C8D; font-size: 12px;
+      box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    }
+    .nav a:active { transform: scale(0.95); }
+    .nav a.active { background: #FF6B6B; color: white; }
+    .nav-icon { font-size: 20px; }
     .greeting { font-size: 36px; font-weight: bold; text-align: center; padding: 16px 0; color: #FF6B6B; }
     .date-info { text-align: center; color: #7F8C8D; font-size: 20px; margin-bottom: 16px; }
     .section-title { font-size: 22px; color: #4ECDC4; margin: 20px 0 12px; font-weight: bold; }
@@ -27,11 +42,11 @@
 </head>
 <body>
   <div class="nav">
-    <a href="/prepare" class="active">🏠 准备</a>
-    <a href="/practice">🎵 练习</a>
-    <a href="/achievements">🏆 成就</a>
-    <a href="/report">📊 报告</a>
-    <a href="/praise">⭐ 表扬</a>
+    <a href="/prepare" class="nav-item active"><span class="nav-icon">🏠</span><span>准备</span></a>
+    <a href="/practice" class="nav-item"><span class="nav-icon">🎵</span><span>练习</span></a>
+    <a href="/achievements" class="nav-item"><span class="nav-icon">🏆</span><span>成就</span></a>
+    <a href="/report" class="nav-item"><span class="nav-icon">📊</span><span>报告</span></a>
+    <a href="/praise" class="nav-item"><span class="nav-icon">⭐</span><span>表扬</span></a>
   </div>
 
   <div class="greeting">{{child_name}}，准备练习啦！</div>
