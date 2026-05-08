@@ -141,18 +141,42 @@ body {
   color: var(--streak);
   text-align: center;
 }
-.badge {
-  display: inline-block;
-  padding: 12px 20px;
-  border-radius: var(--radius);
-  text-align: center;
-  font-size: 14px;
-  margin: 6px;
+
+/* 徽章容器：图片+文字垂直堆叠 */
+.badge-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 10px;
 }
-.badge.flame { background: #FFF0E0; color: var(--streak); }
-.badge.star { background: #FFF8DC; color: #DAA520; }
-.badge.star2 { background: #E8F5E9; color: var(--success); }
-.badge.strong { background: #E3F2FD; color: #1976D2; }
+
+/* 徽章图片：圆形裁切，阴影 */
+.badge-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.badge-img:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}
+
+/* 徽章文字标签 */
+.badge-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.badge-label.flame  { background: #FFF0E0; color: #c56000; }
+.badge-label.star   { background: #FFF8DC; color: #b8860b; }
+.badge-label.star2 { background: #E8F5E9; color: #2E7D32; }
+.badge-label.strong { background: #E3F2FD; color: #1565C0; }
 
 /* 月历 */
 .cal-grid {

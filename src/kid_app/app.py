@@ -236,19 +236,24 @@ def achievements_page():
 
     badges = []
     if streak >= 3:
-        badges.append(("fire", str(streak) + " days", "flame"))
+        badges.append(("fire", str(streak) + " 天连续", "flame"))
     if streak >= 7:
-        badges.append(("star", str(streak) + " day streak!", "star"))
+        badges.append(("star", "7天连续达成！", "star"))
     if total_mins >= 60:
-        badges.append(("medal", "Practice Pro", "star2"))
+        badges.append(("medal", "练习达人", "star2"))
     if week_mins >= 60:
-        badges.append(("flex", "Week Star", "strong"))
+        badges.append(("flex", "本周之星", "strong"))
 
     badge_html = ""
-    for icon, label, cls in badges:
-        badge_html += "<div class='badge " + cls + "'>" + icon + "<br><small>" + label + "</small></div>"
+    for icon_type, label, cls in badges:
+        badge_html += (
+            "<div class='badge-wrap'>"
+            "<img src='/static/badges/" + icon_type + "_badge.png' alt='" + label + "' class='badge-img " + cls + "'>"
+            "<div class='badge-label " + cls + "'>" + label + "</div>"
+            "</div>"
+        )
     if not badge_html:
-        badge_html = "<p style='color:#7F8C8D;text-align:center;'>No badges yet, keep going!</p>"
+        badge_html = "<p style='color:#7F8C8D;text-align:center;'>还没有徽章，继续加油！</p>"
 
     return render(
         "achievements",
