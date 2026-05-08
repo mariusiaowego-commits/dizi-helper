@@ -242,7 +242,7 @@ def achievements_page():
     if total_mins >= 60:
         badges.append(("medal", "练习达人", "star2"))
     if week_mins >= 60:
-        badges.append(("flex", "本周之星", "strong"))
+        badges.append(("week_star", "本周之星", "strong"))
 
     badge_html = ""
     for icon_type, label, cls in badges:
