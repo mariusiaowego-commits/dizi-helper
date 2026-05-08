@@ -931,7 +931,7 @@ from . import practice as practice_module
 @practice_app.command("log")
 def practice_log(
     ctx: typer.Context,
-    date: str = typer.Option(None, "--date", "-d", help="日期，格式 YYYY-MM-DD，默认昨天"),
+    date: str = typer.Option(None, "--date", "-d", help="日期，格式 YYYY-MM-DD，默认今天"),
     log: Optional[str] = typer.Option(None, "--log", "-l", help="详细练习记录/进展"),
     items: Annotated[list[str], typer.Argument(help="练习内容，格式 项目:分钟")] = [],
 ):
@@ -949,8 +949,8 @@ def practice_log(
     if date:
         practice_date = parse_date(date)
     else:
-        # 默认补录昨天
-        practice_date = dt.date.today() - dt.timedelta(days=1)
+        # 默认今天（与 practice today 行为一致）
+        practice_date = dt.date.today()
 
     # 解析 items（初步解析，还未写入 DB）
     parsed = []
