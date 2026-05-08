@@ -130,7 +130,7 @@ def home():
 def prepare_page():
     today = dt.date.today()
     ws = week_start_of(today)
-    assign = db.get_weekly_assignment(ws)
+    assign = db.get_weekly_assignment_for_week(today)  # 查"包含今天的那周"，不管存的是周一还是上课日
 
     assign_html = "<li>还没录本周要求 💭 告诉爸爸帮你加上哦</li>"
     if assign and assign.get("items"):

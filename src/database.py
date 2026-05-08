@@ -479,6 +479,29 @@ class Database:
             ''', (week_start_date.isoformat(), json.dumps(merged_items, ensure_ascii=False), final_notes, json.dumps(merged_images, ensure_ascii=False)))
             conn.commit()
 
+    def get_weekly_assignment_for_week(self, anchor_date: dt.date) -> Optional[Dict]:
+        """查找最接近 anchor_date 的那条作业记录（week_start_date <= anchor_date，按时间倒序取第一条）。
+        这样不管家长存的是周一还是周中上课日，都能匹配到对应的自然周。"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM weekly_assignments
+                WHERE week_start_date <= ?
+                ORDER BY week_start_date DESC
+                LIMIT 1
+            ''', (anchor_date.isoformat(),))
+            row = cursor.fetchone()
+            if row:
+                import json
+                return {
+                    'id': row['id'],
+                    'week_start_date': dt.date.fromisoformat(row['week_start_date']),
+                    'items': json.loads(row['items']),
+                    'notes': row['notes'],
+                    'images': json.loads(row['images']) if row['images'] else []
+                }
+            return None
+
     def get_weekly_assignment(self, week_start_date: dt.date) -> Optional[Dict]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
