@@ -40,6 +40,22 @@ dizi + cal(endar) = dizical
 
 > 通过 `dizical practice report` 或 alcove profile 的 dizical-report skill 生成
 
+## 👧 dizical-kid（iPad 儿童界面）
+
+面向 7 岁儿童的竹笛练习助手，支持 iPad Safari 访问。
+
+```bash
+# 启动服务
+dizical kid start
+
+# iPad 访问
+# http://<本机IP>:8765
+```
+
+**5 个页面**：`/prepare` 准备页 · `/practice` 练习打卡 · `/achievements` 成就徽章 · `/report` 月报 · `/praise` 表扬页
+
+**成就徽章**：连续练习/累计时长达成后自动解锁，包含火焰/星星/奖牌/本周之星四种
+
 ---
 
 ## 🚀 Quick Start
