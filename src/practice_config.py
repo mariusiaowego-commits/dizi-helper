@@ -387,24 +387,58 @@ def _do_relation():
 # 归档
 # ─────────────────────────────────────────
 
-def _archive_toggle(switch_to: bool):
-    """切换小科目归档状态"""
-    items = db.get_practice_items(active_only=False)
-    if not items:
-        _print("  （无小科目）")
-        return
-    label = "归档" if switch_to else "取消归档"
-    candidates = [it for it in items if bool(it.get('is_archived')) == (not switch_to)]
+# ─────────────────────────────────────────
+# 归档
+# ─────────────────────────────────────────
+
+def _do_archive():
+    """显示已归档清单 + 操作入口"""
+    all_items = db.get_practice_items(active_only=False)
+    archived = [it for it in all_items if it.get('is_archived')]
+
+    _print("\n─── 已归档小科目 ───")
+    if not archived:
+        _print("  （目前没有已归档的小科目）")
+    else:
+        cats = {c['id']: c['name'] for c in get_categories()}
+        for it in archived:
+            cat = cats.get(it.get('category_id'), '')
+            path = f" → {cat}" if cat else ""
+            _print(f"  [{it['id']}] {it['name']}{path}")
+    _print(f"\n  共 {len(archived)} 个已归档")
+    _print("\n─── 归档操作 ───")
+    _print("  a 归档小科目  u 取消归档  q 返回")
+    op = _input("  选择: ").strip().lower()
+    if op == 'a':
+        _archive_choose(switch_to=True)
+    elif op == 'u':
+        _archive_choose(switch_to=False)
+    else:
+        _print("  返回")
+
+
+def _archive_choose(switch_to: bool):
+    """选择要归档/取消归档的小科目"""
+    all_items = db.get_practice_items(active_only=False)
+    # 归档：选 is_archived=0 的；取消归档：选 is_archived=1 的
+    candidates = [it for it in all_items if bool(it.get('is_archived')) == (not switch_to)]
+    cats = {c['id']: c['name'] for c in get_categories()}
+
+    action = "归档" if switch_to else "取消归档"
+    state = "已归档" if not switch_to else "未归档"
+
+    _print(f"\n─── 选择要{action}的小科目（当前状态：{state}）───")
     if not candidates:
-        _print(f"  没有需要{label}的小科目")
+        _print(f"  没有需要{action}的小科目（都已{action}或无小科目）")
         return
-    _print(f"\n  当前未{label}的小科目：")
+
     for it in candidates:
-        cat_name = next((c['name'] for c in get_categories() if c['id'] == it.get('category_id')), None)
-        tag = f" → {cat_name}" if cat_name else ""
-        _print(f"  [{it['id']}] {it['name']}{tag}")
-    _print("  多个ID用空格分隔，直接回车返回")
-    sid = _input(f"  输入要{label}的小科目ID: ").strip()
+        cat = cats.get(it.get('category_id'), '')
+        path = f" → {cat}" if cat else ""
+        _print(f"  [{it['id']}] {it['name']}{path}")
+
+    _print("\n  多个ID用空格分隔，直接回车返回")
+    sid = _input(f"  输入要{action}的小科目ID: ").strip()
     if not sid:
         _print("  取消")
         return
@@ -413,10 +447,11 @@ def _archive_toggle(switch_to: bool):
     except ValueError:
         _print("  无效ID")
         return
+
     for iid in ids:
         target = next((it for it in candidates if it['id'] == iid), None)
         if not target:
-            _print(f"  ⚠️  ID {iid} 不存在，跳过")
+            _print(f"  ⚠️  ID {iid} 不在可选范围内，跳过")
             continue
         if switch_to:
             db.archive_practice_item(iid)
@@ -425,7 +460,6 @@ def _archive_toggle(switch_to: bool):
             db.unarchive_practice_item(iid)
             _print(f"  ✅ 「{target['name']}」已取消归档")
 
-    # 显示结果
     remaining = [it for it in db.get_practice_items(active_only=False) if it.get('is_archived')]
     _print(f"\n  当前已归档 {len(remaining)} 个小科目")
 
