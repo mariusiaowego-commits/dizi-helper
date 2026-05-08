@@ -952,9 +952,15 @@ def practice_log(
         # 默认今天（与 practice today 行为一致）
         practice_date = dt.date.today()
 
-    # 解析 items（初步解析，还未写入 DB）
+    # 解析 items（支持空格分隔 或 逗号分隔）
+    # 格式: "单吐练习:7 回娘家:4" 或 "单吐练习:7，回娘家:4"
+    raw_parts = ' '.join(items_list) if items_list else ''
+    # 先把逗号统一替换为空格（中文逗号、英文逗号）
+    raw_parts = raw_parts.replace('，', ' ').replace(',', ' ')
+    all_parts = raw_parts.split()
+
     parsed = []
-    for part in items_list:
+    for part in all_parts:
         if ':' in part:
             item_name, mins = part.split(':', 1)
             try:
