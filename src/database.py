@@ -68,6 +68,7 @@ class Database:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     category_id INTEGER REFERENCES practice_categories(id),
+                    sort_order INTEGER NOT NULL DEFAULT 0,
                     is_active BOOLEAN NOT NULL DEFAULT 1,
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
@@ -134,6 +135,8 @@ class Database:
             item_columns = [col['name'] for col in cursor.fetchall()]
             if 'category_id' not in item_columns:
                 cursor.execute('ALTER TABLE practice_items ADD COLUMN category_id INTEGER REFERENCES practice_categories(id)')
+            if 'sort_order' not in item_columns:
+                cursor.execute('ALTER TABLE practice_items ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0')
 
             # Create indexes
             cursor.execute('''
@@ -384,9 +387,9 @@ class Database:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             if active_only:
-                cursor.execute('SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id WHERE pi.is_active = 1 ORDER BY pc.sort_order, pi.name')
+                cursor.execute('SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id WHERE pi.is_active = 1 ORDER BY pc.sort_order, pi.sort_order, pi.name')
             else:
-                cursor.execute('SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id ORDER BY pc.sort_order, pi.name')
+                cursor.execute('SELECT pi.*, pc.name as category_name FROM practice_items pi LEFT JOIN practice_categories pc ON pi.category_id = pc.id ORDER BY pc.sort_order, pi.sort_order, pi.name')
             return [dict(row) for row in cursor.fetchall()]
 
     def update_practice_item_category(self, item_id: int, category_id: Optional[int]) -> None:
@@ -411,6 +414,12 @@ class Database:
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('UPDATE practice_items SET name = ? WHERE id = ?', (name, item_id))
+            conn.commit()
+
+    def update_practice_item_sort_order(self, item_id: int, sort_order: int) -> None:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('UPDATE practice_items SET sort_order = ? WHERE id = ?', (sort_order, item_id))
             conn.commit()
 
     def merge_practice_item(self, from_id: int, to_id: int, from_name: str, to_name: str) -> None:
@@ -479,6 +488,29 @@ class Database:
             ''', (week_start_date.isoformat(), json.dumps(merged_items, ensure_ascii=False), final_notes, json.dumps(merged_images, ensure_ascii=False)))
             conn.commit()
 
+    def get_weekly_assignment_for_week(self, anchor_date: dt.date) -> Optional[Dict]:
+        """查找最接近 anchor_date 的那条作业记录（week_start_date <= anchor_date，按时间倒序取第一条）。
+        这样不管家长存的是周一还是周中上课日，都能匹配到对应的自然周。"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT * FROM weekly_assignments
+                WHERE week_start_date <= ?
+                ORDER BY week_start_date DESC
+                LIMIT 1
+            ''', (anchor_date.isoformat(),))
+            row = cursor.fetchone()
+            if row:
+                import json
+                return {
+                    'id': row['id'],
+                    'week_start_date': dt.date.fromisoformat(row['week_start_date']),
+                    'items': json.loads(row['items']),
+                    'notes': row['notes'],
+                    'images': json.loads(row['images']) if row['images'] else []
+                }
+            return None
+
     def get_weekly_assignment(self, week_start_date: dt.date) -> Optional[Dict]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -537,6 +569,23 @@ class Database:
         if items and isinstance(items[0], str):
             return [{'item': name, 'minutes': 0} for name in items]
         return items
+
+    def remove_daily_practice_item(self, date: dt.date, item_name: str) -> None:
+        """从指定日期的练习记录中删除一个项目（减少其分钟数），若无其他项目则删除整条记录"""
+        existing = self.get_daily_practice(date)
+        if not existing:
+            return
+        items = existing.get("items", [])
+        new_items = [it for it in items if it.get("item") != item_name]
+        if not new_items:
+            # 删除整条记录
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM daily_practices WHERE date = ?', (date.isoformat(),))
+                conn.commit()
+        else:
+            new_total = sum(it.get("minutes", 0) for it in new_items)
+            self.save_daily_practice(date, new_items, new_total, existing.get("log"))
 
     def get_daily_practice(self, date: dt.date) -> Optional[Dict]:
         import json

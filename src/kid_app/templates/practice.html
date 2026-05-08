@@ -18,6 +18,14 @@
     .today-stat { text-align: center; color: #7F8C8D; font-size: 16px; margin-top: 8px; }
     .confirm-area { display: none; text-align: center; margin-top: 20px; }
     .confirm-area.show { display: block; }
+    .today-records { margin-top: 20px; }
+    .today-records h3 { font-size: 18px; color: #4ECDC4; margin-bottom: 10px; }
+    .record-item { display: flex; align-items: center; justify-content: space-between; background: #FFF; border: 2px solid #E0E0E0; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
+    .record-item .item-name { font-size: 16px; font-weight: bold; color: #333; }
+    .record-item .item-mins { font-size: 14px; color: #7F8C8D; margin-top: 2px; }
+    .record-item .delete-btn { background: #FF6B6B; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; flex-shrink: 0; line-height: 32px; text-align: center; }
+    .record-item .delete-btn:active { background: #e55a5a; }
+    .empty-records { text-align: center; color: #BDBDBD; font-size: 14px; padding: 12px; }
   </style>
 </head>
 <body>
@@ -31,6 +39,7 @@
 
   <div class="card">
     <h2 style="color:#FF6B6B;">🎵 选择练习项目</h2>
+    <input type="text" id="itemFilter" placeholder="🔍 搜索..." style="width:100%;padding:12px;border-radius:12px;border:2px solid #E0E0E0;font-size:16px;margin-bottom:12px;" oninput="filterItems(this.value)">
     {{items_html}}
     <div class="today-stat">今日已练习: {{today_mins}} 分钟</div>
   </div>
@@ -55,17 +64,87 @@
     </div>
   </div>
 
+  <div class="card today-records" id="todayRecords">
+    <h3>📋 今日练习记录</h3>
+    <div id="recordsList"></div>
+  </div>
+
   <script>
+    // Short completion chime (base64 WAV of a pleasant two-tone ding)
+    function playChime() {
+      try {
+        new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQYMTYq9n6p7IQQ5jcOyp5mMZEA3YK3b4LyDeEBpp9XjtnVJUJLU4s2zak1ToNXm4qd2UFmn1eXeqHFWYqrc5cClcF5sreDnw5B0YW2s4OPGj3hmcLDl5cB/dGVysujnxH13aHS07enGf3dqdrTu6sR6eGx4tO/qw3l9b3q18OnBdn9xe7bx6sB4gHF9ufLqwHWAdn+69OvAdoF3gL316r53gnmCefTrvneDeoN69e28d4N7g3n17rx3hHyEevXuuneFfIV79u67d4Z9hXv27rt3h3yGfPbuuneHfod99u67d4h+h3z27rt3iH+Hffbuu3eIf4d99u67d4hA').play();
+      } catch(e) {}
+    }
+
+    // Filter practice items by search query
+    function filterItems(q) {
+      q = q.trim().toLowerCase();
+      document.querySelectorAll('.item-btn').forEach(btn => {
+        btn.style.display = (q === '' || btn.textContent.toLowerCase().includes(q)) ? '' : 'none';
+      });
+      document.querySelectorAll('.item-grid').forEach(grid => {
+        const hasVisible = Array.from(grid.querySelectorAll('.item-btn')).some(b => b.style.display !== 'none');
+        const prev = grid.previousElementSibling;
+        if (prev && prev.tagName === 'H3') {
+          prev.style.display = hasVisible ? '' : 'none';
+        }
+      });
+    }
+
     let selectedItem = null;
+    let selectedItemId = null;
     let duration = 10;
     let elapsed = 0;
     let timerInterval = null;
     let started = false;
+    let todayDate = new Date().toISOString().split('T')[0];
 
-    function selectItem(name) {
+    // Load today's records from API
+    async function loadTodayRecords() {
+      try {
+        let res = await fetch('/api/practices/' + todayDate);
+        let data = await res.json();
+        let recordsList = document.getElementById('recordsList');
+        if (!data.items || data.items.length === 0) {
+          recordsList.innerHTML = '<div class="empty-records">还没有练习记录，开始练习吧！</div>';
+        } else {
+          recordsList.innerHTML = data.items.map(it => `
+            <div class="record-item">
+              <div>
+                <div class="item-name">${it.item}</div>
+                <div class="item-mins">${it.minutes} 分钟</div>
+              </div>
+              <button class="delete-btn" onclick="deleteRecord('${it.item}')">✕</button>
+            </div>
+          `).join('');
+        }
+        // Update today's minutes stat
+        document.querySelector('.today-stat') && (document.querySelector('.today-stat').textContent = '今日已练习: ' + data.total_minutes + ' 分钟');
+      } catch(e) {
+        document.getElementById('recordsList').innerHTML = '<div class="empty-records">加载失败</div>';
+      }
+    }
+
+    async function deleteRecord(itemName) {
+      if (!confirm('删除「' + itemName + '」这条记录？')) return;
+      try {
+        await fetch('/api/log', {
+          method: 'DELETE',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({date: todayDate, item: itemName})
+        });
+        loadTodayRecords();
+      } catch(e) {
+        alert('删除失败');
+      }
+    }
+
+    function selectItem(name, id) {
       document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
       event.target.classList.add('selected');
       selectedItem = name;
+      selectedItemId = id;
       document.getElementById('timer-card').style.display = 'block';
       document.getElementById('timer-card').scrollIntoView({behavior: 'smooth'});
       resetTimer();
@@ -103,6 +182,7 @@
           if (elapsed >= duration * 60) {
             clearInterval(timerInterval);
             document.getElementById('confirmArea').classList.add('show');
+            playChime();
           }
         }, 1000);
       }
@@ -117,18 +197,27 @@
 
     async function submitPractice() {
       if (!selectedItem || elapsed === 0) return;
-      let date = new Date().toISOString().split('T')[0];
       let res = await fetch('/api/log', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date, item: selectedItem, minutes: elapsed, log: ''})
+        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: elapsed, log: ''})
       });
       let json = await res.json();
       if (json.ok) {
-        alert('打卡成功！');
-        location.reload();
+        let confirmArea = document.getElementById('confirmArea');
+        confirmArea.classList.add('celebrate');
+        document.querySelector('.confirm-area p').innerHTML = '🎉 打卡成功！太棒啦！';
+        setTimeout(() => {
+          resetTimer();
+          document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
+          selectedItem = null;
+          loadTodayRecords();
+        }, 1800);
       }
     }
+
+    // Init
+    loadTodayRecords();
   </script>
 </body>
 </html>

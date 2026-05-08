@@ -58,6 +58,24 @@ def total_practice_minutes():
     practices = db.get_daily_practices_in_range(dt.date(2020, 1, 1), dt.date.today())
     return sum(p["total_minutes"] for p in practices)
 
+# ─── API: 某日练习明细 ─────────────────────────────────────────────────────
+@app.get("/api/practices/{date_str}")
+def api_practice_day(date_str: str):
+    """返回指定日期的练习明细"""
+    try:
+        day = dt.date.fromisoformat(date_str)
+    except ValueError:
+        return JSONResponse({"error": "无效日期格式"}, status_code=400)
+    practice = db.get_daily_practice(day)
+    if not practice:
+        return JSONResponse({"date": date_str, "items": [], "total_minutes": 0, "log": ""})
+    return JSONResponse({
+        "date": date_str,
+        "items": practice.get("items", []),
+        "total_minutes": practice.get("total_minutes", 0),
+        "log": practice.get("log", "")
+    })
+
 # ─── API: 练习项目列表 ─────────────────────────────────────────────────────
 @app.get("/api/items")
 def api_items():
@@ -93,6 +111,27 @@ async def api_log(request: Request):
     db.save_daily_practice(date, items, total, log_note)
     return JSONResponse({"ok": True, "total": total})
 
+# ─── API: 删除单条练习记录 ─────────────────────────────────────────────────
+@app.delete("/api/log")
+async def api_delete_log(request: Request):
+    body = json.loads(await request.body())
+    date_str = body.get("date")
+    item_name = body.get("item")
+    if not date_str or not item_name:
+        return JSONResponse({"ok": False, "error": "缺少参数"}, status_code=400)
+    date = dt.date.fromisoformat(date_str)
+    db.remove_daily_practice_item(date, item_name)
+    return JSONResponse({"ok": True})
+
+# ─── API: 更新练习项目排序 ─────────────────────────────────────────────────
+@app.put("/api/items/order")
+async def api_update_items_order(request: Request):
+    body = json.loads(await request.body())
+    orders = body.get("orders", [])
+    for entry in orders:
+        db.update_practice_item_sort_order(entry["id"], entry["sort_order"])
+    return JSONResponse({"ok": True})
+
 # ─── API: 表扬海报生成 ─────────────────────────────────────────────────────
 # 已下线：图片生成需在 Hermes Agent 对话窗口进行，见 /praise 页面
 @app.post("/api/praise")
@@ -111,7 +150,7 @@ def home():
 def prepare_page():
     today = dt.date.today()
     ws = week_start_of(today)
-    assign = db.get_weekly_assignment(ws)
+    assign = db.get_weekly_assignment_for_week(today)
 
     assign_html = "<li>还没录本周要求 💭 告诉爸爸帮你加上哦</li>"
     if assign and assign.get("items"):
@@ -160,14 +199,14 @@ def practice_page():
         cat = cat_map.get(cid, "Other")
         if cat not in by_cat:
             by_cat[cat] = []
-        by_cat[cat].append(it["name"])
+        by_cat[cat].append(it)
 
     items_html = ""
-    for cat, names in by_cat.items():
+    for cat, cat_items in sorted(by_cat.items(), key=lambda x: next((c["sort_order"] for c in categories if c["name"] == x[0]), 99)):
         items_html += "<h3 style='font-size:16px;color:#4ECDC4;margin:12px 0 6px;'>" + cat + "</h3>"
         items_html += "<div class='item-grid'>"
-        for name in names:
-            items_html += "<button class='item-btn' onclick=\"selectItem('" + name + "')\">" + name + "</button>"
+        for it in sorted(cat_items, key=lambda x: x.get("sort_order", 0)):
+            items_html += "<button class='item-btn' data-id='" + str(it["id"]) + "' onclick=\"selectItem('" + it["name"] + "', " + str(it["id"]) + ")\">" + it["name"] + "</button>"
         items_html += "</div>"
 
     if not items_html:
@@ -198,19 +237,24 @@ def achievements_page():
 
     badges = []
     if streak >= 3:
-        badges.append(("fire", str(streak) + " days", "flame"))
+        badges.append(("fire", str(streak) + " 天连续", "flame"))
     if streak >= 7:
-        badges.append(("star", str(streak) + " day streak!", "star"))
+        badges.append(("star", "7天连续达成！", "star"))
     if total_mins >= 60:
-        badges.append(("medal", "Practice Pro", "star2"))
+        badges.append(("medal", "练习达人", "star2"))
     if week_mins >= 60:
-        badges.append(("flex", "Week Star", "strong"))
+        badges.append(("week_star", "本周之星", "strong"))
 
     badge_html = ""
-    for icon, label, cls in badges:
-        badge_html += "<div class='badge " + cls + "'>" + icon + "<br><small>" + label + "</small></div>"
+    for icon_type, label, cls in badges:
+        badge_html += (
+            "<div class='badge-wrap'>"
+            "<img src='/static/badges/" + icon_type + "_badge.png' alt='" + label + "' class='badge-img " + cls + "'>"
+            "<div class='badge-label " + cls + "'>" + label + "</div>"
+            "</div>"
+        )
     if not badge_html:
-        badge_html = "<p style='color:#7F8C8D;text-align:center;'>No badges yet, keep going!</p>"
+        badge_html = "<p style='color:#7F8C8D;text-align:center;'>还没有徽章，继续加油！</p>"
 
     return render(
         "achievements",
@@ -258,7 +302,7 @@ def report_page():
             label = str(d) + "<br><small>" + str(mins) + "m</small>"
         if day_date == today:
             cls += " today"
-        cal_html += "<div class='" + cls + "'>" + label + "</div>"
+        cal_html += "<div class='" + cls + "' data-date='" + key + "'>" + label + "</div>"
 
     return render(
         "report",

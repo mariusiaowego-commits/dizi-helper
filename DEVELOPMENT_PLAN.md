@@ -5,7 +5,7 @@
 
 **作者**: mtt
 **创建时间**: 2026-04-25
-**最后更新**: 2026-05-03 15:25
+**最后更新**: 2026-05-08（Kid Interface Session）
 
 ---
 
@@ -421,6 +421,28 @@ DIZICAL_DB_PATH=data/dizical.db
 - 数据库操作使用参数化查询，防止 SQL 注入
 - 所有对外接口有异常处理和重试机制
 - 配置通过 pydantic-settings 统一管理
+
+---
+
+## 👧 Kid Interface（iPad 友好界面）
+
+### ✅ 本次 Session 完成
+- [x] practice_query TUI bugs 修复（curses.nodelay / _fuzzy_match None / h键→homework view）
+- [x] Kid iPad 界面全面 review（5个页面：prepare/practice/achievements/report/praise）
+- [x] 编写 `PRD-kid-interface-v0.1.md`（已保存 Obsidian）
+- [x] 9 个 issues 记录，P0 critical bugs 修复中
+
+### 🎯 P0 优先级修复（feat/kid-ui-refresh）
+1. 打卡后显示进度记录
+2. 重复打卡拦截
+3. 打卡成功提示优化
+4. achievements 空状态处理
+5. 进度条动画
+6. prepare 每日一练卡片
+7. praise 鼓励语个性化
+
+### 📄 PRD 文档
+- Obsidian: `tqob/05 Coding/project-dizical/PRD-kid-interface-v0.1.md`
 
 ---
 

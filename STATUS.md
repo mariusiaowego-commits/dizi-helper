@@ -1,18 +1,17 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-07
-**当前阶段**: Phase 3 完成（练习报告信息图已生成）
+**最后更新**: 2026-05-08
+**当前阶段**: Kid Interface Phase 1 完成（feat/kid-ui-refresh 已合并）
 
 **历史分支**:
-- `fix/src-import-error` — items 格式兼容修复，已合并 #24
-- `hermes/hermes-eb075c87` — 已废弃
+- `feat/kid-ui-refresh` — Kid UI 改进：badge图片/praise返回按钮/练习记录删除/sort_order，已合并
 
 ---
 
 ## 📂 项目位置
 
 - **main 分支 (生产)**: `/Users/mt16/dev/dizical/`
-- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-a761b8a5/`
+- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-3bb46bdd/`
 - **Git 模式**: worktree 模式，hermes/hermes-a761b8a5 与 main 完全同步
 - **remote**: origin/main 已切 SSH，正常连接
 
@@ -91,11 +90,16 @@ dizical obsidian export 4          # 导出4月报告
 
 ---
 
-## 📦 待提交改动
+## 👧 Kid Interface Phase 1 完成
 
-| 文件 | 说明 |
-|------|------|
-| 无 | 所有代码已提交并同步，main 最新 `a2a7d93` |
+### 本次 Session 完成
+- [x] practice_query TUI bugs 修复
+- [x] Kid iPad 界面全面 review（5个页面测试）
+- [x] praise tab PIN overlay 加「返回首页」按钮
+- [x] practice_items 加 sort_order 字段 + 拖拽排序
+- [x] DELETE /api/log + 练习记录逐条删除 + 撤销
+- [x] 设计变量抽离 design-tokens.css
+- [x] 成就徽章 emoji → GPT-4o 生成图片 badge（4个）
 
 ## 📊 最近提交 (2026-05-07)
 
