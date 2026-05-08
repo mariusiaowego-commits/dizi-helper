@@ -69,7 +69,6 @@ def api_practice_day(date_str: str):
     practice = db.get_daily_practice(day)
     if not practice:
         return JSONResponse({"date": date_str, "items": [], "total_minutes": 0, "log": ""})
-    # items 是列表: [{"item": "...", "minutes": N}, ...]
     return JSONResponse({
         "date": date_str,
         "items": practice.get("items", []),
@@ -112,8 +111,28 @@ async def api_log(request: Request):
     db.save_daily_practice(date, items, total, log_note)
     return JSONResponse({"ok": True, "total": total})
 
+# ─── API: 删除单条练习记录 ─────────────────────────────────────────────────
+@app.delete("/api/log")
+async def api_delete_log(request: Request):
+    body = json.loads(await request.body())
+    date_str = body.get("date")
+    item_name = body.get("item")
+    if not date_str or not item_name:
+        return JSONResponse({"ok": False, "error": "缺少参数"}, status_code=400)
+    date = dt.date.fromisoformat(date_str)
+    db.remove_daily_practice_item(date, item_name)
+    return JSONResponse({"ok": True})
+
+# ─── API: 更新练习项目排序 ─────────────────────────────────────────────────
+@app.put("/api/items/order")
+async def api_update_items_order(request: Request):
+    body = json.loads(await request.body())
+    orders = body.get("orders", [])
+    for entry in orders:
+        db.update_practice_item_sort_order(entry["id"], entry["sort_order"])
+    return JSONResponse({"ok": True})
+
 # ─── API: 表扬海报生成 ─────────────────────────────────────────────────────
-# 已下线：图片生成需在 Hermes Agent 对话窗口进行，见 /praise 页面
 @app.post("/api/praise")
 async def api_praise(request: Request):
     return JSONResponse({
@@ -130,7 +149,7 @@ def home():
 def prepare_page():
     today = dt.date.today()
     ws = week_start_of(today)
-    assign = db.get_weekly_assignment_for_week(today)  # 查"包含今天的那周"，不管存的是周一还是上课日
+    assign = db.get_weekly_assignment_for_week(today)
 
     assign_html = "<li>还没录本周要求 💭 告诉爸爸帮你加上哦</li>"
     if assign and assign.get("items"):
@@ -179,14 +198,14 @@ def practice_page():
         cat = cat_map.get(cid, "Other")
         if cat not in by_cat:
             by_cat[cat] = []
-        by_cat[cat].append(it["name"])
+        by_cat[cat].append(it)
 
     items_html = ""
-    for cat, names in by_cat.items():
+    for cat, cat_items in sorted(by_cat.items(), key=lambda x: next((c["sort_order"] for c in categories if c["name"] == x[0]), 99)):
         items_html += "<h3 style='font-size:16px;color:#4ECDC4;margin:12px 0 6px;'>" + cat + "</h3>"
         items_html += "<div class='item-grid'>"
-        for name in names:
-            items_html += "<button class='item-btn' onclick=\"selectItem('" + name + "')\">" + name + "</button>"
+        for it in sorted(cat_items, key=lambda x: x.get("sort_order", 0)):
+            items_html += "<button class='item-btn' data-id='" + str(it["id"]) + "' onclick=\"selectItem('" + it["name"] + "', " + str(it["id"]) + ")\">" + it["name"] + "</button>"
         items_html += "</div>"
 
     if not items_html:
