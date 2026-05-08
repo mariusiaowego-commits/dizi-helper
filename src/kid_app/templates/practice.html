@@ -191,7 +191,7 @@
     function finishEarly() {
       clearInterval(timerInterval);
       started = false;
-      document.getElementById('confirmMins').textContent = elapsed;
+      document.getElementById('confirmMins').textContent = Math.floor(elapsed / 60);
       document.getElementById('confirmArea').classList.add('show');
     }
 
@@ -200,7 +200,7 @@
       let res = await fetch('/api/log', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: elapsed, log: ''})
+        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: Math.floor(elapsed / 60), log: ''})
       });
       let json = await res.json();
       if (json.ok) {
