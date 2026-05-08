@@ -1,10 +1,20 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
 **最后更新**: 2026-05-08
-**当前阶段**: Kid Interface Phase 1 完成（feat/kid-ui-refresh 已合并）+ Timer Bug 修复
+**当前阶段**: Kid UI Phase 2 完成 — 底部Tab导航 + practice_config归档 + CLI多项修复
 
 **历史分支**:
-- `feat/kid-ui-refresh` — Kid UI 改进：badge图片/praise返回按钮/练习记录删除/sort_order，已合并
+- `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
+- 本次 session 全在 main 开发，13个新 commit 直接推送
+
+---
+
+## 📂 项目位置
+
+- **main 分支 (生产)**: `/Users/mt16/dev/dizical/`
+- **hermes 分支 (当前会话)**: `/Users/mt16/dev/dizical/.worktrees/hermes-xxx/`
+- **Git 模式**: worktree 模式，hermes 与 main 完全同步
+- **remote**: origin/main 已切 SSH，正常连接
 
 ---
 
@@ -90,41 +100,40 @@ dizical obsidian export 4          # 导出4月报告
 
 ---
 
-## 👧 Kid Interface Phase 1 完成
+## 👧 Kid UI Phase 2 完成（2026-05-08）
 
 ### 本次 Session 完成
-- [x] practice_query TUI bugs 修复
-- [x] Kid iPad 界面全面 review（5个页面测试）
-- [x] praise tab PIN overlay 加「返回首页」按钮
-- [x] practice_items 加 sort_order 字段 + 拖拽排序
-- [x] DELETE /api/log + 练习记录逐条删除 + 撤销
-- [x] 设计变量抽离 design-tokens.css
-- [x] 成就徽章 emoji → GPT-4o 生成图片 badge（4个）
+- [x] **底部 Tab 导航** - 5个页面全部改为 position:fixed bottom，适合 iPad 单手操作
+- [x] **practice_config TUI 重构** - 每个子菜单 while True 自循环，q 逐层返回，消灭死角
+- [x] **practice_config 归档菜单** - 选项4：进菜单先显示已归档清单，unarchive 行为修正
+- [x] **kid-ui 归档逻辑** - 已归档小科目默认隐藏，底部归档区按钮点击后弹窗选择
+- [x] **practice log 逗号分隔** - 支持 `单吐:7，回娘家:4` 中文/英文逗号多种格式
+- [x] **practice log 默认日期修正** - 从"昨天"改为"今天"，与 `practice today` 一致
+- [x] **save_daily_practice 追加修复** - 同日期多次 log 改为合并（同名累加），不再覆盖
+- [x] **修复归档 q 键无效** - `_archive_choose` 两次 `input()` 导致第二次读空字符串
+- [x] **修复排序验证缺失** - `_category_sort` 增加重复ID检查 + 完整性覆盖检查
 
-## 📊 最近提交 (2026-05-08)
-
+### 历史提交 (2026-05-08)
 | Commit | 内容 |
 |--------|------|
-| `a90e6f6` | fix(kid-ui): timer elapsed seconds vs minutes confusion |
-| `a2a7d93` | fix: items 格式兼容 + threading.sleep 修复 (#24) |
-| `a526ea2` | fix: stop auto-creating uncategorized practice items on save |
-| `64779f2` | feat(kid-ui): PIN-protected praise tab, ZCOOL KuaiLe font, iPad UX (#22) |
-| `4ac6e6f` | fix: 修复 ModuleNotFoundError: No module named 'src' (#23) |
-| `44be8f8` | feat: add dizical-kid web app for 7-year-old iPad interface |
+| `5d33c74` | docs: 更新README - kid-ui底部Tab/归档/CLI逗号分隔 |
+| `ced8c4c` | feat(cli): practice log 支持逗号分隔多条记录 |
+| `4b47107` | fix(database): save_daily_practice 改为追加合并而非整体替换 |
+| `673b36e` | fix(cli): practice log 默认日期改为今天，与 practice today 一致 |
+| `290b6a1` | fix(practice-config): 修复归档q键无效+排序验证缺失 |
+| `9eeeb01` | refactor(practice-config): 全面重构TUI交互规范 |
+| `f546d00` | feat(kid-ui): 固定底部Tab导航 + practice_config归档管理 |
+| `a57140b` | feat(kid-ui): 4项优化 - 老科目归档/底部Tab/计时保护/快速录入/全屏烟花 |
 
 ## 🚀 下一步开发计划
 
-### 优先级 P0 - 数据安全 ✅
-1. **数据库备份** - 定期自动备份 SQLite 文件到本地（data/backups/）
+### 优先级 P0 - 数据安全 ✅（部分完成，待补充 iCloud 同步）
+1. **数据库备份** - 定期自动备份 SQLite 文件到本地（data/backups/）✅ 本地
 2. **备份 iCloud 同步** - 自动同步到 iCloud 目标路径
 3. **备份验证** - 每次备份后 sqlite3 连接验证可读
 
 ### 优先级 P1 - 练习录入防误录 ✅
-4. **Phase 2** - 模糊匹配 + 确认拦截（_similarity / find_similar_items / practice_log 拦截）
-
-### 优先级 P2 - 增强功能
-5. **复习计划优化** - 基于老师每周要求智能生成复习建议
-6. **进度提醒增强** - 根据练习数据动态调整提醒策略
+4. **模糊匹配 + 确认拦截** - 已完成（_similarity / find_similar_items / practice_log 拦截）
 
 ---
 
