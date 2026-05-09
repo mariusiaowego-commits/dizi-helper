@@ -12,15 +12,13 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 
-# 项目数据目录（指向 main repo 的 data/，worktree 和 main 共用）
+# 项目数据目录（指向项目根目录，data/ 是数据子目录）
 _DATA_ROOT = Path(__file__).resolve().parent.parent
-# worktree 下 .worktrees/hermes-xxx/data 只有 backups 子目录，
-# 实际数据在上层 main repo 的 data/
-if not (_DATA_ROOT / "dizi.db").exists():
-    # __file__ = .../dizical/.worktrees/hermes-xxx/src/backup.py
-    # 往上两级到 .worktrees/hermes-xxx/，再上一级到 dizical/
-    _DATA_ROOT = _DATA_ROOT.parent.parent / "data"
-DATA_DIR = _DATA_ROOT
+# 统一检查 data/ 子目录（main repo 和 worktree 共用此路径）
+if not (_DATA_ROOT / "data" / "dizi.db").exists():
+    # 兜底：指向 /Users/mt16/data（旧路径，保持兼容）
+    _DATA_ROOT = Path("/Users/mt16/data")
+DATA_DIR = _DATA_ROOT / "data" if (_DATA_ROOT / "data").exists() and _DATA_ROOT.name != "data" else _DATA_ROOT
 BACKUP_DIR = DATA_DIR / "backups"
 # iCloud 冗余备份路径
 ICLOUD_BACKUP_DIR = Path("/Users/mt16/Documents/TQ/01-Personal/0101-Family/010101-YoYo/dizical-backups")
@@ -85,13 +83,13 @@ def _sync_to_icloud(backup_path: Path) -> Tuple[bool, str]:
 
 def backup_all(backup_dir: Optional[Path] = None) -> List[dict]:
     """
-    备份所有数据库文件（dizi.db, dizical.db）。
+    备份所有数据库文件（dizi.db）。
     返回所有备份结果列表（每项含路径和验证/同步状态）。
     """
     backup_dir = backup_dir or _get_backup_dir()
 
     results: List[dict] = []
-    for name in ("dizi.db", "dizical.db"):
+    for name in ("dizi.db",):
         p = DATA_DIR / name
         if p.exists() and p.stat().st_size > 0:
             bp = _backup_single_db(p, backup_dir)

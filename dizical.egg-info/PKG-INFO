@@ -61,6 +61,26 @@ dizi + cal(endar) = dizical
 
 > 通过 `dizical practice report` 或 alcove profile 的 dizical-report skill 生成
 
+## 👧 dizical-kid（iPad 儿童界面）
+
+面向 7 岁儿童的竹笛练习助手，支持 iPad Safari 访问。
+
+```bash
+# 启动服务
+dizical kid start
+
+# iPad 访问
+# http://<本机IP>:8765
+```
+
+**5 个页面**：`/prepare` 准备页 · `/practice` 练习打卡 · `/achievements` 成就徽章 · `/report` 月报 · `/praise` 表扬页
+
+**底部 Tab 导航**：固定底部，点击反馈，适合 iPad 单手操作
+
+**老科目归档**：已归档的小科目默认隐藏，可点击归档区按钮单独选择
+
+**成就徽章**：连续练习/累计时长达成后自动解锁，包含火焰/星星/奖牌/本周之星四种
+
 ---
 
 ## 🚀 Quick Start
@@ -106,8 +126,9 @@ dizical payment status        # 缴费状态
 dizical payment history       # 缴费历史
 
 # 练习
-dizical practice log 基本功:20 单吐:15  # 打卡
-dizical practice log 单吐:10 --log "突破5连吐"  # 打卡+记录
+dizical practice log 基本功:20 单吐:15  # 打卡（空格分隔多条）
+dizical practice log 单吐:10，回娘家:4 --log "突破5连吐"  # 逗号分隔多条
+dizical practice log -d 2026-05-07 基本功:20  # 补录指定日期
 dizical practice today        # 今日练习
 dizical practice week         # 本周练习
 dizical practice calendar 4   # 4月日历

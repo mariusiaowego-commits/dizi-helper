@@ -62,7 +62,7 @@ class PaymentStatus(BaseModel):
     estimated_fee: int           # 当月预计缴费（attended + remaining_scheduled，用于月末提醒）
     paid_amount: int             # 当月已缴费
     historical_cumulative_paid: int  # 历史累计已缴总额（截至当月初）
-    balance: int                 # 待缴余额
+    balance: int                 # 累计待缴金额
     # 缴费明细（展示用）
     payment_breakdown: str        # 费用说明
     # 日期

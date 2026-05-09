@@ -282,7 +282,7 @@ class PaymentManager:
         ]
 
         if status.balance > 0:
-            lines.append(f"❌ 待缴余额: {status.balance} 元")
+            lines.append(f"❌ 累计待缴金额: {status.balance} 元")
             if status.last_lesson_date:
                 lines.append(f"📆 最后上课日: {status.last_lesson_date}")
                 lines.append(f"⏰ 请在 {status.last_lesson_date} 上课前缴清")

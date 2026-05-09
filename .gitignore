@@ -1,5 +1,6 @@
 .env
 data/
+data/assignment_images/
 *.db
 *.sqlite
 __pycache__/

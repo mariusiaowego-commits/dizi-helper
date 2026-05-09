@@ -107,10 +107,17 @@ class Database:
                     week_start_date DATE NOT NULL,
                     items TEXT NOT NULL DEFAULT '[]',
                     notes TEXT,
+                    images TEXT NOT NULL DEFAULT '[]',
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(week_start_date)
                 )
             ''')
+
+            # Migration: add images column if missing
+            cursor.execute("PRAGMA table_info(weekly_assignments)")
+            wa_columns = [col['name'] for col in cursor.fetchall()]
+            if 'images' not in wa_columns:
+                cursor.execute('ALTER TABLE weekly_assignments ADD COLUMN images TEXT NOT NULL DEFAULT \'[]\'')
 
             # Daily practices table (每日分项打卡)
             cursor.execute('''
