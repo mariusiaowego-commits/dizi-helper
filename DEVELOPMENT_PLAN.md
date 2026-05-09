@@ -51,7 +51,7 @@
 ## 🏗 技术栈
 
 ```
-Python 3.10+
+Python 3.14
 ├── pydantic + pydantic-settings  # 数据模型 + 配置
 ├── sqlite3                       # 数据库 (内置)
 ├── typer + rich                  # CLI + TUI 界面

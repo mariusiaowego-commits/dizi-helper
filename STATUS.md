@@ -186,7 +186,7 @@ dizical practice stats 4
 
 ## 🔧 环境
 
-- Python 3.12+
+- Python 3.14
 - 依赖已通过 `pip install -e .` 安装
 - `dizical` CLI 命令已在 PATH 中可用
 - 数据库: SQLite (`data/dizical.db`, `data/dizi.db`)
