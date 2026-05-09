@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-09
-**当前阶段**: assign-phase1b 图片存储完成 + 数据库备份全面修复
+**最后更新**: 2026-05-10
+**当前阶段**: assignments 阶段模型重构 + practice_item_id 关联完成
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
@@ -80,7 +80,8 @@ dizical practice config             # 增删改查 TUI（配置管理）
 dizical practice query              # 交互式练习查询 TUI
 dizical practice import <csv>               # 导入时长 CSV
 dizical practice import_logs <csv>         # 批量导入进展 log
-dizical practice assign -d <周一> <项目:要求> [-i <图片路径>]  # 录入每周老师要求（含配图）
+dizical practice assign -d <YYYY-MM-DD> <项目:要求> [-i <图片路径>]  # 录入每周老师要求（含配图）
+dizical practice assign -d <date> <4:要求> <1224:要求>  # 用 practice_item_id 精准命中科目
 dizical practice assignments             # 查询每周老师要求
 dizical practice import-assignments <csv>  # 批量导入每周老师要求
 
@@ -134,6 +135,14 @@ dizical obsidian export 4          # 导出4月报告
 - [x] 使用指南：DB 路径合并，配图目录说明
 - [x] 修复 iter 双重消费 bug（`img_list` 避免重复遍历）
 - Commit: `4f62e66` | 49/49 tests pass
+
+## 👧 assignments 阶段模型重构（2026-05-10）
+- [x] `weekly_assignments` 表新增 `stage_start`、`stage_end`、`stage_order` 字段
+- [x] `stage_start` = 上课后一天；`stage_end` = 下一节课当天；`stage_order` = 上课序号
+- [x] 显示格式：`第4课  04-19  ~  04-25  单吐练习  ♩=82...`
+- [x] `kid_app` practice 页优先用 `practice_item_id` 精确匹配，fallback 名称匹配
+- [x] 录入支持 `practice_item_id:要求` 格式：`dizical practice assign 4:♩=82 1224:♩=80`
+- [x] 历史数据批量回填 `practice_item_id`（8条记录全部匹配）
 
 ## 🚀 下一步开发计划
 

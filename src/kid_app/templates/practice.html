@@ -6,6 +6,7 @@
   <title>练习打卡 - 竹笛助手</title>
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
     body { padding-bottom: 80px; }
 
@@ -50,10 +51,141 @@
     .time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
     .time-btn { padding: 10px 16px; border: 2px solid #4ECDC4; background: white; border-radius: 20px; font-size: 16px; cursor: pointer; }
     .time-btn.selected { background: #4ECDC4; color: white; }
-    .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; margin: 12px 0; }
-    .item-btn { padding: 14px 6px; background: #4ECDC4; color: white; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; text-align: center; }
-    .item-btn:active { transform: scale(0.95); }
-    .item-btn.selected { background: #FF6B6B; }
+    /* ── 活力色块：练习科目按钮 ── */
+    .item-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .item-btn {
+      width: 100%;
+      min-width: 0;
+      height: 56px;
+      border: none;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 0 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .item-btn:active { transform: scale(0.96); filter: brightness(0.92); }
+
+    /* 默认色块：循环 5 色 */
+    .item-btn:nth-child(5n+1) { background: #00CED1; }   /* 深青 */
+    .item-btn:nth-child(5n+2) { background: #FF6B9D; }   /* 粉红 */
+    .item-btn:nth-child(5n+3) { background: #A855F7; }   /* 紫色 */
+    .item-btn:nth-child(5n+4) { background: #FF9F1C; }   /* 橙黄 */
+    .item-btn:nth-child(5n+5) { background: #10B981; }   /* 翠绿 */
+
+    /* 选中 */
+    .item-btn.selected {
+      background: #FF4D6D !important;
+      box-shadow: 0 4px 0 #C41E3A;
+      transform: translateY(-2px);
+    }
+    .item-btn.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
+
+    /* 老师要求高亮 */
+    .item-btn.has-req {
+      background: #FFE066 !important;
+      color: #5D4037;
+      box-shadow: 0 4px 0 #E6A800;
+      transform: translateY(-2px);
+      animation: req-glow 2s ease-in-out infinite;
+    }
+    .item-btn.has-req.selected {
+      background: #FF4D6D !important;
+      color: white;
+      box-shadow: 0 4px 0 #C41E3A;
+      transform: translateY(-2px);
+      animation: none;
+    }
+    .item-btn.has-req.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
+    @keyframes req-glow {
+      0%, 100% { box-shadow: 0 4px 0 #E6A800, 0 0 0 0 rgba(255,224,102,0.4); }
+      50%       { box-shadow: 0 4px 0 #E6A800, 0 0 0 8px rgba(255,224,102,0); }
+    }
+
+    /* 浮动气泡 */
+    .req-tooltip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: #FFE066;
+      color: #333;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      max-width: 180px;
+      white-space: normal;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      z-index: 10;
+      pointer-events: none;
+    }
+    .req-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #FFE066;
+    }
+    .item-btn-wrap { position: relative; display: inline-block; }
+    .item-btn-wrap .req-tooltip { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .item-btn-wrap:hover .req-tooltip { opacity: 1; }
+
+    /* 老师要求提示卡 */
+    #reqTip {
+      display: none;
+      background: linear-gradient(135deg, #FFF9C4, #FFE082);
+      border: 2px solid #FFD54F;
+      border-radius: 12px;
+      padding: 12px 36px 12px 14px;
+      margin: 10px auto 14px;
+      font-size: 14px;
+      color: #5D4037;
+      position: relative;
+      max-width: 320px;
+    }
+    #reqTip.show { display: block; }
+    #reqTip::before {
+      content: '🎯 老师要求';
+      display: block;
+      font-weight: bold;
+      font-size: 13px;
+      color: #E65100;
+      margin-bottom: 6px;
+    }
+    .close-tip {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #BDBDBD;
+      line-height: 1;
+    }
+
+    /* 打卡按钮 */
     .start-btn { display: block; width: 100%; padding: 18px; background: #FF6B6B; color: white; border: none; border-radius: 20px; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 16px; }
     .today-stat { text-align: center; color: #7F8C8D; font-size: 16px; margin-top: 8px; }
     .confirm-area { display: none; text-align: center; margin-top: 20px; }
@@ -69,43 +201,24 @@
 
     /* 老科目折叠 */
     .archived-toggle {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background: #F5F5F5;
-      border: 2px dashed #BDBDBD;
-      border-radius: 12px;
-      font-size: 15px;
-      color: #7F8C8D;
-      cursor: pointer;
-      text-align: center;
-      margin-top: 8px;
+      display: block; width: 100%; padding: 12px; background: #F5F5F5;
+      border: 2px dashed #BDBDBD; border-radius: 12px; font-size: 15px;
+      color: #7F8C8D; cursor: pointer; text-align: center; margin-top: 8px;
     }
     .archived-toggle:active { background: #EBEBEB; }
     .archived-section { display: none; margin-top: 12px; }
     .archived-section.open { display: block; }
     .archived-section h4 { font-size: 14px; color: #BDBDBD; margin-bottom: 8px; text-align: center; }
     .archived-item-btn {
-      padding: 10px 8px;
-      background: #E0E0E0;
-      color: #7F8C8D;
-      border: none;
-      border-radius: 10px;
-      font-size: 14px;
-      cursor: pointer;
-      text-align: center;
-      text-decoration: line-through;
+      padding: 10px 8px; background: #E0E0E0; color: #7F8C8D; border: none;
+      border-radius: 10px; font-size: 14px; cursor: pointer; text-align: center; text-decoration: line-through;
     }
     .archived-item-btn.selected { background: #FF6B6B; color: white; }
 
     /* 快速录入 */
     .quick-add-section {
-      display: none;
-      background: #FFF8E1;
-      border: 2px solid #FFE066;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 12px;
+      display: none; background: #FFF8E1; border: 2px solid #FFE066;
+      border-radius: 12px; padding: 16px; margin-top: 12px;
     }
     .quick-add-section.open { display: block; }
     .quick-add-section h4 { font-size: 15px; color: #E6A800; margin-bottom: 10px; text-align: center; }
@@ -114,25 +227,39 @@
     .quick-time-btn.selected { background: #FFE066; color: #333; }
     .quick-add-actions { display: flex; gap: 8px; justify-content: center; }
 
+    /* 额外练习时间 */
+    .extra-section {
+      display: none; background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+      border: 2px solid #66BB6A; border-radius: 12px; padding: 16px; margin-top: 12px;
+    }
+    .extra-section.open { display: block; }
+    .extra-section h4 { font-size: 15px; color: #2E7D32; margin-bottom: 10px; text-align: center; }
+    .extra-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .extra-btn {
+      padding: 8px 14px; border: 2px solid #66BB6A; background: white;
+      border-radius: 16px; font-size: 15px; cursor: pointer; color: #333;
+    }
+    .extra-btn.selected { background: #66BB6A; color: white; }
+    .extra-log-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.7); border: 1px solid #A5D6A7;
+      border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 14px;
+    }
+    .extra-log-item .extra-mins { color: #2E7D32; font-weight: bold; }
+    .extra-log-item .extra-del {
+      background: #FF6B6B; color: white; border: none; border-radius: 50%;
+      width: 24px; height: 24px; font-size: 12px; cursor: pointer; flex-shrink: 0;
+    }
+
     /* 计时器保护弹窗 */
     #timerProtectModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 200; align-items: center; justify-content: center; padding: 20px;
     }
     #timerProtectModal.open { display: flex; }
     .modal-box {
-      background: white;
-      border-radius: 20px;
-      padding: 28px 24px;
-      max-width: 320px;
-      width: 100%;
-      text-align: center;
+      background: white; border-radius: 20px; padding: 28px 24px;
+      max-width: 320px; width: 100%; text-align: center;
     }
     .modal-box h3 { font-size: 20px; color: #FF6B6B; margin-bottom: 12px; }
     .modal-box p { font-size: 16px; color: #555; margin-bottom: 20px; line-height: 1.5; }
@@ -181,6 +308,11 @@
       <button class="time-btn" onclick="setDuration(20)">20分钟</button>
       <button class="time-btn" onclick="setDuration(30)">30分钟</button>
     </div>
+    <!-- 老师要求提示（选中科目后显示） -->
+    <div id="reqTip">
+      <button class="close-tip" onclick="closeReqTip()">✕</button>
+      <div id="reqTipContent"></div>
+    </div>
     <div style="display:flex;gap:10px;justify-content:center;">
       <button class="btn btn-secondary" id="startBtn" onclick="toggleTimer()">开始</button>
       <button class="btn btn-primary" onclick="finishEarly()">提前结束</button>
@@ -199,6 +331,18 @@
         <button class="start-btn" style="margin:0;background:#FFE066;color:#333;" onclick="submitQuickLog()">✅ 直接打卡</button>
         <button style="background:none;border:2px solid #E0E0E0;color:#7F8C8D;padding:10px;border-radius:16px;font-size:15px;cursor:pointer;" onclick="toggleQuickAdd()">取消</button>
       </div>
+    </div>
+    <!-- 额外练习时间模块 -->
+    <div class="extra-section" id="extraSection">
+      <h4>🌿 额外练习时间</h4>
+      <div class="extra-btns">
+        <button class="extra-btn" onclick="addExtraMins(5)">+5分钟</button>
+        <button class="extra-btn selected" onclick="addExtraMins(10)">+10分钟</button>
+        <button class="extra-btn" onclick="addExtraMins(15)">+15分钟</button>
+        <button class="extra-btn" onclick="addExtraMins(20)">+20分钟</button>
+        <button class="extra-btn" onclick="addExtraMins(30)">+30分钟</button>
+      </div>
+      <div id="extraLogList"></div>
     </div>
     <div class="confirm-area" id="confirmArea">
       <p style="font-size:20px;margin-bottom:12px;">练了 <strong id="confirmMins">0</strong> 分钟！</p>
@@ -234,6 +378,9 @@
         confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors });
       } catch(e) {}
     }
+
+    // ── 老师要求数据 ──
+    const WEEKLY_ASSIGN = {{assign_json}};
 
     // Filter practice items by search query
     function filterItems(q) {
@@ -308,6 +455,32 @@
       document.getElementById('timer-card').style.display = 'block';
       document.getElementById('timer-card').scrollIntoView({behavior: 'smooth'});
       resetTimer();
+      refreshExtraSection();
+
+      // 检查老师要求
+      const tip = document.getElementById('reqTip');
+      const tipContent = document.getElementById('reqTipContent');
+      let reqText = '';
+      if (WEEKLY_ASSIGN && WEEKLY_ASSIGN.items) {
+        for (const a of WEEKLY_ASSIGN.items) {
+          if (a.item === name) { reqText = a.requirement || ''; break; }
+        }
+      }
+      if (reqText) {
+        tipContent.textContent = reqText;
+        tip.classList.add('show');
+        gsap.fromTo('#reqTip',
+          { opacity: 0, scale: 0.8, y: -10 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(2)" }
+        );
+      } else {
+        tip.classList.remove('show');
+      }
+    }
+
+    function closeReqTip() {
+      const tip = document.getElementById('reqTip');
+      tip.classList.remove('show');
     }
 
     // ── 计时器防跳出 ──
@@ -370,6 +543,10 @@
         fireConfetti();
         document.querySelector('.confirm-area p').innerHTML = '⚡ 快速打卡 +' + quickDuration + '分钟！';
         document.getElementById('confirmArea').classList.add('show');
+        gsap.fromTo('#confirmArea',
+          { scale: 0.5, opacity: 0, y: 30 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" }
+        );
         document.getElementById('quickAddSection').classList.remove('open');
         setTimeout(() => {
           document.getElementById('confirmArea').classList.remove('show');
@@ -392,6 +569,23 @@
       document.getElementById('timer-card').style.display = 'block';
       document.getElementById('timer-card').scrollIntoView({behavior: 'smooth'});
       resetTimer();
+      refreshExtraSection();
+
+      // 检查老师要求
+      const tip = document.getElementById('reqTip');
+      const tipContent = document.getElementById('reqTipContent');
+      const btn = event.target;
+      const reqText = btn.getAttribute('data-req');
+      if (reqText) {
+        tipContent.textContent = reqText;
+        tip.classList.add('show');
+        gsap.fromTo('#reqTip',
+          { opacity: 0, scale: 0.8, y: -10 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(2)" }
+        );
+      } else {
+        tip.classList.remove('show');
+      }
     }
 
     function setDuration(mins) {
@@ -410,6 +604,7 @@
       document.getElementById('startBtn').textContent = '开始';
       document.getElementById('confirmArea').classList.remove('show');
       document.getElementById('quickAddSection').classList.remove('open');
+      document.getElementById('reqTip').classList.remove('show');
     }
 
     function toggleTimer() {
@@ -458,6 +653,11 @@
         fireConfetti();
         document.querySelector('.confirm-area p').innerHTML = '🎉 打卡成功！太棒啦！';
         document.getElementById('confirmArea').classList.add('show');
+        // GSAP bounce 进场动画
+        gsap.fromTo('#confirmArea',
+          { scale: 0.5, opacity: 0, y: 30 },
+          { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" }
+        );
         setTimeout(() => {
           resetTimer();
           document.querySelectorAll('.item-btn, .archived-item-btn').forEach(b => b.classList.remove('selected'));
@@ -466,6 +666,62 @@
           loadTodayRecords();
         }, 2500);
       }
+    }
+
+    // ── 额外练习时间 ──
+    async function refreshExtraSection() {
+      try {
+        let res = await fetch('/api/practices/' + todayDate);
+        let data = await res.json();
+        let logList = document.getElementById('extraLogList');
+        let extras = (data.items || []).filter(it => it.is_extra);
+        if (extras.length === 0) {
+          logList.innerHTML = '';
+        } else {
+          logList.innerHTML = extras.map(it => `
+            <div class="extra-log-item">
+              <span>${it.item}</span>
+              <span class="extra-mins">+${it.minutes}分钟</span>
+              <button class="extra-del" onclick="deleteExtraRecord('${it.id}')">✕</button>
+            </div>
+          `).join('');
+        }
+        // Toggle section visibility based on whether any item is selected
+        const section = document.getElementById('extraSection');
+        if (selectedItem) {
+          section.classList.add('open');
+        } else {
+          section.classList.remove('open');
+        }
+      } catch(e) {}
+    }
+
+    async function addExtraMins(mins) {
+      if (!selectedItem) { alert('请先选择一个科目'); return; }
+      document.querySelectorAll('.extra-btn').forEach(b => b.classList.remove('selected'));
+      event.target.classList.add('selected');
+      try {
+        let res = await fetch('/api/log', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({date: todayDate, item: selectedItem, minutes: mins, log: '', is_extra: true})
+        });
+        let json = await res.json();
+        if (json.ok) {
+          fireConfetti();
+          refreshExtraSection();
+          loadTodayRecords();
+        }
+      } catch(e) {}
+    }
+
+    async function deleteExtraRecord(id) {
+      if (!confirm('删除这条额外练习记录？')) return;
+      try {
+        await fetch('/api/log/' + id, { method: 'DELETE' });
+        refreshExtraSection();
+        loadTodayRecords();
+      } catch(e) {}
     }
 
     // Load today's records from API
@@ -486,6 +742,11 @@
               <button class="delete-btn" onclick="deleteRecord('${it.item.replace(/'/g, "\\'")}')">✕</button>
             </div>
           `).join('');
+          // GSAP: 记录从右侧滑入（stagger）
+          gsap.fromTo('.record-item',
+            { opacity: 0, x: 60 },
+            { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" }
+          );
         }
         document.querySelector('.today-stat') && (document.querySelector('.today-stat').textContent = '今日已练习: ' + data.total_minutes + ' 分钟');
       } catch(e) {
@@ -511,6 +772,13 @@
     loadTodayRecords();
     loadArchivedToggle();
     setupTimerProtect();
+
+    // ── 页面加载整体弹入动画 ──
+    const allCards = document.querySelectorAll('.card');
+    gsap.fromTo(allCards,
+      { opacity: 0, scale: 0.88, y: 24 },
+      { opacity: 1, scale: 1, y: 0, duration: 0.6, stagger: 0.12, ease: "back.out(2)" }
+    );
   </script>
 </body>
 </html>

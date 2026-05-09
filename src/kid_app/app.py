@@ -159,6 +159,11 @@ async def api_praise(request: Request):
 def home():
     return prepare_page()
 
+@app.get("/gsap-demo", response_class=HTMLResponse)
+def gsap_demo():
+    demo_path = Path(__file__).parent.parent.parent / "gsap-demo.html"
+    return HTMLResponse(demo_path.read_text())
+
 @app.get("/prepare", response_class=HTMLResponse)
 def prepare_page():
     today = dt.date.today()
@@ -202,8 +207,36 @@ def prepare_page():
 
 @app.get("/practice", response_class=HTMLResponse)
 def practice_page():
+    today = dt.date.today()
     items = db.get_practice_items(active_only=True, include_archived=False)
     categories = practice_module.get_categories()
+
+    # 本周老师要求（date 字段转字符串避免 JSON 序列化报错）
+    assign = db.get_weekly_assignment_for_week(today)
+    import json as _json
+    if assign:
+        assign = dict(assign)
+        for k in ('lesson_date', 'stage_start', 'stage_end'):
+            if assign.get(k):
+                assign[k] = str(assign[k])
+    assign_json = _json.dumps(assign) if assign else "null"
+
+    assign_item_names = {}
+    if assign and assign.get("items"):
+        for a in assign["items"]:
+            assign_item_names[a["item"]] = a.get("requirement", "")
+
+    # 建立 practice_item_id → requirement 的映射（精确匹配）
+    assign_by_pi_id = {}
+    if assign and assign.get("items"):
+        for a in assign["items"]:
+            pid = a.get("practice_item_id")
+            if pid:
+                assign_by_pi_id[pid] = a.get("requirement", "")
+
+    def _find_requirement(item_name):
+        """精确匹配 name（不用模糊，避免 '长音' 错误匹配 '吸气长音'）"""
+        return assign_item_names.get(item_name, "")
 
     cat_map = {c["id"]: c["name"] for c in categories}
     by_cat = {}
@@ -219,13 +252,30 @@ def practice_page():
         items_html += "<h3 style='font-size:16px;color:#4ECDC4;margin:12px 0 6px;'>" + cat + "</h3>"
         items_html += "<div class='item-grid'>"
         for it in sorted(cat_items, key=lambda x: x.get("sort_order", 0)):
-            items_html += "<button class='item-btn' data-id='" + str(it["id"]) + "' onclick=\"selectItem('" + it["name"] + "', " + str(it["id"]) + ")\">" + it["name"] + "</button>"
+            name = it["name"]
+            pid = it.get("id")
+            # 优先用 practice_item_id 精确匹配，fallback 用名称模糊匹配
+            req_text = assign_by_pi_id.get(pid) or _find_requirement(name)
+            has_req = bool(req_text)
+            tooltip_html = ""
+            if has_req and req_text:
+                tooltip_html = "<div class='req-tooltip'>" + req_text + "</div>"
+            wrap_class = "item-btn-wrap" if has_req else ""
+            has_req_class = "has-req" if has_req else ""
+            items_html += (
+                "<div class='" + wrap_class + "'>"
+                + "<button class='item-btn " + has_req_class + "' data-id='" + str(it["id"]) + "' "
+                + "data-req='" + req_text.replace("'", "&#39;") + "' "
+                + "onclick=\"selectItem('" + name.replace("'", "\\'") + "', " + str(it["id"]) + ")\">"
+                + name
+                + tooltip_html
+                + "</button></div>"
+            )
         items_html += "</div>"
 
     if not items_html:
         items_html = "<p style='color:#7F8C8D;text-align:center;'>No practice items. Ask dad to add via dizical practice config</p>"
 
-    today = dt.date.today()
     today_p = db.get_daily_practice(today)
     today_mins = today_p["total_minutes"] if today_p else 0
 
@@ -234,6 +284,7 @@ def practice_page():
         child_name=child_name(),
         items_html=items_html,
         today_mins=today_mins,
+        assign_json=assign_json,
     )
 
 @app.get("/achievements", response_class=HTMLResponse)

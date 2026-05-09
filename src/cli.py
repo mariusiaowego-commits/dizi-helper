@@ -1065,13 +1065,13 @@ def practice_note(
 @practice_app.command("assign")
 def practice_assign(
     ctx: typer.Context,
-    date: str = typer.Option(None, "--date", "-d", help="周开始日期（周一），格式 YYYY-MM-DD"),
+    date: str = typer.Option(None, "--date", "-d", help="上课日期（YYYY-MM-DD），格式：2026-04-18"),
     notes: Optional[str] = typer.Option(None, "--notes", "-n", help="老师补充说明"),
     show_items: bool = typer.Option(False, "--show-items", help="录入前列出已有练习项目供补全"),
     img: list[str] = typer.Option([], "--image", "-i", help="老师要求配图路径，可多次指定"),
     items: Annotated[list[str], typer.Argument(help="练习项目和要求，格式 项目:要求")] = [],
 ):
-    """录入每周老师要求（支持增量追加，漏了可以再执行追加）
+    """录入每课老师要求（支持增量追加，漏了可以再执行追加）
 
     示例:
         dizical practice assign 单吐练习:♩=82,84,86各两天 回娘家:连线小节♩=78
@@ -1079,6 +1079,7 @@ def practice_assign(
         dizical practice assign -d 2026-04-20 回娘家:连线小节♩=78  # 增量追加，不会覆盖单吐练习
         dizical practice assign --show-items  # 先看有哪些项目，再录入
         dizical practice assign -d 2026-05-05 单吐练习:♩=82 -i ~/photos/req.jpg
+        dizical practice assign -d 2026-05-05 4:♩=82 1224:♩=80  # 用 practice_item_id 直接命中科目
     """
     from . import practice as pm
 
@@ -1099,15 +1100,17 @@ def practice_assign(
             return
 
     if date:
-        week_start = parse_date(date)
+        lesson_date = parse_date(date)
     else:
-        # 自动推算：取最近一次已上课的下一天作为 WeekStart
-        inferred = pm.get_last_attended_lesson_date_next()
-        if inferred:
-            week_start = inferred
-            console.print(f"[blue]ℹ️  自动推算 WeekStart: {week_start}（上次课后次日）[/blue]")
+        # 自动推算：取最近一次已上课的日期
+        lessons = pm.db.get_all_lessons()
+        attended = [l for l in lessons if l.status == pm.LessonStatus.ATTENDED]
+        if attended:
+            last_lesson = max(attended, key=lambda l: l.date)
+            lesson_date = last_lesson.date
+            console.print(f"[blue]ℹ️  自动推算 lesson_date: {lesson_date}（最近已上课）[/blue]")
         else:
-            console.print("[yellow]无法推算 WeekStart：请先用 'dizical lesson confirm' 确认上课日期，或使用 -d 指定[/yellow]")
+            console.print("[yellow]无法推算 lesson_date：请先用 'dizical lesson confirm' 确认上课日期，或使用 -d 指定[/yellow]")
             return
 
     if not items_list:
@@ -1116,17 +1119,30 @@ def practice_assign(
 
     parsed = []
     for part in items_list:
-        if ':' in part:
-            item_name, req = part.split(':', 1)
-            parsed.append({'item': item_name.strip(), 'requirement': req.strip()})
+        if ':' not in part:
+            continue
+        item_key, req = part.split(':', 1)
+        item_key = item_key.strip()
+        req = req.strip()
+        # 支持数字 ID 直接引用 practice_items
+        if item_key.isdigit():
+            pid = int(item_key)
+            # 查 practice_items 表获取名称
+            pi = pm.db.get_practice_item_by_id(pid)
+            if pi:
+                parsed.append({'item': pi['name'], 'practice_item_id': pid, 'requirement': req})
+            else:
+                console.print(f"[yellow]⚠️  未找到 practice_item_id={pid}，已跳过[/yellow]")
+        else:
+            parsed.append({'item': item_key, 'requirement': req})
 
     if parsed:
         # 增量追加
         img_list = list(img) if img else None
-        pm.save_weekly_assignment(week_start, parsed, notes, img_list)
+        pm.save_weekly_assignment(lesson_date, parsed, notes, img_list)
         # 确认打印
         item_names = [p['item'] for p in parsed]
-        console.print(f"[green]✅ 已录入 {week_start} 这周：[/green]")
+        console.print(f"[green]✅ 已录入 {lesson_date} 课后要求：[/green]")
         for name in item_names:
             console.print(f"  • {name}")
         if img_list:
@@ -1135,16 +1151,17 @@ def practice_assign(
 
 @practice_app.command("assignments")
 def practice_assignments(
-    weeks: int = typer.Option(4, "--weeks", "-w", help="过去 N 周"),
+    weeks: int = typer.Option(4, "--weeks", "-w", help="过去 N 课"),
     start: Optional[str] = typer.Option(None, "--start", "-s", help="开始日期 YYYY-MM-DD"),
     end: Optional[str] = typer.Option(None, "--end", "-e", help="结束日期 YYYY-MM-DD"),
     item: Optional[str] = typer.Option(None, "--item", "-i", help="只看某个练习项目"),
 ):
-    """查询每周老师要求（明细 + 汇总）
+    """查询每课老师要求（明细 + 汇总）
 
-    默认显示过去 4 周。支持 --weeks、--start/--end、--item 过滤。
+    默认显示过去 4 课。支持 --weeks、--start/--end、--item 过滤。
     """
     from . import practice as pm
+    import datetime as dt
 
     # 解析日期范围
     if start and end:
@@ -1175,9 +1192,15 @@ def practice_assignments(
 
     # ── 汇总头部 ──
     total_items = sum(len(a['items']) for a in assignments)
-    date_range = f"{assignments[0]['week_start_date']} ~ {assignments[-1]['week_start_date']}"
-    console.print(f"\n📋 每周老师要求")
-    console.print(f"  范围: {date_range}  ({len(assignments)} 周, {total_items} 条要求)")
+    first_lesson = assignments[0]['lesson_date']
+    last_lesson = assignments[-1]['lesson_date']
+    last_stage_end = assignments[-1].get('stage_end')
+    if last_stage_end:
+        date_range = f"{first_lesson} ~ {last_lesson}（至{last_stage_end}）"
+    else:
+        date_range = f"{first_lesson} ~ {last_lesson}"
+    console.print(f"\n📋 每课老师要求")
+    console.print(f"  范围: {date_range}  ({len(assignments)} 课, {total_items} 条要求)")
 
     # ── 项目频次汇总 ──
     item_counts: Dict[str, int] = {}
@@ -1189,29 +1212,38 @@ def practice_assignments(
         for name, cnt in sorted(item_counts.items(), key=lambda x: -x[1]):
             console.print(f"    {name}: {cnt} 次")
 
-    # ── 每周明细 ──
+    # ── 每课明细 ──
     import sys
     out = lambda msg: sys.stdout.write(msg + '\n')
 
     out("")
-    out(f"  周起始      项目            要求")
+    out(f"  第N课    阶段起始日    阶段结束日    项目            要求")
     out(f"  {'─' * 72}")
 
     for a in assignments:
-        week_str = a['week_start_date'].isoformat()
+        ss = a.get('stage_start')
+        se = a.get('stage_end')
+        so = a.get('stage_order')
+        order_str = f"第{so}课" if so else "无序号"
+        if ss and se:
+            stage_str = f"{ss.strftime('%m-%d')}  ~  {se.strftime('%m-%d')}"
+        elif ss:
+            stage_str = f"{ss.strftime('%m-%d')}  ~  （未安排）"
+        else:
+            stage_str = f"（未上课）  ~  （未安排）"
         for idx, it in enumerate(a['items']):
             req_preview = it['requirement'].strip().replace('\n', ' ')
             if len(req_preview) > 40:
                 req_preview = req_preview[:40] + '...'
-            out(f"  {week_str}  {it['item']:<12}  {req_preview}")
+            out(f"  {order_str}  {stage_str}  {it['item']:<12}  {req_preview}")
         if a.get('notes'):
             notes_preview = a['notes'].replace('\n', ' ')[:44]
-            out(f"  {' ' * len(week_str)}  {'📝':<12}  {notes_preview}")
+            out(f"  {' ' * len(order_str)}  {' ' * len(stage_str)}  {'📝':<12}  {notes_preview}")
         if a.get('images'):
-            out(f"  {' ' * len(week_str)}  {'📷':<12}  {len(a['images'])} 张配图")
+            out(f"  {' ' * len(order_str)}  {' ' * len(stage_str)}  {'📷':<12}  {len(a['images'])} 张配图")
         out("")
 
-    out(f"  💡 补录: dizical practice assign -d {assignments[-1]['week_start_date']} 项目:要求")
+    out(f"  💡 补录: dizical practice assign -d {assignments[-1]['lesson_date']} 项目:要求")
 
 
 @practice_app.command("today")

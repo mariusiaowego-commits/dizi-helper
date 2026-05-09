@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>练习报告 - 竹笛助手</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
     body { padding-bottom: 80px; }
     .nav {
@@ -104,5 +105,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+// 页面整体弹入（和 achievements 一样的风格）
+document.addEventListener('DOMContentLoaded', () => {
+  const reportCard = document.querySelector('.card');
+  gsap.fromTo(reportCard,
+    { opacity: 0, scale: 0.82, y: 28 },
+    { opacity: 1, scale: 1, y: 0, duration: 0.65, ease: "back.out(2)" }
+  );
+});
 </script>
-</html>
+</body>

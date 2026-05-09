@@ -1,5 +1,35 @@
 # dizical vibe coding log
 
+## 2026-05-10 (Sun) — assignments 字段治理 + 阶段模型重构
+
+### 本次完成
+- **删除错误记录**：`2026-05-05` 单独一条的单吐练习（05-02课才上完，05-05不可能有新课）
+- **修正 lesson_date**：`2026-05-04` → `2026-05-02`
+- **修正科目名**：`04-11课` "单独练习" → "单吐练习"
+
+#### 阶段模型重构
+- `weekly_assignments` 表新增 `stage_start DATE`、`stage_end DATE`、`stage_order INTEGER`
+- `stage_start` = 上一次已上课的后一天
+- `stage_end` = 下一节（attended + scheduled）课当天
+- `stage_order` = 该课是第几次已上课（1-based）
+- **显示改为**：`第4课  04-19  ~  04-25  单吐练习  ♩=82...`
+- 修复 bug：回填时 stage_end 错用所有 scheduled 课里最早的，应为"按时间顺序下一节课"
+
+#### practice_item_id 关联
+- `items` JSON 数组新增 `practice_item_id` 字段（fuzzy match 自动关联）
+- `kid_app` practice 页优先用 `practice_item_id` 精确匹配，fallback 名称匹配（兼容历史）
+- 录入支持 `practice_item_id:要求` 格式精准命中：`dizical practice assign 4:♩=82 1224:♩=80`
+- 新增 `database.get_practice_item_by_id()` 方法
+- 历史数据批量迁移：8条记录全部回填 `practice_item_id`
+
+#### 涉及文件
+- `src/database.py`：schema 迁移 + 三个 get 方法 + save + fuzzy match + get_practice_item_by_id
+- `src/cli.py`：显示格式 + ID 模式录入解析
+- `src/kid_app/app.py`：精确匹配逻辑
+- `data/dizi.db`：migration 回填 stage_* 字段 + practice_item_id
+
+---
+
 ## 2026-05-09 (Sat) — assign-phase1b + P0 备份全面收尾
 
 ### assign-phase1b 图片存储
@@ -29,6 +59,16 @@
 | `ced8c4c` | feat(cli): practice log 支持逗号分隔多条记录 |
 | `4b47107` | fix(database): save_daily_practice 改为追加合并 |
 | `673b36e` | fix(cli): practice log 默认日期改为今天 |
+
+### 本次 Session（第二段）— P0验证 + dizical-report skill + Kid UI Phase3 plan
+- P0 验证通过：practice log ✅ / backup run ✅ / assign配图录入查询 ✅
+- dizical-report skill 创建：`~/.hermes/profiles/coder/skills/life-automation/dizical-report/SKILL.md`
+  - 生图阻断：Nous subscription FAL gateway 未开通 gpt-image-2，需用户自行配置
+- Kid UI Phase 3 plan：`dizical/.hermes/plans/kid-ui-phase3-ux-refresh.md`
+  - P0: prepare页面完善
+  - P1: achievements增强 + praise重建
+  - P2: practice项目分组 + style.css统一
+- Handoff: `.hermes/plans/kid-ui-phases-handoff.md`
 
 ---
 

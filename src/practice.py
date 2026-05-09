@@ -185,12 +185,12 @@ def save_progress(date: dt.date, note: str) -> None:
     db.save_progress_to_log(date, note)
 
 
-def save_weekly_assignment(week_start: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
+def save_weekly_assignment(lesson_date: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
     """
-    保存每周老师要求
+    保存每课老师要求
     items: [{"item": "单吐练习", "requirement": "♩=82,84,86 各两天"}, ...]
     """
-    db.save_weekly_assignment(week_start, items, notes, images)
+    db.save_weekly_assignment(lesson_date, items, notes, images)
 
 
 def query_assignments(
@@ -241,7 +241,7 @@ def get_assignments_summary(weeks: int = 4) -> Dict:
             name = it['item']
             item_counts[name] = item_counts.get(name, 0) + 1
             recent_items.append({
-                'week_start': a['week_start'],
+                'lesson_date': a['lesson_date'],
                 'item': name,
                 'requirement': it['requirement'],
             })

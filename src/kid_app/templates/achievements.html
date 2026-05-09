@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>我的成就 - 竹笛助手</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
     body { padding-bottom: 80px; }
     .nav {
@@ -32,7 +33,7 @@
     <a href="/praise" class="nav-item"><span class="nav-icon">⭐</span><span>表扬</span></a>
   </div>
 
-  <div class="card" style="text-align:center;">
+  <div class="card" style="text-align:center;opacity:0;" id="streakCard">
     <div style="font-size:20px;color:#7F8C8D;margin-bottom:8px;">🔥 连续练习</div>
     <div class="streak-num">{{streak}}</div>
     <div style="font-size:20px;color:#7F8C8D;">天</div>
@@ -67,5 +68,45 @@
     </div>
     <p style="font-size:13px;color:#7F8C8D;text-align:center;margin-top:8px;">徽章根据累计练习达成，不限本周</p>
   </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. 连续天数卡片整体弹入（比数字滚动先入场）
+      const streakCard = document.getElementById('streakCard');
+      gsap.fromTo(streakCard,
+        { opacity: 0, scale: 0.7, y: 30 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.7, ease: "back.out(2.2)" }
+      );
+
+      // 数字滚动（独立于卡片入场）
+      const streakEl = document.querySelector('.streak-num');
+      const streakTarget = parseInt(streakEl.textContent) || 0;
+      let streakCount = 0;
+      const streakInterval = setInterval(() => {
+        streakCount++;
+        streakEl.textContent = streakCount;
+        gsap.fromTo(streakEl, { scale: 1.15 }, { scale: 1, duration: 0.1 });
+        if (streakCount >= streakTarget) {
+          clearInterval(streakInterval);
+          gsap.to(streakEl, { scale: 1.25, duration: 0.25, yoyo: true, repeat: 1, ease: "power2.inOut" });
+        }
+      }, 80);
+
+      // 2. 统计数据卡片依次弹入
+      const statCards = document.querySelectorAll('.card:not(:first-child)');
+      gsap.fromTo(statCards,
+        { opacity: 0, y: 40, scale: 0.9 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.55, stagger: 0.15, ease: "back.out(1.8)" }
+      );
+
+      // 3. 徽章依次弹入
+      const badges = document.querySelectorAll('.badge-wrap');
+      if (badges.length > 0) {
+        gsap.fromTo(badges,
+          { opacity: 0, scale: 0, y: 50 },
+          { opacity: 1, scale: 1, y: 0, duration: 0.5, stagger: 0.18, ease: "back.out(2.2)" }
+        );
+      }
+    });
+  </script>
 </body>
 </html>

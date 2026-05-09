@@ -104,12 +104,12 @@ class Database:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS weekly_assignments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    week_start_date DATE NOT NULL,
+                    lesson_date DATE NOT NULL,
                     items TEXT NOT NULL DEFAULT '[]',
                     notes TEXT,
                     images TEXT NOT NULL DEFAULT '[]',
                     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    UNIQUE(week_start_date)
+                    UNIQUE(lesson_date)
                 )
             ''')
 
@@ -118,6 +118,30 @@ class Database:
             wa_columns = [col['name'] for col in cursor.fetchall()]
             if 'images' not in wa_columns:
                 cursor.execute('ALTER TABLE weekly_assignments ADD COLUMN images TEXT NOT NULL DEFAULT \'[]\'')
+
+            # Migration: add stage_start / stage_end columns if missing
+            cursor.execute("PRAGMA table_info(weekly_assignments)")
+            wa_columns = {col['name'] for col in cursor.fetchall()}
+            if 'stage_start' not in wa_columns:
+                cursor.execute('ALTER TABLE weekly_assignments ADD COLUMN stage_start DATE')
+                cursor.execute('ALTER TABLE weekly_assignments ADD COLUMN stage_end DATE')
+
+                # 回填：stage_start = lesson_date + 1天，stage_end = 下一节（attended + scheduled）课日期
+                cursor.execute("SELECT date FROM lessons ORDER BY date")
+                all_lessons = [dt.date.fromisoformat(r[0]) for r in cursor.fetchall()]
+                cursor.execute("SELECT date FROM lessons WHERE status = 'attended' ORDER BY date")
+                attended_dates = [dt.date.fromisoformat(r[0]) for r in cursor.fetchall()]
+                cursor.execute("SELECT id, lesson_date FROM weekly_assignments")
+                for row in cursor.fetchall():
+                    ld = dt.date.fromisoformat(row[1])
+                    future = [d for d in all_lessons if d > ld]
+                    stage_end = future[0].isoformat() if future else None
+                    stage_start = (ld + dt.timedelta(days=1)).isoformat()
+                    stage_order = attended_dates.index(ld) + 1 if ld in attended_dates else None
+                    cursor.execute(
+                        "UPDATE weekly_assignments SET stage_start = ?, stage_end = ?, stage_order = ? WHERE id = ?",
+                        (stage_start, stage_end, stage_order, row[0])
+                    )
 
             # Daily practices table (每日分项打卡)
             cursor.execute('''
@@ -155,7 +179,7 @@ class Database:
                 CREATE INDEX IF NOT EXISTS idx_practices_date ON daily_practices(date)
             ''')
             cursor.execute('''
-                CREATE INDEX IF NOT EXISTS idx_assignments_week ON weekly_assignments(week_start_date)
+                CREATE INDEX IF NOT EXISTS idx_assignments_week ON weekly_assignments(lesson_date)
             ''')
 
             conn.commit()
@@ -392,6 +416,15 @@ class Database:
                 return row['id']
             return cursor.lastrowid
 
+    def get_practice_item_by_id(self, item_id: int) -> Optional[Dict]:
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM practice_items WHERE id = ?", (item_id,))
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+
     def get_practice_items(self, active_only: bool = True, include_archived: bool = False) -> List[Dict]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -483,11 +516,34 @@ class Database:
             cursor.execute('DELETE FROM practice_items WHERE id = ?', (from_id,))
             conn.commit()
 
+    def _match_practice_item_id(self, item_name: str) -> Optional[int]:
+        """将自由文本科目名 fuzzy-match 到 practice_items 表的 id，失败返回 None"""
+        from difflib import SequenceMatcher
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id, name FROM practice_items WHERE is_archived = 0")
+            pi_map = {name: pid for pid, name in cursor.fetchall()}
+        name = item_name.strip()
+        if name in pi_map:
+            return pi_map[name]
+        for pi_name, pid in pi_map.items():
+            if pi_name in name:
+                return pid
+        for pi_name, pid in pi_map.items():
+            if name in pi_name:
+                return pid
+        best_ratio, best_pid = 0, None
+        for pi_name, pid in pi_map.items():
+            r = SequenceMatcher(None, name, pi_name).ratio()
+            if r > best_ratio and r > 0.6:
+                best_ratio, best_pid = r, pid
+        return best_pid
+
     # Weekly assignment operations
-    def save_weekly_assignment(self, week_start_date: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
+    def save_weekly_assignment(self, lesson_date: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
         import json
         # 增量追加：查询现有 items，合并新旧（按 item 名称去重），再保存
-        existing = self.get_weekly_assignment(week_start_date)
+        existing = self.get_weekly_assignment(lesson_date)
         if existing:
             # 按 item 名称去重：新items覆盖旧requirement，旧items保留
             existing_map = {it['item']: it for it in existing['items']}
@@ -497,33 +553,47 @@ class Database:
         else:
             merged_items = items
 
+        # 补充 practice_item_id（fuzzy match）
+        for it in merged_items:
+            if 'practice_item_id' not in it:
+                matched = self._match_practice_item_id(it['item'])
+                if matched:
+                    it['practice_item_id'] = matched
+
         # 保留 notes（首次录入时保存，后续追加时保留原有 notes 除非明确传入）
         final_notes = notes if notes is not None else (existing['notes'] if existing else None)
+        # 保留 images
+        merged_images = existing['images'] if existing else []
 
-        # 保留 images（后续追加时合并，不覆盖已有图片）
-        if images is not None:
-            existing_images = existing['images'] if existing else []
-            merged_images = existing_images + [img for img in images if img not in existing_images]
-        else:
-            merged_images = existing['images'] if existing else []
-
+        # 计算 stage_start = lesson_date + 1，stage_end = 下一节（attended + scheduled）课日期
         with self._get_connection() as conn:
             cursor = conn.cursor()
+            cursor.execute("SELECT date FROM lessons ORDER BY date")
+            all_lessons = [dt.date.fromisoformat(r[0]) for r in cursor.fetchall()]
+            cursor.execute("SELECT date FROM lessons WHERE status = 'attended' ORDER BY date")
+            attended_dates = [dt.date.fromisoformat(r[0]) for r in cursor.fetchall()]
+            stage_start = (lesson_date + dt.timedelta(days=1)).isoformat()
+            future = [d for d in all_lessons if d > lesson_date]
+            stage_end = future[0].isoformat() if future else None
+            stage_order = attended_dates.index(lesson_date) + 1 if lesson_date in attended_dates else None
+
             cursor.execute('''
-                INSERT OR REPLACE INTO weekly_assignments (week_start_date, items, notes, images)
-                VALUES (?, ?, ?, ?)
-            ''', (week_start_date.isoformat(), json.dumps(merged_items, ensure_ascii=False), final_notes, json.dumps(merged_images, ensure_ascii=False)))
+                INSERT OR REPLACE INTO weekly_assignments (lesson_date, stage_start, stage_end, stage_order, items, notes, images)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (lesson_date.isoformat(), stage_start, stage_end, stage_order,
+                  json.dumps(merged_items, ensure_ascii=False), final_notes,
+                  json.dumps(merged_images, ensure_ascii=False)))
             conn.commit()
 
     def get_weekly_assignment_for_week(self, anchor_date: dt.date) -> Optional[Dict]:
-        """查找最接近 anchor_date 的那条作业记录（week_start_date <= anchor_date，按时间倒序取第一条）。
+        """查找最接近 anchor_date 的那条作业记录（lesson_date <= anchor_date，按时间倒序取第一条）。
         这样不管家长存的是周一还是周中上课日，都能匹配到对应的自然周。"""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT * FROM weekly_assignments
-                WHERE week_start_date <= ?
-                ORDER BY week_start_date DESC
+                WHERE lesson_date <= ?
+                ORDER BY lesson_date DESC
                 LIMIT 1
             ''', (anchor_date.isoformat(),))
             row = cursor.fetchone()
@@ -531,23 +601,36 @@ class Database:
                 import json
                 return {
                     'id': row['id'],
-                    'week_start_date': dt.date.fromisoformat(row['week_start_date']),
+                    'lesson_date': dt.date.fromisoformat(row['lesson_date']),
+                    'stage_start': dt.date.fromisoformat(row['stage_start']) if row['stage_start'] else None,
+                    'stage_end': dt.date.fromisoformat(row['stage_end']) if row['stage_end'] else None,
                     'items': json.loads(row['items']),
                     'notes': row['notes'],
                     'images': json.loads(row['images']) if row['images'] else []
                 }
             return None
 
-    def get_weekly_assignment(self, week_start_date: dt.date) -> Optional[Dict]:
+    def get_weekly_assignment(self, week_start: dt.date) -> Optional[Dict]:
+        """查找指定自然周（week_start 为周一）的作业记录。
+        找该周最接近的 lesson_date（上课日），返回对应的作业。"""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM weekly_assignments WHERE week_start_date = ?', (week_start_date.isoformat(),))
+            week_end = week_start + dt.timedelta(days=6)
+            cursor.execute('''
+                SELECT * FROM weekly_assignments
+                WHERE lesson_date >= ? AND lesson_date <= ?
+                ORDER BY lesson_date DESC
+                LIMIT 1
+            ''', (week_start.isoformat(), week_end.isoformat()))
             row = cursor.fetchone()
             if row:
                 import json
                 return {
                     'id': row['id'],
-                    'week_start_date': dt.date.fromisoformat(row['week_start_date']),
+                    'lesson_date': dt.date.fromisoformat(row['lesson_date']),
+                    'stage_start': dt.date.fromisoformat(row['stage_start']) if row['stage_start'] else None,
+                    'stage_end': dt.date.fromisoformat(row['stage_end']) if row['stage_end'] else None,
+                    'stage_order': row['stage_order'],
                     'items': json.loads(row['items']),
                     'notes': row['notes'],
                     'images': json.loads(row['images']) if row['images'] else []
@@ -559,13 +642,16 @@ class Database:
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT * FROM weekly_assignments
-                WHERE week_start_date >= ? AND week_start_date <= ?
-                ORDER BY week_start_date
+                WHERE lesson_date >= ? AND lesson_date <= ?
+                ORDER BY lesson_date
             ''', (start.isoformat(), end.isoformat()))
             import json
             return [{
                 'id': row['id'],
-                'week_start_date': dt.date.fromisoformat(row['week_start_date']),
+                'lesson_date': dt.date.fromisoformat(row['lesson_date']),
+                'stage_start': dt.date.fromisoformat(row['stage_start']) if row['stage_start'] else None,
+                'stage_end': dt.date.fromisoformat(row['stage_end']) if row['stage_end'] else None,
+                'stage_order': row['stage_order'],
                 'items': json.loads(row['items']),
                 'notes': row['notes'],
                 'images': json.loads(row['images']) if row['images'] else []
