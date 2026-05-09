@@ -142,7 +142,7 @@ async def api_update_items_order(request: Request):
     body = json.loads(await request.body())
     orders = body.get("orders", [])
     for entry in orders:
-        db.update_practice_item_sort_order(entry["id"], entry["sort_order"])
+        db.update_practice_item_sort_order(entry["item_id"], entry["sort_order"])
     return JSONResponse({"ok": True})
 
 # ─── API: 表扬海报生成 ─────────────────────────────────────────────────────
@@ -230,7 +230,7 @@ def practice_page():
     assign_by_pi_id = {}
     if assign and assign.get("items"):
         for a in assign["items"]:
-            pid = a.get("practice_item_id")
+            pid = a.get("item_id")
             if pid:
                 assign_by_pi_id[pid] = a.get("requirement", "")
 
@@ -253,7 +253,7 @@ def practice_page():
         items_html += "<div class='item-grid'>"
         for it in sorted(cat_items, key=lambda x: x.get("sort_order", 0)):
             name = it["name"]
-            pid = it.get("id")
+            pid = it.get("item_id")
             # 优先用 practice_item_id 精确匹配，fallback 用名称模糊匹配
             req_text = assign_by_pi_id.get(pid) or _find_requirement(name)
             has_req = bool(req_text)
@@ -264,9 +264,9 @@ def practice_page():
             has_req_class = "has-req" if has_req else ""
             items_html += (
                 "<div class='" + wrap_class + "'>"
-                + "<button class='item-btn " + has_req_class + "' data-id='" + str(it["id"]) + "' "
+                + "<button class='item-btn " + has_req_class + "' data-id='" + str(it["item_id"]) + "' "
                 + "data-req='" + req_text.replace("'", "&#39;") + "' "
-                + "onclick=\"selectItem('" + name.replace("'", "\\'") + "', " + str(it["id"]) + ")\">"
+                + "onclick=\"selectItem('" + name.replace("'", "\\'") + "', " + str(it["item_id"]) + ")\">"
                 + name
                 + tooltip_html
                 + "</button></div>"

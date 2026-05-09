@@ -83,6 +83,7 @@ class DailyPracticeLog(BaseModel):
     items: List[Dict] = Field(default_factory=list)
     total_minutes: int = 0
     log: Optional[str] = None  # 详细练习记录/进展
+    practiced: str = 'Y'  # Y=已练习，N=未练习（如病假）
     created_at: Optional[dt.datetime] = None
 
 

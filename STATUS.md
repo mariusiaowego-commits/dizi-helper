@@ -140,9 +140,31 @@ dizical obsidian export 4          # 导出4月报告
 - [x] `weekly_assignments` 表新增 `stage_start`、`stage_end`、`stage_order` 字段
 - [x] `stage_start` = 上课后一天；`stage_end` = 下一节课当天；`stage_order` = 上课序号
 - [x] 显示格式：`第4课  04-19  ~  04-25  单吐练习  ♩=82...`
-- [x] `kid_app` practice 页优先用 `practice_item_id` 精确匹配，fallback 名称匹配
-- [x] 录入支持 `practice_item_id:要求` 格式：`dizical practice assign 4:♩=82 1224:♩=80`
-- [x] 历史数据批量回填 `practice_item_id`（8条记录全部匹配）
+- [x] `kid_app` practice 页优先用 `item_id` 精确匹配，fallback 名称匹配
+- [x] 录入支持 `item_id:要求` 格式：`dizical practice assign 4:♩=82 1224:♩=80`
+- [x] 历史数据批量回填 `item_id`（weekly_assignments 45条/23条含ID，daily_practices 653条/648条含ID）
+
+## 👧 数据结构统一（2026-05-10）
+- [x] `practice_items.id` → `item_id`（表列已改名）
+- [x] `practice_items` 表外键：`category_id`（引用 `practice_categories.id`）
+- [x] `weekly_assignments.items` JSON：增加 `item_id` 字段（fuzzy match 回填）
+- [x] `daily_practices.items` JSON：增加 `item_id` 字段（fuzzy match 回填，653条中648条已回填）
+- [x] `daily_practices` 表：新增 `practiced TEXT NOT NULL DEFAULT 'Y'`（Y=已练习，N=未练习如病假）
+- [x] `save_daily_practice`：写入时自动 fuzzy-match 回填 `item_id`
+- [x] `save_weekly_assignment`：写入时自动 fuzzy-match 回填 `item_id`
+- [x] `DailyPracticeLog` Pydantic 模型：增加 `practiced` 字段
+- [x] 所有代码引用：`item['id']` → `item['item_id']`，`practice_item_id` → `item_id`
+- 迁移脚本：`src/migrate_item_id.py`（可重复安全执行）
+
+## 👧 item_id 四位数重编号（2026-05-10）
+- [x] `practice_items.item_id` 从原值（1~1335）重写为 1001~1039 四位序号
+- [x] `weekly_assignments.items` JSON 全部 209 条同步更新
+- [x] `daily_practices.items` JSON 全部更新
+- [x] 历史数据错配修正：`基本功-长音` → 1037，`基本功-颤音` → 1035
+- [x] `save_weekly_assignment` / `save_daily_practice` / `get_weekly_assignment` 入参 string→date 转换修复
+- [x] CLI 示例 ID 更新：`4` → `1003`（单吐练习），`1224` → `1026`（采茶扑蝶）
+- 迁移脚本：`src/migrate_renumber_item_id.py`（dry-run 验证后再执行）
+- pytest 49/49 ✅，kid_app 5路由 200 ✅
 
 ## 🚀 下一步开发计划
 

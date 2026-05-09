@@ -5,7 +5,7 @@
 
 **作者**: mtt
 **创建时间**: 2026-04-25
-**最后更新**: 2026-05-08（Kid Interface Session）
+**最后更新**: 2026-05-10（item_id 四位数重编号 + assignments fuzzy-match 完善）
 
 ---
 
@@ -139,44 +139,46 @@ dizical/
 ### dizical.db - 练习追踪
 
 #### practice_items 表
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 主键 |
-| name | TEXT | 练习项目名称 |
-| category_id | INTEGER FK | 所属大科目 |
-| created_at | DATETIME | 创建时间 |
+|| 字段 | 类型 | 说明 |
+||------|------|------|
+|| item_id | INTEGER PK | 小科目 ID（4位数字显示如 0001） |
+|| name | TEXT | 练习项目名称 |
+|| category_id | INTEGER FK | 所属大科目（引用 practice_categories.id） |
+|| sort_order | INTEGER | 排序序号，默认0 |
+|| is_active | BOOLEAN | 是否启用，默认1 |
+|| is_archived | BOOLEAN | 是否归档，默认0 |
+|| created_at | DATETIME | 创建时间 |
 
 #### daily_practices 表
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 主键 |
-| date | DATE | 练习日期 (YYYY-MM-DD) |
-| total_minutes | INTEGER | 总时长 (分钟) |
-| log | TEXT | 详细练习进展 |
-| created_at | DATETIME | 创建时间 |
+|| 字段 | 类型 | 说明 |
+||------|------|------|
+|| id | INTEGER PK | 主键 |
+|| date | DATE | 练习日期 (YYYY-MM-DD) |
+|| items | TEXT | JSON数组 `[{item, item_id, minutes}, ...]` |
+|| total_minutes | INTEGER | 总时长（分钟） |
+|| practiced | TEXT | Y=已练习，N=未练习（如病假/休息） |
+|| log | TEXT | 详细练习进展 |
+|| created_at | DATETIME | 创建时间 |
 
-#### daily_practice_items 表
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 主键 |
-| daily_practice_id | INTEGER FK | 关联每日练习 |
-| practice_item_id | INTEGER FK | 关联练习项目 |
-| minutes | INTEGER | 时长 (分钟) |
-
+#### daily_practice_items 表（已废弃，请忽略）
 #### practice_categories 表
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 主键 |
-| name | TEXT | 大科目名称 |
-| parent_name | TEXT | 保留字段 (统一用 name) |
+|| 字段 | 类型 | 说明 |
+||------|------|------|
+|| id | INTEGER PK | 主键 |
+|| name | TEXT | 大科目名称 |
 
-#### teacher_requirements 表
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 主键 |
-| week_start | DATE | 周开始日期 (周一) |
-| item | TEXT | 练习项目 |
-| requirement | TEXT | 具体要求 |
+#### weekly_assignments 表
+|| 字段 | 类型 | 说明 |
+||------|------|------|
+|| id | INTEGER PK | 主键 |
+|| lesson_date | DATE | 上课日期 |
+|| stage_start | DATE | 练习阶段开始日期（=上课次日） |
+|| stage_end | DATE | 练习阶段结束日期（=下次上课日） |
+|| stage_order | INTEGER | 上课序号 |
+|| items | TEXT | JSON数组 `[{item, item_id, requirement}, ...]` |
+|| notes | TEXT | 备注 |
+|| images | TEXT | JSON数组，存储配图路径 |
+|| created_at | DATETIME | 创建时间 |
 
 ---
 

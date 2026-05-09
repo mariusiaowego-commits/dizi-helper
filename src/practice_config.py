@@ -98,7 +98,7 @@ def _relation_set():
             _print("  ⚠️  小科目ID必须是数字")
             continue
 
-        item = next((it for it in items if it['id'] == item_id), None)
+        item = next((it for it in items if it['item_id'] == item_id), None)
         if not item:
             _print(f"  ⚠️  小科目ID {item_id} 不存在")
             continue

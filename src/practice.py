@@ -99,7 +99,7 @@ def find_similar_items(name: str, threshold: float = 0.3) -> List[Tuple[int, str
     for item in all_items:
         score = _similarity(name, item['name'])
         if score >= threshold:
-            scored.append((item['id'], item['name'], score))
+            scored.append((item['item_id'], item['name'], score))
     scored.sort(key=lambda x: x[2], reverse=True)
     return scored
 
@@ -173,7 +173,7 @@ def set_item_category(item_name: str, category_id: Optional[int]) -> None:
     items = db.get_practice_items(active_only=False)
     for item in items:
         if item['name'] == item_name:
-            db.update_practice_item_category(item['id'], category_id)
+            db.update_practice_item_category(item['item_id'], category_id)
             return
     # 不存在则新增
     new_id = db.add_practice_item(item_name, category_id)

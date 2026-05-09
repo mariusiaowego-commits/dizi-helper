@@ -411,15 +411,15 @@ class Database:
             ''', (name, category_id))
             conn.commit()
             if cursor.rowcount == 0:
-                cursor.execute('SELECT id FROM practice_items WHERE name = ?', (name,))
+                cursor.execute('SELECT item_id FROM practice_items WHERE name = ?', (name,))
                 row = cursor.fetchone()
-                return row['id']
+                return row['item_id']
             return cursor.lastrowid
 
     def get_practice_item_by_id(self, item_id: int) -> Optional[Dict]:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM practice_items WHERE id = ?", (item_id,))
+            cursor.execute("SELECT * FROM practice_items WHERE item_id = ?", (item_id,))
             row = cursor.fetchone()
             if row:
                 return dict(row)
@@ -440,46 +440,57 @@ class Database:
             cursor.execute(sql)
             return [dict(row) for row in cursor.fetchall()]
 
+    def create_practice_item(self, name: str, category_id: Optional[int] = None) -> int:
+        """创建新的练习小科目，返回新条目的 item_id。"""
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO practice_items (name, category_id, sort_order, is_active, is_archived) VALUES (?, ?, 0, 1, 0)",
+                (name, category_id)
+            )
+            conn.commit()
+            return cursor.lastrowid
+
     def update_practice_item_category(self, item_id: int, category_id: Optional[int]) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('UPDATE practice_items SET category_id = ? WHERE id = ?', (category_id, item_id))
+            cursor.execute('UPDATE practice_items SET category_id = ? WHERE item_id = ?', (category_id, item_id))
             conn.commit()
 
     def deactivate_practice_item(self, item_id: int) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('UPDATE practice_items SET is_active = 0 WHERE id = ?', (item_id,))
+            cursor.execute('UPDATE practice_items SET is_active = 0 WHERE item_id = ?', (item_id,))
             conn.commit()
 
     def delete_practice_item(self, item_id: int) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('DELETE FROM practice_items WHERE id = ?', (item_id,))
+            cursor.execute('DELETE FROM practice_items WHERE item_id = ?', (item_id,))
             conn.commit()
 
     def update_practice_item_name(self, item_id: int, name: str) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('UPDATE practice_items SET name = ? WHERE id = ?', (name, item_id))
+            cursor.execute('UPDATE practice_items SET name = ? WHERE item_id = ?', (name, item_id))
             conn.commit()
 
     def update_practice_item_sort_order(self, item_id: int, sort_order: int) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('UPDATE practice_items SET sort_order = ? WHERE id = ?', (sort_order, item_id))
+            cursor.execute('UPDATE practice_items SET sort_order = ? WHERE item_id = ?', (sort_order, item_id))
             conn.commit()
 
     def archive_practice_item(self, item_id: int) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('UPDATE practice_items SET is_archived = 1 WHERE id = ?', (item_id,))
+            cursor.execute('UPDATE practice_items SET is_archived = 1 WHERE item_id = ?', (item_id,))
             conn.commit()
 
     def unarchive_practice_item(self, item_id: int) -> None:
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute('UPDATE practice_items SET is_archived = 0 WHERE id = ?', (item_id,))
+            cursor.execute('UPDATE practice_items SET is_archived = 0 WHERE item_id = ?', (item_id,))
             conn.commit()
 
     def merge_practice_item(self, from_id: int, to_id: int, from_name: str, to_name: str) -> None:
@@ -513,7 +524,7 @@ class Database:
                     )
 
             # 3. 删除被合并的小科目
-            cursor.execute('DELETE FROM practice_items WHERE id = ?', (from_id,))
+            cursor.execute('DELETE FROM practice_items WHERE item_id = ?', (from_id,))
             conn.commit()
 
     def _match_practice_item_id(self, item_name: str) -> Optional[int]:
@@ -521,8 +532,8 @@ class Database:
         from difflib import SequenceMatcher
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT id, name FROM practice_items WHERE is_archived = 0")
-            pi_map = {name: pid for pid, name in cursor.fetchall()}
+            cursor.execute("SELECT item_id, name FROM practice_items WHERE is_archived = 0")
+            pi_map = {name: item_id for item_id, name in cursor.fetchall()}
         name = item_name.strip()
         if name in pi_map:
             return pi_map[name]
@@ -542,6 +553,8 @@ class Database:
     # Weekly assignment operations
     def save_weekly_assignment(self, lesson_date: dt.date, items: List[Dict], notes: Optional[str] = None, images: Optional[List[str]] = None) -> None:
         import json
+        if isinstance(lesson_date, str):
+            lesson_date = dt.date.fromisoformat(lesson_date)
         # 增量追加：查询现有 items，合并新旧（按 item 名称去重），再保存
         existing = self.get_weekly_assignment(lesson_date)
         if existing:
@@ -553,12 +566,12 @@ class Database:
         else:
             merged_items = items
 
-        # 补充 practice_item_id（fuzzy match）
+        # 补充 item_id（fuzzy match：只有 item_id 为 None/0 时才尝试匹配）
         for it in merged_items:
-            if 'practice_item_id' not in it:
+            if not it.get('item_id'):
                 matched = self._match_practice_item_id(it['item'])
                 if matched:
-                    it['practice_item_id'] = matched
+                    it['item_id'] = matched
 
         # 保留 notes（首次录入时保存，后续追加时保留原有 notes 除非明确传入）
         final_notes = notes if notes is not None else (existing['notes'] if existing else None)
@@ -613,6 +626,8 @@ class Database:
     def get_weekly_assignment(self, week_start: dt.date) -> Optional[Dict]:
         """查找指定自然周（week_start 为周一）的作业记录。
         找该周最接近的 lesson_date（上课日），返回对应的作业。"""
+        if isinstance(week_start, str):
+            week_start = dt.date.fromisoformat(week_start)
         with self._get_connection() as conn:
             cursor = conn.cursor()
             week_end = week_start + dt.timedelta(days=6)
@@ -658,16 +673,26 @@ class Database:
             } for row in cursor.fetchall()]
 
     # Daily practice operations
-    def save_daily_practice(self, date: dt.date, items: List[Dict], total_minutes: int, log: Optional[str] = None) -> None:
+    def save_daily_practice(self, date: dt.date, items: List[Dict], total_minutes: int, log: Optional[str] = None, practiced: str = 'Y') -> None:
         import json
+        if isinstance(date, str):
+            date = dt.date.fromisoformat(date)
         with self._get_connection() as conn:
             cursor = conn.cursor()
+            # 回填 item_id（fuzzy match，精确匹配时不重复查）
+            for it in items:
+                if 'item_id' not in it:
+                    matched = self._match_practice_item_id(it['item'])
+                    if matched:
+                        it['item_id'] = matched
+
             # 读取已有记录（同一日期多次录入需合并，而非替换）
-            cursor.execute('SELECT items, log FROM daily_practices WHERE date = ?', (date.isoformat(),))
+            cursor.execute('SELECT items, log, practiced FROM daily_practices WHERE date = ?', (date.isoformat(),))
             row = cursor.fetchone()
             if row:
                 existing_items = json.loads(row[0]) if row[0] else []
                 existing_log = row[1] or ''
+                existing_practiced = row[2] or 'Y'
                 # 合并 items：同名累加分钟数，不同则追加
                 item_map = {it['item']: it for it in existing_items}
                 for it in items:
@@ -678,15 +703,17 @@ class Database:
                 merged_items = list(item_map.values())
                 merged_total = sum(it['minutes'] for it in merged_items)
                 merged_log = (existing_log + '\n' + log).strip() if log else existing_log
+                # 未练习状态（practiced=N）覆盖为 Y
+                final_practiced = 'Y' if merged_total > 0 else existing_practiced
                 cursor.execute('''
-                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log)
-                    VALUES (?, ?, ?, ?)
-                ''', (date.isoformat(), json.dumps(merged_items, ensure_ascii=False), merged_total, merged_log))
+                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log, practiced)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (date.isoformat(), json.dumps(merged_items, ensure_ascii=False), merged_total, merged_log, final_practiced))
             else:
                 cursor.execute('''
-                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log)
-                    VALUES (?, ?, ?, ?)
-                ''', (date.isoformat(), json.dumps(items, ensure_ascii=False), total_minutes, log))
+                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log, practiced)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (date.isoformat(), json.dumps(items, ensure_ascii=False), total_minutes, log, practiced))
             conn.commit()
 
     @staticmethod
@@ -733,7 +760,8 @@ class Database:
                     'date': dt.date.fromisoformat(row['date']),
                     'items': self._normalize_items(row['items']),
                     'total_minutes': row['total_minutes'],
-                    'log': row['log']
+                    'log': row['log'],
+                    'practiced': row['practiced'] if 'practiced' in row.keys() else 'Y'
                 }
             return None
 
@@ -751,7 +779,8 @@ class Database:
                 'date': dt.date.fromisoformat(row['date']),
                 'items': self._normalize_items(row['items']),
                 'total_minutes': row['total_minutes'],
-                'log': row['log']
+                'log': row['log'],
+                'practiced': row['practiced'] if 'practiced' in row.keys() else 'Y'
             } for row in cursor.fetchall()]
 
     # ─── Progress → daily_practices.log ───────────────────────────────────────
@@ -766,7 +795,7 @@ class Database:
             new_log = f"{existing_log}\n{note}".strip()
             self.save_daily_practice(date, existing['items'], existing['total_minutes'], new_log)
         else:
-            self.save_daily_practice(date, [], 0, note)
+            self.save_daily_practice(date, [], 0, note, practiced='N')
 
     def get_progress_from_log(self, date: dt.date) -> Optional[str]:
         """读取某日的进展（从 daily_practices.log，取第一条非空行）"""

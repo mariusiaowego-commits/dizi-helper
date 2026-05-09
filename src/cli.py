@@ -1079,7 +1079,7 @@ def practice_assign(
         dizical practice assign -d 2026-04-20 回娘家:连线小节♩=78  # 增量追加，不会覆盖单吐练习
         dizical practice assign --show-items  # 先看有哪些项目，再录入
         dizical practice assign -d 2026-05-05 单吐练习:♩=82 -i ~/photos/req.jpg
-        dizical practice assign -d 2026-05-05 4:♩=82 1224:♩=80  # 用 practice_item_id 直接命中科目
+        dizical practice assign -d 2026-05-05 1003:♩=82 1026:♩=80  # 用 item_id 直接命中科目
     """
     from . import practice as pm
 
@@ -1130,19 +1130,72 @@ def practice_assign(
             # 查 practice_items 表获取名称
             pi = pm.db.get_practice_item_by_id(pid)
             if pi:
-                parsed.append({'item': pi['name'], 'practice_item_id': pid, 'requirement': req})
+                parsed.append({'item': pi['name'], 'item_id': pid, 'requirement': req})
             else:
-                console.print(f"[yellow]⚠️  未找到 practice_item_id={pid}，已跳过[/yellow]")
+                console.print(f"[yellow]⚠️  未找到 item_id={pid}，已跳过[/yellow]")
         else:
-            parsed.append({'item': item_key, 'requirement': req})
+            parsed.append({'item': item_key, 'item_id': None, 'requirement': req})
 
-    if parsed:
+    # ── Phase 2: 模糊匹配 + 确认拦截（参考 practice_log）─────────────────────────
+    resolved_items = []
+    for entry in parsed:
+        raw_name = entry['item']
+        # 精确匹配 → 直接收录
+        all_items = pm.db.get_practice_items(active_only=False)
+        exact = next((it['name'] for it in all_items if it['name'] == raw_name), None)
+        if exact:
+            resolved_items.append({'item': exact, 'item_id': next(it['item_id'] for it in all_items if it['name'] == exact), 'requirement': entry['requirement']})
+            continue
+
+        # 模糊匹配
+        similar = pm.find_similar_items(raw_name)
+        if not similar:
+            # 无相似 → 直接新建（自动创建 practice_items 条目）
+            new_id = pm.db.create_practice_item(raw_name)
+            resolved_items.append({'item': raw_name, 'item_id': new_id, 'requirement': entry['requirement']})
+            continue
+
+        # 有相似 → 打印候选并等待用户选择
+        console.print(f"\n[yellow]未找到完全匹配的小科目「{raw_name}」。[/yellow]")
+        console.print("以下小科目与你的输入相似：")
+        for i, (_, name, score) in enumerate(similar[:5], 1):
+            label = "高" if score >= 0.8 else "中" if score >= 0.5 else "低"
+            console.print(f"  [{i}] {name}（相似度：{label}）")
+        console.print(f"  [{len(similar)+1}] 新建小科目「{raw_name}」")
+
+        choice = None
+        while choice is None:
+            user_input = console.input("\n请选择 [1-{}/Enter取消]: ".format(len(similar)+1))
+            if user_input.strip() == "":
+                console.print("[dim]已取消本次录入[/dim]")
+                return
+            try:
+                idx = int(user_input.strip())
+                if 1 <= idx <= len(similar) + 1:
+                    choice = idx
+                else:
+                    console.print(f"[red]请输入 1~{len(similar)+1} 或直接回车[/red]")
+            except ValueError:
+                console.print(f"[red]请输入 1~{len(similar)+1} 或直接回车[/red]")
+
+        if choice <= len(similar):
+            resolved_name = similar[choice - 1][1]
+            resolved_id = similar[choice - 1][0]
+            console.print(f"[dim]  → 关联已有科目：{resolved_name}[/dim]")
+        else:
+            resolved_name = raw_name
+            new_id = pm.db.create_practice_item(raw_name)
+            resolved_id = new_id
+            console.print(f"[dim]  → 新建科目：{resolved_name}（item_id={new_id}）[/dim]")
+
+        resolved_items.append({'item': resolved_name, 'item_id': resolved_id, 'requirement': entry['requirement']})
+
+    if resolved_items:
         # 增量追加
         img_list = list(img) if img else None
-        pm.save_weekly_assignment(lesson_date, parsed, notes, img_list)
+        pm.save_weekly_assignment(lesson_date, resolved_items, notes, img_list)
         # 确认打印
-        item_names = [p['item'] for p in parsed]
-        console.print(f"[green]✅ 已录入 {lesson_date} 课后要求：[/green]")
+        item_names = [p['item'] for p in resolved_items]
         for name in item_names:
             console.print(f"  • {name}")
         if img_list:
@@ -1624,7 +1677,7 @@ def practice_items():
         for item in items:
             status = "[green]活跃[/green]" if item['is_active'] else "[dim]已停用[/dim]"
             cat = item.get('category_name') or '[dim]-[/dim]'
-            table.add_row(str(item['id']), item['name'], cat, status)
+            table.add_row(str(item['item_id']), item['name'], cat, status)
         console.print(table)
     else:
         console.print("[yellow]暂无练习项目[/yellow]")
