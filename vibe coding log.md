@@ -1,5 +1,37 @@
 # dizical vibe coding log
 
+## 2026-05-09 (Sat) — assign-phase1b + P0 备份全面收尾
+
+### assign-phase1b 图片存储
+- `weekly_assignments` 表新增 `images TEXT` 列（迁移兼容）
+- `save_weekly_assignment` 支持 `images` 增量合并追加，不覆盖已有图片
+- CLI `--image/-i` 可多次指定配图路径，录入后显示「📷 N 张已保存」
+- 查询显示「📷 N 张配图」
+- `.gitignore` 加入 `data/assignment_images/`
+- 修复 iter 双重消费 bug：`img_list = list(img)` 避免确认消息计数错误
+- subagent 验收：schema ✅ / 49 tests ✅ / E2E ✅
+- Commit: `4f62e66` → `fc72a9e` (含 docs 更新)
+
+### P0 数据备份全面完成
+- `backup.py` DATA_DIR 路径修复：优先查 `data/dizi.db`，fallback 到 `/Users/mt16/data`（已清空）
+- Payment reminder 措辞统一：`待缴余额` → `累计待缴金额`（11处）
+- Cron 精简：只保留 `dizi-payment`，删 `dizi-monthly`/`dizi-weekly`/`dizi-reminders-sync`
+- iCloud 同步验证：`/Users/mt16/Documents/TQ/01-Personal/0101-Family/010101-YoYo/dizical-backups/` ✅
+- 废弃 `dizical.db` 空库 + `/Users/mt16/data/` 旧目录已清理
+
+### 今日 commit（7个）
+| Commit | 内容 |
+|--------|------|
+| `4f62e66` | feat: 每周作业配图存储 (assign-phase1b) |
+| `fc72a9e` | docs: 更新 STATUS.md 和 DEVELOPMENT_PLAN.md |
+| `65d863e` | docs: 更新STATUS.md和vibe coding log，收尾开发 |
+| `5d33c74` | docs: 更新README - kid-ui底部Tab/归档/CLI逗号分隔 |
+| `ced8c4c` | feat(cli): practice log 支持逗号分隔多条记录 |
+| `4b47107` | fix(database): save_daily_practice 改为追加合并 |
+| `673b36e` | fix(cli): practice log 默认日期改为今天 |
+
+---
+
 ## 2026-05-08 (Fri) — Kid UI Phase 2
 
 ### 本次完成（Phase 2）
