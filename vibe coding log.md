@@ -15,12 +15,19 @@
 - **显示改为**：`第4课  04-19  ~  04-25  单吐练习  ♩=82...`
 - 修复 bug：回填时 stage_end 错用所有 scheduled 课里最早的，应为"按时间顺序下一节课"
 
-#### practice_item_id 关联
-- `items` JSON 数组新增 `practice_item_id` 字段（fuzzy match 自动关联）
-- `kid_app` practice 页优先用 `practice_item_id` 精确匹配，fallback 名称匹配（兼容历史）
-- 录入支持 `practice_item_id:要求` 格式精准命中：`dizical practice assign 4:♩=82 1224:♩=80`
+#### item_id 关联（字段已统一为 item_id）
+- `items` JSON 数组新增 `item_id` 字段（fuzzy match 自动关联）
+- `kid_app` practice 页优先用 `item_id` 精确匹配，fallback 名称匹配（兼容历史）
+- 录入支持 `item_id:要求` 格式精准命中：`dizical practice assign 1003:♩=82 1026:♩=80`
 - 新增 `database.get_practice_item_by_id()` 方法
-- 历史数据批量迁移：8条记录全部回填 `practice_item_id`
+- 历史数据批量迁移：回填 item_id
+
+#### item_id 四位数重编号
+- `practice_items.item_id` 从原值（1~1335）重写为 1001~1039 四位序号
+- `weekly_assignments.items` / `daily_practices.items` JSON 全部同步更新
+- 修正历史错配：`基本功-长音`→1037，`基本功-颤音`→1035
+- 修复 save_weekly/daily_assignment 入参 string→date 转换 bug
+- 迁移脚本：`src/migrate_renumber_item_id.py`
 
 #### 涉及文件
 - `src/database.py`：schema 迁移 + 三个 get 方法 + save + fuzzy match + get_practice_item_by_id
