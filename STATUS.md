@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-08
-**当前阶段**: Kid UI Phase 2 完成 — 底部Tab导航 + practice_config归档 + CLI多项修复
+**最后更新**: 2026-05-09
+**当前阶段**: assign-phase1b 图片存储完成 + 数据库备份全面修复
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
@@ -125,12 +125,22 @@ dizical obsidian export 4          # 导出4月报告
 | `f546d00` | feat(kid-ui): 固定底部Tab导航 + practice_config归档管理 |
 | `a57140b` | feat(kid-ui): 4项优化 - 老科目归档/底部Tab/计时保护/快速录入/全屏烟花 |
 
+## 👧 assign-phase1b 图片存储完成（2026-05-09）
+- [x] `weekly_assignments` 表新增 `images TEXT` 列（迁移兼容）
+- [x] `save_weekly_assignment` 支持 `images` 增量合并追加
+- [x] CLI: `--image/-i` 可多次指定配图路径，录入后显示「📷 N 张已保存」
+- [x] 查询显示「📷 N 张配图」，增量追加不丢失已有图片
+- [x] `.gitignore`: `data/assignment_images/` 忽略
+- [x] 使用指南：DB 路径合并，配图目录说明
+- [x] 修复 iter 双重消费 bug（`img_list` 避免重复遍历）
+- Commit: `4f62e66` | 49/49 tests pass
+
 ## 🚀 下一步开发计划
 
-### 优先级 P0 - 数据安全 ✅（部分完成，待补充 iCloud 同步）
-1. **数据库备份** - 定期自动备份 SQLite 文件到本地（data/backups/）✅ 本地
-2. **备份 iCloud 同步** - 自动同步到 iCloud 目标路径
-3. **备份验证** - 每次备份后 sqlite3 连接验证可读
+### 优先级 P0 - 数据安全 ✅ 全部完成
+1. **数据库备份** - ✅ 本地 `data/backups/`
+2. **备份 iCloud 同步** - ✅ 自动同步到 iCloud 目标路径
+3. **备份验证** - ✅ `sqlite3` 连接验证
 
 ### 优先级 P1 - 练习录入防误录 ✅
 4. **模糊匹配 + 确认拦截** - 已完成（_similarity / find_similar_items / practice_log 拦截）

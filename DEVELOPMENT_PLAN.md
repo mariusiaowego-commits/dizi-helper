@@ -285,6 +285,31 @@ dizical backup list  # 查看备份状态
 
 ---
 
+## 🎯 Phase 1b：每周作业配图存储（已实现 ✅ 2026-05-09）
+
+### 问题
+老师每周要求有时附有手写笔记照片，纯文字录入无法保留图片信息。
+
+### 实现方案
+- `weekly_assignments` 表新增 `images TEXT` 列（JSON 数组存路径）
+- `save_weekly_assignment` 支持 `images` 参数，增量追加不覆盖已有图片
+- CLI: `--image/-i` 可多次指定配图路径
+- 查询显示「📷 N 张配图」
+- `data/assignment_images/` 目录加入 `.gitignore`
+
+### 验收命令
+```bash
+dizical practice assign -d 2026-05-05 单吐练习:♩=82 -i ~/photos/req.jpg
+dizical practice assignments -s 2026-05-05 -e 2026-05-05
+# 应显示「📷 有 1 张配图」
+```
+
+### 不在此阶段
+- OCR 识别
+- 图片预览
+
+---
+
 ## 🎯 Phase 2：练习录入防误录（已实现）
 
 ### 问题
