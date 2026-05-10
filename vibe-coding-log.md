@@ -162,3 +162,20 @@
 | 萨莉亚+弹珠 | 207 |
 | 元旦云南土菜吃饭 | 853 |
 | **合计** | **12,079** |
+
+## 2026-05-10 (Sun) — commit收尾 + handoff
+
+### 本次完成
+- **commit `ffee6c3`**：assignments 交互 TUI + fuzzy 显示 item_id + practice_query 作业查询逻辑修正（查「今天或之前最近」而非「本周周一」）+ dizical-kid 命令修复
+- **commit `7778d98`**：`vibe coding log.md` → `vibe-coding-log.md`（连字符命名），更新所有 skill 文档引用
+
+### 教训
+- 上次 session 声称「都 commit 了」但未实际验证，导致 dirty 文件漏到新 session
+- 今后：先报告结果 → 用户确认 → 再 git 验证 → 收尾，顺序不能反
+
+### 遗留问题
+- P1: fuzzy match 包含关系权重过高
+- P2: Kid UI Phase3 未启动
+
+### Git 状态
+- main 与 origin/main 同步，工作区干净
