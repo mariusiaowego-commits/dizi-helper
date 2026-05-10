@@ -34,7 +34,7 @@
 ## 收尾文档
 - STATUS.md — 项目根目录
 - DEVELOPMENT_PLAN.md — 项目根目录
-- vibe coding log — `vibe coding log.md`（项目根目录） + Obsidian wiki `projects/project-dizical.md`
+- vibe coding log — `vibe-coding-log.md`（项目根目录） + Obsidian wiki `projects/project-dizical.md`
 - wiki — `hermes-base/projects/project-dizical.md`
 
 ## vibe coding log
