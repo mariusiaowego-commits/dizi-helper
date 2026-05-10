@@ -686,30 +686,41 @@ class Database:
                     if matched:
                         it['item_id'] = matched
 
-            # 读取已有记录（同一日期多次录入需合并，而非替换）
             cursor.execute('SELECT items, log, practiced FROM daily_practices WHERE date = ?', (date.isoformat(),))
             row = cursor.fetchone()
             if row:
                 existing_items = json.loads(row[0]) if row[0] else []
                 existing_log = row[1] or ''
                 existing_practiced = row[2] or 'Y'
+
                 # 合并 items：同名累加分钟数，不同则追加
-                item_map = {it['item']: it for it in existing_items}
+                # 保留已有 item 的 id，不重复分配
                 for it in items:
-                    if it['item'] in item_map:
-                        item_map[it['item']]['minutes'] += it['minutes']
-                    else:
-                        item_map[it['item']] = it
-                merged_items = list(item_map.values())
-                merged_total = sum(it['minutes'] for it in merged_items)
+                    found = False
+                    for ex in existing_items:
+                        if ex.get('item') == it['item'] and ex.get('item') == it['item']:
+                            ex['minutes'] += it['minutes']
+                            found = True
+                            break
+                    if not found:
+                        # 新 item：分配递增 id（取现有最大 item_id + 1）
+                        max_id = max([0] + [ei.get('item_id', 0) for ei in existing_items])
+                        it['item_id'] = max_id + 1
+                        existing_items.append(it)
+                merged_items = existing_items
+                merged_total = sum(it.get('minutes', 0) for it in merged_items)
                 merged_log = (existing_log + '\n' + log).strip() if log else existing_log
-                # 未练习状态（practiced=N）覆盖为 Y
                 final_practiced = 'Y' if merged_total > 0 else existing_practiced
                 cursor.execute('''
                     INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log, practiced)
                     VALUES (?, ?, ?, ?, ?)
                 ''', (date.isoformat(), json.dumps(merged_items, ensure_ascii=False), merged_total, merged_log, final_practiced))
             else:
+                # 新建记录：为每个 item 分配唯一递增 item_id
+                next_id = 1
+                for it in items:
+                    it['item_id'] = next_id
+                    next_id += 1
                 cursor.execute('''
                     INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log, practiced)
                     VALUES (?, ?, ?, ?, ?)
@@ -730,6 +741,31 @@ class Database:
         if items and isinstance(items[0], str):
             return [{'item': name, 'minutes': 0} for name in items]
         return items
+
+    def remove_daily_practice_record_by_id(self, date: dt.date, item_id: int) -> None:
+        """根据日期和 item_id 从 JSON items 数组中删除指定项目"""
+        import json as _json
+        existing = self.get_daily_practice(date)
+        if not existing:
+            return
+        items = existing.get("items", [])
+        new_items = [it for it in items if it.get("item_id") != item_id]
+        if not new_items:
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM daily_practices WHERE date = ?', (date.isoformat(),))
+                conn.commit()
+        else:
+            new_total = sum(it.get("minutes", 0) for it in new_items)
+            # 直接写 DB，绕过 save_daily_practice 的合并逻辑，避免旧数据干扰
+            with self._get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log, practiced)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (date.isoformat(), _json.dumps(new_items, ensure_ascii=False),
+                      new_total, existing.get("log", ""), 'Y'))
+                conn.commit()
 
     def remove_daily_practice_item(self, date: dt.date, item_name: str) -> None:
         """从指定日期的练习记录中删除一个项目（减少其分钟数），若无其他项目则删除整条记录"""

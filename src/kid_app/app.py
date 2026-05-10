@@ -68,9 +68,10 @@ def api_practice_day(date_str: str):
         return JSONResponse({"error": "无效日期格式"}, status_code=400)
     practice = db.get_daily_practice(day)
     if not practice:
-        return JSONResponse({"date": date_str, "items": [], "total_minutes": 0, "log": ""})
+        return JSONResponse({"date": date_str, "id": None, "items": [], "total_minutes": 0, "log": ""})
     return JSONResponse({
         "date": date_str,
+        "id": practice.get("id"),
         "items": practice.get("items", []),
         "total_minutes": practice.get("total_minutes", 0),
         "log": practice.get("log", "")
@@ -99,42 +100,70 @@ async def api_unarchive_item(item_id: int):
 # ─── API: 打卡 ─────────────────────────────────────────────────────────────
 @app.post("/api/log")
 async def api_log(request: Request):
-    body = json.loads(await request.body())
-    date_str = body.get("date")
-    item_name = body.get("item")
-    minutes = int(body.get("minutes", 0))
-    log_note = body.get("log", "")
+    try:
+        body = json.loads(await request.body())
+        date_str = body.get("date")
+        item_name = body.get("item")
+        minutes = int(body.get("minutes", 0))
+        log_note = body.get("log", "")
+        is_extra = body.get("is_extra", False)
 
-    date = dt.date.fromisoformat(date_str) if date_str else dt.date.today()
-    existing = db.get_daily_practice(date)
-    items = []
-    if existing and existing.get("items"):
-        items = existing["items"]
+        date = dt.date.fromisoformat(date_str) if date_str else dt.date.today()
 
-    found = False
-    for it in items:
-        if it["item"] == item_name:
-            it["minutes"] += minutes
-            found = True
-            break
-    if not found:
-        items.append({"item": item_name, "minutes": minutes})
+        if is_extra:
+            # extra 追加：每次创建独立 item 条目（带唯一 id），不与同名合并
+            # 直接操作 DB，绕过 save_daily_practice 的 merge 逻辑
+            existing = db.get_daily_practice(date)
+            existing_items = existing.get("items", []) if existing else []
+            max_id = max([0] + [it.get('item_id', it.get('id', 0)) for it in existing_items])
+            new_item = {"item_id": max_id + 1, "item": item_name, "minutes": minutes}
+            all_items = existing_items + [new_item]
+            total = sum(it.get('minutes', 0) for it in all_items)
+            # 直接写 DB，不合并
+            import sqlite3
+            conn = sqlite3.connect('/Users/mt16/dev/dizical/data/dizi.db')
+            conn.execute('''
+                INSERT OR REPLACE INTO daily_practices (date, items, total_minutes, log, practiced)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (date.isoformat(), json.dumps(all_items, ensure_ascii=False), total, '', 'Y'))
+            conn.commit()
+            conn.close()
+            return JSONResponse({"ok": True})
 
-    total = sum(it["minutes"] for it in items)
-    db.save_daily_practice(date, items, total, log_note)
-    return JSONResponse({"ok": True, "total": total})
+        # 正常打卡：直接传给 save_daily_practice，由它处理合并逻辑
+        # 注意：只传 [{item, minutes}]，不要预合并！save_daily_practice 内部会读 DB 合并
+        items = [{"item": item_name, "minutes": minutes}]
+        total = minutes  # save_daily_practice 会重新计算，这里只作返回值参考
+        db.save_daily_practice(date, items, total, log_note)
+        return JSONResponse({"ok": True, "total": total})
+
+    except Exception as e:
+        import traceback
+        return JSONResponse({"ok": False, "error": str(e), "trace": traceback.format_exc()}, status_code=500)
 
 # ─── API: 删除单条练习记录 ─────────────────────────────────────────────────
 @app.delete("/api/log")
 async def api_delete_log(request: Request):
-    body = json.loads(await request.body())
-    date_str = body.get("date")
-    item_name = body.get("item")
-    if not date_str or not item_name:
-        return JSONResponse({"ok": False, "error": "缺少参数"}, status_code=400)
-    date = dt.date.fromisoformat(date_str)
-    db.remove_daily_practice_item(date, item_name)
-    return JSONResponse({"ok": True})
+    import traceback
+    try:
+        body = json.loads(await request.body())
+        date_str = body.get("date")
+        item_name = body.get("item")
+        item_id = body.get("id")
+        if not date_str:
+            return JSONResponse({"ok": False, "error": "缺少参数"}, status_code=400)
+        date = dt.date.fromisoformat(date_str)
+        if item_id:
+            db.remove_daily_practice_record_by_id(date, item_id)
+            after = db.get_daily_practice(date)
+        elif item_name:
+            db.remove_daily_practice_item(date, item_name)
+            after = db.get_daily_practice(date)
+        else:
+            return JSONResponse({"ok": False, "error": "缺少参数"}, status_code=400)
+        return JSONResponse({"ok": True, "items": after["items"] if after else [], "total_minutes": after["total_minutes"] if after else 0})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e), "trace": traceback.format_exc()}, status_code=500)
 
 # ─── API: 更新练习项目排序 ─────────────────────────────────────────────────
 @app.put("/api/items/order")
@@ -267,7 +296,7 @@ def practice_page():
                 + "<button class='item-btn " + has_req_class + "' data-id='" + str(it["item_id"]) + "' "
                 + "data-req='" + req_text.replace("'", "&#39;") + "' "
                 + "onclick=\"selectItem('" + name.replace("'", "\\'") + "', " + str(it["item_id"]) + ")\">"
-                + name
+                + name + " <span style='font-size:11px;color:rgba(255,255,255,0.6)'>[" + str(it["item_id"]) + "]</span>"
                 + tooltip_html
                 + "</button></div>"
             )
@@ -285,6 +314,7 @@ def practice_page():
         items_html=items_html,
         today_mins=today_mins,
         assign_json=assign_json,
+        today_date=today.isoformat(),
     )
 
 @app.get("/achievements", response_class=HTMLResponse)

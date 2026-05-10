@@ -351,7 +351,10 @@
   </div>
 
   <div class="card today-records" id="todayRecords">
-    <h3>📋 今日练习记录</h3>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+      <h3>📋 今日练习记录</h3>
+      <div id="serverClock" style="font-size:13px;color:#7F8C8D;background:#F8F9FA;border-radius:12px;padding:4px 12px;flex:1;text-align:right;"></div>
+    </div>
     <div id="recordsList"></div>
   </div>
 
@@ -405,7 +408,24 @@
     let started = false;
     let timerRunning = false;
     let quickDuration = 10;
-    let todayDate = new Date().toISOString().split('T')[0];
+    let todayDate = "{{today_date}}";
+
+    // ── 实时时钟 ──
+    function updateClock() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const mo = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const h = String(now.getHours()).padStart(2, '0');
+      const mi = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      const pad = document.getElementById('serverClock');
+      if (pad) {
+        pad.textContent = `${y}-${mo}-${d} ${h}:${mi}:${s}`;
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
     let pendingNav = null;
 
     // ── 老科目加载 ──
@@ -563,7 +583,9 @@
       // Clear archived selection
       document.querySelectorAll('.archived-item-btn').forEach(b => b.classList.remove('selected'));
       document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
-      event.target.classList.add('selected');
+      // Find the button that was clicked (supports both regular and archived items)
+      const btn = document.querySelector(`.item-btn[data-id='${id}'], .archived-item-btn[data-id='${id}']`);
+      if (btn) btn.classList.add('selected');
       selectedItem = name;
       selectedItemId = id;
       document.getElementById('timer-card').style.display = 'block';
@@ -574,8 +596,7 @@
       // 检查老师要求
       const tip = document.getElementById('reqTip');
       const tipContent = document.getElementById('reqTipContent');
-      const btn = event.target;
-      const reqText = btn.getAttribute('data-req');
+      const reqText = btn ? btn.getAttribute('data-req') : null;
       if (reqText) {
         tipContent.textContent = reqText;
         tip.classList.add('show');
@@ -636,7 +657,11 @@
       clearInterval(timerInterval);
       started = false;
       timerRunning = false;
-      document.getElementById('confirmMins').textContent = Math.floor(elapsed / 60);
+      // 保存提前结束时的分钟数，然后立即重置 elapsed 防止带到下次
+      const finalMins = Math.floor(elapsed / 60);
+      elapsed = 0;
+      document.getElementById('timer-display').textContent = '00:00';
+      document.getElementById('confirmMins').textContent = finalMins;
       document.getElementById('confirmArea').classList.add('show');
     }
 
@@ -680,9 +705,9 @@
         } else {
           logList.innerHTML = extras.map(it => `
             <div class="extra-log-item">
-              <span>${it.item}</span>
+              <span>${it.item} <span style="font-size:11px;color:#AAA;">[#${it.item_id}]</span></span>
               <span class="extra-mins">+${it.minutes}分钟</span>
-              <button class="extra-del" onclick="deleteExtraRecord('${it.id}')">✕</button>
+              <button class="extra-del" onclick="deleteExtraRecord('${it.item_id}')">✕</button>
             </div>
           `).join('');
         }
@@ -698,8 +723,6 @@
 
     async function addExtraMins(mins) {
       if (!selectedItem) { alert('请先选择一个科目'); return; }
-      document.querySelectorAll('.extra-btn').forEach(b => b.classList.remove('selected'));
-      event.target.classList.add('selected');
       try {
         let res = await fetch('/api/log', {
           method: 'POST',
@@ -716,55 +739,82 @@
     }
 
     async function deleteExtraRecord(id) {
-      if (!confirm('删除这条额外练习记录？')) return;
+      console.log('[deleteExtraRecord] deleting id=' + id);
       try {
-        await fetch('/api/log/' + id, { method: 'DELETE' });
-        refreshExtraSection();
-        loadTodayRecords();
-      } catch(e) {}
-    }
-
-    // Load today's records from API
-    async function loadTodayRecords() {
-      try {
-        let res = await fetch('/api/practices/' + todayDate);
-        let data = await res.json();
-        let recordsList = document.getElementById('recordsList');
-        if (!data.items || data.items.length === 0) {
-          recordsList.innerHTML = '<div class="empty-records">还没有练习记录，开始练习吧！</div>';
+        let res = await fetch('/api/log', {
+          method: 'DELETE',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({date: todayDate, id: id})
+        });
+        let result = await res.json();
+        console.log('[deleteExtraRecord] result=' + JSON.stringify(result));
+        if (result.ok) {
+          refreshExtraSection();
+          renderTodayRecords(result.items || [], result.total_minutes || 0);
         } else {
-          recordsList.innerHTML = data.items.map(it => `
-            <div class="record-item">
-              <div>
-                <div class="item-name">${it.item}</div>
-                <div class="item-mins">${it.minutes} 分钟</div>
-              </div>
-              <button class="delete-btn" onclick="deleteRecord('${it.item.replace(/'/g, "\\'")}')">✕</button>
-            </div>
-          `).join('');
-          // GSAP: 记录从右侧滑入（stagger）
-          gsap.fromTo('.record-item',
-            { opacity: 0, x: 60 },
-            { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" }
-          );
+          alert('删除失败: ' + (result.error || '未知错误'));
         }
-        document.querySelector('.today-stat') && (document.querySelector('.today-stat').textContent = '今日已练习: ' + data.total_minutes + ' 分钟');
       } catch(e) {
-        document.getElementById('recordsList').innerHTML = '<div class="empty-records">加载失败</div>';
+        console.error('[deleteExtraRecord] error=' + e.message);
       }
     }
 
-    async function deleteRecord(itemName) {
-      if (!confirm('删除「' + itemName + '」这条记录？')) return;
+    // Load today's records from API
+    function renderTodayRecords(items, total) {
+      let recordsList = document.getElementById('recordsList');
+      if (!items || items.length === 0) {
+        recordsList.innerHTML = '<div class="empty-records">还没有练习记录，开始练习吧！</div>';
+      } else {
+        recordsList.innerHTML = items.map(it => `
+          <div class="record-item">
+            <div>
+              <div class="item-name">${it.item} <span style="font-size:11px;color:#AAA;">[#${it.item_id}]</span></div>
+              <div class="item-mins">${it.minutes} 分钟</div>
+            </div>
+            <button class="delete-btn" onclick="deleteRecord('${it.item_id}')">✕</button>
+          </div>
+        `).join('');
+        gsap.fromTo('.record-item',
+          { opacity: 0, x: 60 },
+          { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" }
+        );
+      }
+      document.querySelector('.today-stat') && (document.querySelector('.today-stat').textContent = '今日已练习: ' + total + ' 分钟');
+    }
+
+    async function loadTodayRecords() {
+      console.log('[loadTodayRecords] fetching /api/practices/' + todayDate);
       try {
-        await fetch('/api/log', {
+        let res = await fetch('/api/practices/' + todayDate);
+        console.log('[loadTodayRecords] status=' + res.status);
+        let data = await res.json();
+        console.log('[loadTodayRecords] data.items.length=' + (data.items ? data.items.length : 'null'));
+        renderTodayRecords(data.items || [], data.total_minutes || 0);
+      } catch(e) {
+        console.error('[loadTodayRecords] error: ' + e.message);
+        document.getElementById('recordsList').innerHTML = '<div class="empty-records">加载失败: ' + e.message + '</div>';
+      }
+    }
+
+    async function deleteRecord(id) {
+      console.log('[deleteRecord] called, id=' + id + ', todayDate=' + todayDate);
+      try {
+        let res = await fetch('/api/log', {
           method: 'DELETE',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({date: todayDate, item: itemName})
+          body: JSON.stringify({date: todayDate, id: id})
         });
-        loadTodayRecords();
+        let result = await res.json();
+        console.log('[deleteRecord] result=' + JSON.stringify(result));
+        if (result.ok) {
+          // 直接用服务端返回的数据更新 UI，避免 re-fetch 竞态
+          renderTodayRecords(result.items || [], result.total_minutes || 0);
+        } else {
+          alert('删除失败: ' + (result.error || '未知错误'));
+        }
       } catch(e) {
-        alert('删除失败');
+        console.error('[deleteRecord] error=' + e.message);
+        alert('删除失败: ' + e.message);
       }
     }
 
