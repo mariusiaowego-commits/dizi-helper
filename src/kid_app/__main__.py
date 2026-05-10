@@ -79,7 +79,7 @@ def status():
         urllib.request.urlopen(f"http://localhost:{port}/", timeout=2)
         print(f"\u2705 服务正在运行: http://localhost:{port}")
     except:
-        print(f"\u274C 服务未运行，请先执行: dizical kid start")
+        print(f"\u274C 服务未运行，请先执行: dizical-kid start")
 
 if __name__ == "__main__":
     kid_app()

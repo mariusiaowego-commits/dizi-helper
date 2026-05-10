@@ -1,5 +1,7 @@
 from datetime import date
-from typing import Optional, Annotated
+from typing import Optional, Annotated, List, Dict
+import curses
+import io
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -24,6 +26,104 @@ def _pad(text: str, width: int = 4) -> str:
     visible = wcwidth.wcswidth(stripped)
     return text + " " * (width - visible)
 
+def _visual_width(line: str) -> int:
+    """计算一行去掉rich标签后的显示宽度"""
+    return wcwidth.wcswidth(_RICH_TAG.sub("", line))
+
+# Rich 标签 → curses 属性映射（ANSI code → curses attr）
+_RICH_STYLE_MAP = {
+    "bold": curses.A_BOLD,
+    "dim": curses.A_DIM,
+    "italic": curses.A_ITALIC,
+    "reverse": curses.A_REVERSE,
+    "cyan": 1,   # 用 color_pair(1)
+    "yellow": 2, # 用 color_pair(2)
+    "red": 3,    # 用 color_pair(3)
+    "green": 4,  # 用 color_pair(4)
+    "magenta": 5,
+}
+
+def _render_rich_line(line: str, stdscr, row: int, col: int, w: int) -> None:
+    """
+    解析 line 中的 Rich ANSI 标签（来自 Console(force_terminal=False) 输出），
+    按显示内容逐段写到 curses（带样式）并截断到 w 宽度。
+    """
+    if curses.has_colors():
+        if not hasattr(_render_rich_line, '_inited'):
+            curses.init_pair(1, curses.COLOR_CYAN, -1)
+            curses.init_pair(2, curses.COLOR_YELLOW, -1)
+            curses.init_pair(3, curses.COLOR_RED, -1)
+            curses.init_pair(4, curses.COLOR_GREEN, -1)
+            curses.init_pair(5, curses.COLOR_MAGENTA, -1)
+            _render_rich_line._inited = True
+
+    # 解析 ANSI 色码（如 \x1b[1;36m）并分段
+    import re as _re2
+    ANSI_RE = _re2.compile(r'\x1b\[[0-9;]*m')
+    parts = ANSI_RE.split(line)
+    codes = ANSI_RE.findall(line)
+
+    attr = curses.A_NORMAL
+    pos = col
+    for i, segment in enumerate(parts):
+        if not segment:
+            continue
+        # 当前段的 ANSI 属性
+        if i < len(codes):
+            code = codes[i].strip('\x1b[]')
+            attr = curses.A_NORMAL
+            for part in code.split(';'):
+                p = part.strip()
+                if p == '1':
+                    attr |= curses.A_BOLD
+                elif p == '2':
+                    attr |= curses.A_DIM
+                elif p == '3':
+                    attr |= curses.A_ITALIC
+                elif p == '7':
+                    attr |= curses.A_REVERSE
+                elif p in ('30', '36') and '36' in code:
+                    attr |= curses.color_pair(1)
+                elif p in ('33',) and '33' in code:
+                    attr |= curses.color_pair(2)
+                elif p == '31':
+                    attr |= curses.color_pair(3)
+                elif p == '32':
+                    attr |= curses.color_pair(4)
+                elif p == '35':
+                    attr |= curses.color_pair(5)
+
+        vis = _visual_width(segment)
+        if pos + vis > w - 1:
+            segment = _truncate_to_width(segment, w - 1 - pos)
+            vis = _visual_width(segment)
+        if vis <= 0:
+            break
+        try:
+            stdscr.addstr(row, pos, segment, attr)
+        except curses.error:
+            pass
+        pos += vis
+
+def _truncate_to_width(line: str, max_width: int) -> str:
+    """截断到最大显示宽度（忽略标签）"""
+    stripped = _RICH_TAG.sub("", line)
+    vis = wcwidth.wcswidth(stripped)
+    if vis <= max_width:
+        return line
+    # 从右往左截
+    result = []
+    consumed = 0
+    for ch in line:
+        cw = wcwidth.wcswidth(ch)
+        if cw < 0:
+            cw = 0
+        if consumed + cw > max_width:
+            break
+        result.append(ch)
+        consumed += cw
+    return ''.join(result)
+
 lesson_app = typer.Typer(help="课程管理")
 payment_app = typer.Typer(help="缴费管理")
 stat_app = typer.Typer(help="统计报表")
@@ -44,6 +144,10 @@ app.add_typer(payment_app, name="payment")
 app.add_typer(stat_app, name="stat")
 app.add_typer(practice_app, name="practice")
 app.add_typer(backup_app, name="backup")
+
+# kid_app 子命令（儿童版 Web 界面）
+from src.kid_app.__main__ import kid_app as _kid_app
+app.add_typer(_kid_app, name="kid", help="🎵 竹笛练习助手（儿童版）")
 
 lesson_manager = LessonManager()
 payment_manager = PaymentManager()
@@ -995,10 +1099,10 @@ def practice_log(
         # 有相似 → 打印候选并等待用户选择
         console.print(f"\n[yellow]未找到完全匹配的小科目「{raw_name}」。[/yellow]")
         console.print("以下小科目与你的输入相似：")
-        for i, (_, name, score) in enumerate(similar[:5], 1):
+        for i, (iid, name, score) in enumerate(similar[:5], 1):
             label = "高" if score >= 0.8 else "中" if score >= 0.5 else "低"
-            console.print(f"  [{i}] {name}（相似度：{label}）")
-        console.print(f"  [{len(similar)+1}] 新建小科目「{raw_name}」")
+            console.print(f"  [{i}] {name} [dim]#{iid}[/dim]（相似度：{label}）")
+        console.print(f"  [{len(similar)+1}] 新建小科目「{raw_name}（item_id=?）」")
 
         choice = None
         while choice is None:
@@ -1158,10 +1262,10 @@ def practice_assign(
         # 有相似 → 打印候选并等待用户选择
         console.print(f"\n[yellow]未找到完全匹配的小科目「{raw_name}」。[/yellow]")
         console.print("以下小科目与你的输入相似：")
-        for i, (_, name, score) in enumerate(similar[:5], 1):
+        for i, (iid, name, score) in enumerate(similar[:5], 1):
             label = "高" if score >= 0.8 else "中" if score >= 0.5 else "低"
-            console.print(f"  [{i}] {name}（相似度：{label}）")
-        console.print(f"  [{len(similar)+1}] 新建小科目「{raw_name}」")
+            console.print(f"  [{i}] {name} [dim]#{iid}[/dim]（相似度：{label}）")
+        console.print(f"  [{len(similar)+1}] 新建小科目「{raw_name}（item_id=?）」")
 
         choice = None
         while choice is None:
@@ -1204,14 +1308,15 @@ def practice_assign(
 
 @practice_app.command("assignments")
 def practice_assignments(
-    weeks: int = typer.Option(4, "--weeks", "-w", help="过去 N 课"),
+    weeks: int = typer.Option(8, "--weeks", "-w", help="过去 N 课"),
     start: Optional[str] = typer.Option(None, "--start", "-s", help="开始日期 YYYY-MM-DD"),
     end: Optional[str] = typer.Option(None, "--end", "-e", help="结束日期 YYYY-MM-DD"),
     item: Optional[str] = typer.Option(None, "--item", "-i", help="只看某个练习项目"),
 ):
-    """查询每课老师要求（明细 + 汇总）
+    """查询每课老师要求 — 交互式浏览，最新课在前面
 
-    默认显示过去 4 课。支持 --weeks、--start/--end、--item 过滤。
+    默认显示过去 8 课。支持 --weeks、--start/--end、--item 过滤。
+    方向键 ↑↓ 浏览，回车展开科目要求，ESC 退出。
     """
     from . import practice as pm
     import datetime as dt
@@ -1226,6 +1331,9 @@ def practice_assignments(
         assignments = pm.query_assignments(start=start_date, end=end_date)
     else:
         assignments = pm.query_assignments(weeks=weeks)
+
+    # 倒序：最新课在前
+    assignments = sorted(assignments, key=lambda a: a['lesson_date'], reverse=True)
 
     if not assignments:
         console.print("[yellow]没有找到老师要求记录[/yellow]")
@@ -1243,60 +1351,127 @@ def practice_assignments(
             console.print(f"[yellow]没有找到包含「{item}」的记录[/yellow]")
             return
 
-    # ── 汇总头部 ──
-    total_items = sum(len(a['items']) for a in assignments)
-    first_lesson = assignments[0]['lesson_date']
-    last_lesson = assignments[-1]['lesson_date']
-    last_stage_end = assignments[-1].get('stage_end')
-    if last_stage_end:
-        date_range = f"{first_lesson} ~ {last_lesson}（至{last_stage_end}）"
-    else:
-        date_range = f"{first_lesson} ~ {last_lesson}"
-    console.print(f"\n📋 每课老师要求")
-    console.print(f"  范围: {date_range}  ({len(assignments)} 课, {total_items} 条要求)")
+    # 启动 curses TUI
+    curses.wrapper(_AssignmentsTUI(assignments).run)
 
-    # ── 项目频次汇总 ──
-    item_counts: Dict[str, int] = {}
-    for a in assignments:
-        for it in a['items']:
-            item_counts[it['item']] = item_counts.get(it['item'], 0) + 1
-    if item_counts:
-        console.print(f"\n  📊 项目频次:")
-        for name, cnt in sorted(item_counts.items(), key=lambda x: -x[1]):
-            console.print(f"    {name}: {cnt} 次")
 
-    # ── 每课明细 ──
-    import sys
-    out = lambda msg: sys.stdout.write(msg + '\n')
+# ── assignments TUI ───────────────────────────────────────────────────────────
+class _AssignmentsTUI:
+    """交互式浏览每课老师要求 — Rich Table 风格"""
 
-    out("")
-    out(f"  第N课    阶段起始日    阶段结束日    项目            要求")
-    out(f"  {'─' * 72}")
+    def __init__(self, assignments: List[Dict]):
+        self.assignments = assignments
+        self.cursor = 0       # 当前选中课
+        self.expanded: set[int] = set()  # 展开的课索引
 
-    for a in assignments:
-        ss = a.get('stage_start')
-        se = a.get('stage_end')
-        so = a.get('stage_order')
-        order_str = f"第{so}课" if so else "无序号"
-        if ss and se:
-            stage_str = f"{ss.strftime('%m-%d')}  ~  {se.strftime('%m-%d')}"
-        elif ss:
-            stage_str = f"{ss.strftime('%m-%d')}  ~  （未安排）"
-        else:
-            stage_str = f"（未上课）  ~  （未安排）"
-        for idx, it in enumerate(a['items']):
-            req_preview = it['requirement'].strip().replace('\n', ' ')
-            if len(req_preview) > 40:
-                req_preview = req_preview[:40] + '...'
-            out(f"  {order_str}  {stage_str}  {it['item']:<12}  {req_preview}")
-        if a.get('notes'):
-            notes_preview = a['notes'].replace('\n', ' ')[:44]
-            out(f"  {' ' * len(order_str)}  {' ' * len(stage_str)}  {'📝':<12}  {notes_preview}")
-        if a.get('images'):
-            out(f"  {' ' * len(order_str)}  {' ' * len(stage_str)}  {'📷':<12}  {len(a['images'])} 张配图")
-        out("")
+    def run(self, stdscr: curses.window) -> None:
+        # 颜色初始化：透明背景以继承终端主题色
+        if curses.has_colors():
+            curses.start_color()
+            curses.use_default_colors()
+            curses.init_pair(101, curses.COLOR_CYAN, -1)   # 标题
+            curses.init_pair(102, curses.COLOR_WHITE, -1) # 默认文本（透明背景）
+            curses.init_pair(103, curses.COLOR_YELLOW, -1) # 选中行
+        stdscr.attrset(0)
 
-    out(f"  💡 补录: dizical practice assign -d {assignments[-1]['lesson_date']} 项目:要求")
+        curses.curs_set(0)
+        stdscr.nodelay(False)
+        stdscr.keypad(True)
+        stdscr.clear()
+
+        h, w = stdscr.getmaxyx()
+        while True:
+            stdscr.clear()
+            self._draw(stdscr, h, w)
+            key = stdscr.getch()
+            if key in (curses.KEY_UP,):
+                self.cursor = max(0, self.cursor - 1)
+            elif key in (curses.KEY_DOWN,):
+                self.cursor = min(len(self.assignments) - 1, self.cursor + 1)
+            elif key in (curses.KEY_ENTER, 10, 13):
+                if self.cursor in self.expanded:
+                    self.expanded.discard(self.cursor)
+                else:
+                    self.expanded.add(self.cursor)
+            elif key in (ord('q'), ord('Q'), 27):
+                break
+
+    def _draw(self, stdscr: curses.window, h: int, w: int) -> None:
+        try:
+            # 标题行
+            stdscr.addstr(0, 0, f" 🎵 每课老师要求  │  {len(self.assignments)} 课  │  [↑↓]浏览  [Enter]展开/收起  [Q/ESC]退出")
+            stdscr.clrtoeol()
+            stdscr.addstr(1, 0, "─" * (w - 1))
+        except curses.error:
+            pass
+
+        row = 2
+        for idx, a in enumerate(self.assignments):
+            if row >= h - 3:
+                break
+
+            is_selected = (idx == self.cursor)
+            ss = a.get('stage_start')
+            se = a.get('stage_end')
+            so = a.get('stage_order')
+            order_str = f"第{so}课" if so else ""
+            ld = a['lesson_date'].strftime('%m-%d')
+
+            if ss and se:
+                stage_str = f"{ss.strftime('%m-%d')}~{se.strftime('%m-%d')}"
+            elif ss:
+                stage_str = f"{ss.strftime('%m-%d')}~（未安排）"
+            else:
+                stage_str = "（无阶段）"
+
+            item_count = len(a.get('items', []))
+            img_count = len(a.get('images', []))
+
+            prefix = "▶ " if is_selected else "  "
+            extra = f"  📷{img_count}" if img_count else ""
+            line = f"{prefix}第{so}课 | {ld} | {stage_str} | {item_count}项{extra}"
+
+            attr = curses.A_REVERSE if is_selected else curses.A_NORMAL
+            try:
+                stdscr.addstr(row, 0, line[:w-1], attr)
+                stdscr.clrtoeol()
+            except curses.error:
+                pass
+            row += 1
+
+            # 展开的明细 — Rich Table 风格
+            if is_selected and idx in self.expanded:
+                items = a.get('items', [])
+                notes = a.get('notes', '')
+                if items or notes:
+                    buf = io.StringIO()
+                    rc = Console(file=buf, force_terminal=False, width=max(w - 8, 40))
+                    rc.print(Panel(f"[bold cyan]第{so}课[/bold cyan]  {a['lesson_date'].strftime('%Y-%m-%d')}  老师要求", expand=False))
+
+                    tbl = Table(show_header=True, header_style="bold magenta", box=None, padding=(0, 1))
+                    tbl.add_column("#", style="dim", width=2, justify="right")
+                    tbl.add_column("ID", style="dim", width=5, justify="right")
+                    tbl.add_column("练习项", style="bold white", width=14)
+                    tbl.add_column("时长", style="dim", justify="right")
+                    tbl.add_column("老师要求", style="italic dim")
+
+                    for i, it in enumerate(items, 1):
+                        mins = it.get('minutes', 0)
+                        mins_str = f"{mins}′" if mins else ""
+                        req = (it.get('requirement') or "").strip().replace('\n', ' ')
+                        item_id = it.get('item_id') or ''
+                        tbl.add_row(str(i), str(item_id), it.get('item', ''), mins_str, req)
+
+                    rc.print(tbl)
+
+                    if notes:
+                        rc.print(Panel(f"[yellow]📝 {notes}[/yellow]", expand=False, style="yellow"))
+
+                    for line in buf.getvalue().splitlines():
+                        if row >= h - 2:
+                            break
+                        _render_rich_line(line, stdscr, row, 4, w)
+                        row += 1
 
 
 @practice_app.command("today")
@@ -1468,7 +1643,7 @@ def practice_dashboard():
     import calendar
     cal = calendar.Calendar(firstweekday=0)
 
-    console.print(f"\n📅 {year}年{month}月 练习热力图")
+    console.print(Panel(f"[blue]📅 {year}年{month}月 练习热力图[/blue]"))
     console.print("  一   二   三   四   五   六   日")
 
     week = []
@@ -1503,15 +1678,20 @@ def practice_dashboard():
     console.print(f"\n  📊 本月: {practiced}/{total_days} 天 ({practiced/total_days*100:.0f}%)  "
                   f"⏱ {total_min} 分钟 ({total_min//60}h {total_min%60}m)")
 
-    # 项目分布
+    # 项目分布 — Rich Table
     if summary['item_totals']:
         total = sum(summary['item_totals'].values())
-        console.print(f"\n  📊 项目累计:")
+        table = Table(show_header=True, header_style="bold magenta", title="📊 项目累计")
+        table.add_column("项目", style="dim", width=14)
+        table.add_column("分钟", justify="right")
+        table.add_column("占比", justify="right")
+        table.add_column("分布", width=22)
         for item, mins in sorted(summary['item_totals'].items(), key=lambda x: -x[1]):
             pct = mins / total * 100
             bar_len = int(pct / 5)
-            bar = "█" * bar_len + "." * (20 - bar_len)
-            console.print(f"  {item:>8}: {mins:>3}' ({pct:>5.1f}%)  {bar}")
+            bar = "█" * bar_len + "·" * (20 - bar_len)
+            table.add_row(item, f"{mins}'", f"{pct:.1f}%", bar)
+        console.print(table)
 
     # 近8周趋势
     console.print(f"\n  📈 近8周趋势:")
@@ -1523,7 +1703,6 @@ def practice_dashboard():
         week_starts.append((w_start, ws_summary['total_minutes'], ws_summary['practice_days']))
 
     max_min = max(m for _, m, _ in week_starts) if week_starts else 1
-    # 趋势条形图（每列高度=时长比例，12行高度）
     for row in range(11, -1, -1):
         line = "  "
         for _, m, _ in week_starts:

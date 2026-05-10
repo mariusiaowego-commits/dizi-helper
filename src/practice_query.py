@@ -199,7 +199,8 @@ class PracticeQueryTUI:
 
     def _draw_homework(self) -> None:
         """专门展示老师本周要求"""
-        assignment = db.get_weekly_assignment(self.week_start)
+        # 找今天或之前最近的一次作业（不局限本周周一）
+        assignment = db.get_weekly_assignment_for_week(self.today)
         row = 3
         week_label = f" 本周作业 {_fmt_week(self.week_start)} "
         self._center(row, week_label, Colors.HIGHLIGHT, bold=True)
@@ -498,6 +499,11 @@ def _fmt_week(ws: dt.date) -> str:
 
 # ── 入口 ─────────────────────────────────────────────────
 def run(stdscr: curses.window) -> None:
+    # 透明背景以继承终端主题色（ghostty/zellij）
+    if curses.has_colors():
+        curses.start_color()
+        curses.use_default_colors()
+    stdscr.clear()
     tui = PracticeQueryTUI(stdscr)
     while True:
         tui.draw()

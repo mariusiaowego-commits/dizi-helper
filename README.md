@@ -3,7 +3,7 @@
 > 竹笛课程管理 + 缴费提醒 + Apple Reminders 双向同步
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/python-3.14-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   <img src="https://img.shields.io/badge/tests-49%20passed-brightgreen" alt="Tests">
   <img src="https://img.shields.io/badge/lessons-211%20days%20imported-blue" alt="Lessons">
@@ -59,6 +59,11 @@ dizical kid start
 **老科目归档**：已归档的小科目默认隐藏，可点击归档区按钮单独选择
 
 **成就徽章**：连续练习/累计时长达成后自动解锁，包含火焰/星星/奖牌/本周之星四种
+
+```bash
+# 启动儿童界面（CLI 方式也可用）
+dizical-kid start
+```
 
 ---
 
@@ -120,8 +125,8 @@ dizical practice config         # 增删改查模式管理大科目/小科目
 dizical practice import <csv>             # 导入练习时长CSV
 dizical practice import_logs <csv>       # 批量导入进展log（Date,Log）
 dizical practice import-assignments <csv> # 批量导入每周老师要求（WeekStart,Item,Requirement）
-dizical practice assign -d 2026-05-05 单吐练习:♩=82 -i img.jpg  # 录入本周要求（含配图）
-dizical practice assignments             # 查询每周老师要求（明细+汇总）
+dizical practice assign -d 2026-05-05 1003:♩=82 -i img1.jpg -i img2.jpg  # 精准ID+配图录入
+dizical practice assignments             # 交互式浏览每课老师要求（↑↓浏览/Enter展开）
 dizical practice report -y 2026 -m 3 --style academic  # 生成月报图片
 
 # 同步
