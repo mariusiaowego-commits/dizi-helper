@@ -69,7 +69,7 @@ def _relation_set():
             cat = cat_map.get(it.get('category_id'), '')
             status = f" → {cat}" if cat else "（未归属）"
             archived_tag = " 📁" if it.get('is_archived') else ""
-            _print(f"  [{it['id']}] {it['name']}{archived_tag}{status}")
+            _print(f"  [{it['item_id']}] {it['name']}{archived_tag}{status}")
 
         _print("\n  q 取消全部归属并返回  |  直接回车完成设置并返回")
         line = _input("\n  > ").strip()
@@ -135,7 +135,7 @@ def _do_archive():
             for it in archived:
                 cat = cats.get(it.get('category_id'), '')
                 path = f" → {cat}" if cat else ""
-                _print(f"  [{it['id']}] {it['name']}{path}")
+                _print(f"  [{it['item_id']}] {it['name']}{path}")
             _print(f"  共 {len(archived)} 个")
 
         _print("\n  a 归档小科目（设为老科目，不再出现在练习选择中）")
@@ -173,7 +173,7 @@ def _archive_choose(switch_to: bool):
         for it in candidates:
             cat = cats.get(it.get('category_id'), '')
             path = f" → {cat}" if cat else ""
-            _print(f"  [{it['id']}] {it['name']}{path}")
+            _print(f"  [{it['item_id']}] {it['name']}{path}")
 
         _print(f"\n  多个ID用空格分隔，q 返回上级")
         sid = _input(f"  ▶ 输入要{action}的小科目ID: ").strip()
@@ -190,7 +190,7 @@ def _archive_choose(switch_to: bool):
             continue
 
         for iid in ids:
-            target = next((it for it in candidates if it['id'] == iid), None)
+            target = next((it for it in candidates if it['item_id'] == iid), None)
             if not target:
                 _print(f"  ⚠️  ID {iid} 不在列表中，跳过")
                 continue
@@ -416,7 +416,7 @@ def _do_item():
                 cat = cat_map.get(it.get('category_id'), '')
                 path = f" → {cat}" if cat else "（未归属）"
                 tag = " 📁" if it.get('is_archived') else ""
-                _print(f"  [{it['id']}] {it['name']}{tag}  {path}")
+                _print(f"  [{it['item_id']}] {it['name']}{tag}  {path}")
 
         _print("\n  a 增加小科目")
         _print("  d 删除小科目")
@@ -476,7 +476,7 @@ def _item_delete():
             cat = cats.get(it.get('category_id'), '')
             path = f" → {cat}" if cat else ""
             tag = " 📁" if it.get('is_archived') else ""
-            _print(f"  [{it['id']}] {it['name']}{tag}{path}")
+            _print(f"  [{it['item_id']}] {it['name']}{tag}{path}")
 
         _print("\n  多个ID用空格分隔，q 返回")
         sid = _input("  ▶ 输入要删除的小科目ID: ").strip()
@@ -489,7 +489,7 @@ def _item_delete():
         except ValueError:
             _print("  ⚠️  无效ID")
             continue
-        item_map = {it['id']: it['name'] for it in items}
+        item_map = {it['item_id']: it['name'] for it in items}
         for iid in ids:
             if iid not in item_map:
                 _print(f"  ⚠️  ID {iid} 不存在，跳过")
@@ -513,7 +513,7 @@ def _item_rename():
             cat = cats.get(it.get('category_id'), '')
             path = f" → {cat}" if cat else ""
             tag = " 📁" if it.get('is_archived') else ""
-            _print(f"  [{it['id']}] {it['name']}{tag}{path}")
+            _print(f"  [{it['item_id']}] {it['name']}{tag}{path}")
 
         sid = _input("\n  ▶ 输入要改名的小科目ID（q 返回）: ").strip()
         if sid.lower() == 'q':
@@ -525,7 +525,7 @@ def _item_rename():
         except ValueError:
             _print("  ⚠️  无效ID")
             continue
-        target = next((it for it in items if it['id'] == iid), None)
+        target = next((it for it in items if it['item_id'] == iid), None)
         if not target:
             _print("  ⚠️  未找到该小科目")
             continue
@@ -536,12 +536,12 @@ def _item_rename():
         if new_name == target['name']:
             _print("  名字未变")
             continue
-        existing = next((it for it in items if it['name'] == new_name and it['id'] != iid), None)
+        existing = next((it for it in items if it['name'] == new_name and it['item_id'] != iid), None)
         if existing:
-            _print(f"\n  ⚠️  「{new_name}」已存在（id={existing['id']}）")
+            _print(f"\n  ⚠️  「{new_name}」已存在（id={existing['item_id']}）")
             confirm = _input(f"  确认合并？「{target['name']}」数据将并入「{new_name}」[y/N]: ").strip().lower()
             if confirm in ('y', 'yes'):
-                db.merge_practice_item(existing['id'], iid, target['name'], new_name)
+                db.merge_practice_item(existing['item_id'], iid, target['name'], new_name)
                 _print(f"  ✅ 「{target['name']}」已合并到「{new_name}」")
             else:
                 _print("  取消合并")
@@ -577,7 +577,7 @@ def _show_current():
     if uncategorized:
         for it in uncategorized:
             tag = " 📁" if it.get('is_archived') else ""
-            _print(f"  [{it['id']}] {it['name']}{tag}")
+            _print(f"  [{it['item_id']}] {it['name']}{tag}")
     else:
         _print("  （空）")
 
@@ -585,7 +585,7 @@ def _show_current():
     if archived:
         _print(f"\n─── 已归档小科目 ({len(archived)} 个) ───")
         for it in archived:
-            _print(f"  [{it['id']}] {it['name']}")
+            _print(f"  [{it['item_id']}] {it['name']}")
 
 
 def _show_menu():
