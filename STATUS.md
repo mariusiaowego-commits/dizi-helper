@@ -1,6 +1,6 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-10
+**最后更新**: 2026-05-11
 **当前阶段**: assignments 阶段模型重构 + practice_item_id 关联完成
 
 **历史分支**:
@@ -143,6 +143,12 @@ dizical obsidian export 4          # 导出4月报告
 - [x] `kid_app` practice 页优先用 `item_id` 精确匹配，fallback 名称匹配
 - [x] 录入支持 `item_id:要求` 格式：`dizical practice assign 4:♩=82 1224:♩=80`
 - [x] 历史数据批量回填 `item_id`（weekly_assignments 45条/23条含ID，daily_practices 653条/648条含ID）
+
+## 👧 kid_app 删除按钮 Bug 修复（2026-05-11）
+- [x] `practice.html:774` — onclick 传参去掉引号：`deleteRecord('${it.item_id}')` → `deleteRecord(${it.item_id})`，避免字符串 vs int 类型不一致
+- [x] `app.py:152` — `body.get("id")` 强转为 `int()`，防止前端传字符串导致 `1 != "1"` Python 比较失效
+- [x] 验证：`item_id=1` 传 int → 正确过滤剩1条；传 string `"1"` → 过滤不掉记录仍存在
+- pytest 49/49 ✅
 
 ## 👧 数据结构统一（2026-05-10）
 - [x] `practice_items.id` → `item_id`（表列已改名）

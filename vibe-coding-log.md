@@ -163,6 +163,32 @@
 | 元旦云南土菜吃饭 | 853 |
 | **合计** | **12,079** |
 
+## 2026-05-11 (Mon) — kid_app 删除按钮 Bug 修复
+
+### 根因
+前端 `practice.html:774` 的 `onclick="deleteRecord('${it.item_id}')"` 传了字符串 `"1"`，后端 `app.py:152` 用 `body.get("id")` 取值（也是字符串），传给 `remove_daily_practice_record_by_id(date, item_id)` 后，与 DB 中的 `item_id`（int）比较 `1 != "1"` → 过滤永远失败 → 记录删不掉。
+
+### 修复
+| 文件 | 行 | 改动 |
+|------|----|------|
+| `practice.html` | 774 | `deleteRecord('${it.item_id}')` → `deleteRecord(${it.item_id})` |
+| `app.py` | 152 | `body.get("id")` → `int(body.get("id", 0))` |
+
+### 验证
+- `DELETE /api/log {"id": 1}` (int) → `total_minutes` 从 20→10 ✅
+- `DELETE /api/log {"id": "1"}` (str) → 同样有效（后端强转） ✅
+- pytest 49/49 ✅
+
+### 待修复（P0 未完成）
+- P0: fuzzy match 包含关系权重过高
+- P1: Kid UI Phase3 未启动
+- 遗留: `_normalize_items` 在 `remove_daily_practice_record_by_id` 中实际未使用（被 `get_daily_practice` 替代）
+
+### Git 状态
+- main `73aacf6`，工作区 dirty（app.py + practice.html 未 commit）
+
+---
+
 ## 2026-05-10 (Sun) — commit收尾 + handoff
 
 ### 本次完成

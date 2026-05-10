@@ -771,7 +771,7 @@
               <div class="item-name">${it.item} <span style="font-size:11px;color:#AAA;">[#${it.item_id}]</span></div>
               <div class="item-mins">${it.minutes} 分钟</div>
             </div>
-            <button class="delete-btn" onclick="deleteRecord('${it.item_id}')">✕</button>
+            <button class="delete-btn" onclick="deleteRecord(${it.item_id})">✕</button>
           </div>
         `).join('');
         gsap.fromTo('.record-item',

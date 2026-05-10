@@ -149,7 +149,7 @@ async def api_delete_log(request: Request):
         body = json.loads(await request.body())
         date_str = body.get("date")
         item_name = body.get("item")
-        item_id = body.get("id")
+        item_id = int(body.get("id", 0))
         if not date_str:
             return JSONResponse({"ok": False, "error": "缺少参数"}, status_code=400)
         date = dt.date.fromisoformat(date_str)
