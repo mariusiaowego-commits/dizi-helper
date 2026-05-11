@@ -137,9 +137,14 @@
     .panel-extra {
       background: #F0F9F0;
       border: 2px solid #A0C8A0;
-      margin-right: -16px;
       padding-right: 30px;
-      border-radius: var(--radius) var(--radius) var(--radius) 0;
+      border-radius: var(--radius);
+    }
+    @media (min-width: 641px) {
+      .panel-extra {
+        margin-right: -16px;
+        border-radius: var(--radius) var(--radius) var(--radius) 0;
+      }
     }
     .panel-extra h4 { font-size: 14px; color: #2E7D32; margin: 0; display: flex; align-items: center; gap: 6px; }
     .extra-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
