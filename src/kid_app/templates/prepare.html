@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <style>
     body { background: #FFF8F0; font-family: 'ZCOOL KuaiLe', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; padding-bottom: 80px; }
     /* Fixed bottom nav */
@@ -32,11 +34,19 @@
     .check-circle { width: 44px; height: 44px; border-radius: 50%; border: 3px solid #4ECDC4; background: white; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
     .check-circle.done { background: #4ECDC4; }
     .check-circle.done::after { content: "✓"; color: white; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 22px; }
-    .start-btn { display: block; width: 100%; padding: 20px; background: #FF6B6B; color: white; border: none; border-radius: 24px; font-size: 26px; font-weight: bold; cursor: pointer; margin-top: 24px; }
+    .start-btn { display: block; width: 100%; padding: 20px; background: #FF6B6B; color: white; border: none; border-radius: 24px; font-size: 26px; font-weight: bold; cursor: pointer; margin-top: 24px; text-decoration: none; }
+    .start-btn:hover { text-decoration: none; }
+    .start-btn span { text-decoration: none; }
     .streak-bar { display: flex; align-items: center; justify-content: center; gap: 8px; background: #FFF0E0; padding: 14px; border-radius: 16px; margin-bottom: 16px; font-size: 22px; color: #FF6B35; }
     .card { background: #FFFFFF; border-radius: 20px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .card h2 { font-size: 26px; margin-bottom: 16px; color: #FF6B6B; }
     .card ul { padding-left: 24px; font-size: 22px; line-height: 2.2; }
+    /* All-done highlight on assignment card */
+    .card.all-done { box-shadow: 0 0 0 3px #4ECDC4, 0 4px 20px rgba(78,205,196,0.3); }
+    /* Start button area — scroll target */
+    #startArea { scroll-margin-top: 24px; }
+    /* Scroll-driven card base state */
+    .scroll-reveal { opacity: 0; transform: translateY(40px); }
   </style>
 </head>
 <body>
@@ -52,62 +62,154 @@
   <div class="date-info">{{weekday}} · {{today_str}}</div>
 
   <div class="streak-bar">🔥 连续练习 {{streak}} 天</div>
-  <div style="text-align:center; font-size:20px; color:#FF6B35; margin-bottom:12px;">{{encouragement}}</div>
 
   <div class="card">
     <h2>🎯 练习前检查</h2>
-    <div class="check-item">
-      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
+    <div class="check-item" id="check0">
+      <div class="check-circle" id="circle0"></div>
       <span>谱架摆好了吗？</span>
     </div>
-    <div class="check-item">
-      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
+    <div class="check-item" id="check1" style="display:none">
+      <div class="check-circle" id="circle1"></div>
       <span>小镜子竖好了吗？</span>
     </div>
-    <div class="check-item">
-      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
+    <div class="check-item" id="check2" style="display:none">
+      <div class="check-circle" id="circle2"></div>
       <span>笛膜检查一下，贴好了吗？</span>
     </div>
   </div>
 
-  <div class="card">
+  <div class="card scroll-reveal" id="card-assign">
     <h2>📋 本周老师要求</h2>
-    <ul style="padding-left: 20px; font-size: 18px; line-height: 2;">
+    <ul id="assignList" style="padding-left: 20px; font-size: 18px; line-height: 2;">
       {{assign_html}}
     </ul>
   </div>
 
-  <div class="card">
-    <h2>💡 今日建议</h2>
-    <ul style="padding-left: 20px; font-size: 18px; line-height: 2;">
-      {{suggestions}}
-    </ul>
+  <div id="startArea" class="scroll-reveal">
+    <a href="/practice" class="start-btn"><span>准备好了！开始练习 🎵</span></a>
   </div>
 
-  <a href="/practice"><button class="start-btn">准备好了！开始练习 🎵</button></a>
-
   <script>
-    // 页面加载时检查准备状态
-    const checked = JSON.parse(localStorage.getItem('prepChecked') || '[]');
-    document.querySelectorAll('.check-circle').forEach((el, i) => {
-      if (checked.includes(i)) el.classList.add('done');
+    gsap.registerPlugin(ScrollTrigger);
+
+    // ── 入场动画 ──
+    const greetingEl = document.querySelector('.greeting');
+    const streakEl = document.querySelector('.streak-bar');
+    const checkCard = document.querySelector('.card');
+    const assignCard = document.getElementById('card-assign');
+    const startArea = document.getElementById('startArea');
+
+    // ── ScrollTrigger 滚动顺序入场（初始隐藏状态）─────
+    gsap.set([assignCard, startArea], { opacity: 0, y: 40 });
+
+    // 本周要求：滚动进入视口时触发
+    ScrollTrigger.create({
+      trigger: assignCard,
+      start: "top 82%",
+      onEnter: () => {
+        gsap.to(assignCard, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
+      }
     });
-    document.querySelectorAll('.check-circle').forEach((el, i) => {
-      el.addEventListener('click', () => {
-        if (el.classList.contains('done')) {
-          checked.splice(checked.indexOf(i), 1);
+
+    // 开始按钮：在要求卡片后跟随出现
+    ScrollTrigger.create({
+      trigger: startArea,
+      start: "top 88%",
+      onEnter: () => {
+        gsap.to(startArea, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out", delay: 0.1 });
+      }
+    });
+
+    gsap.fromTo(greetingEl,
+      { y: 50, opacity: 0, scale: 0.8 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.7, ease: "back.out(2)" }
+    );
+    gsap.fromTo(streakEl,
+      { y: 30, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.5, delay: 0.2, ease: "power3.out" }
+    );
+    gsap.fromTo(checkCard,
+      { y: 40, opacity: 0, scale: 0.9 },
+      { y: 0, opacity: 1, scale: 1, duration: 0.5, delay: 0.35, ease: "back.out(1.8)" }
+    );
+
+    // 第一个 check 项入场
+    gsap.fromTo('#check0',
+      { x: -30, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.4, delay: 0.6, ease: "power3.out" }
+    );
+
+    // ── 步骤式检查逻辑 ──
+    const circles = [
+      document.getElementById('circle0'),
+      document.getElementById('circle1'),
+      document.getElementById('circle2')
+    ];
+    const checkItems = [
+      document.getElementById('check0'),
+      document.getElementById('check1'),
+      document.getElementById('check2')
+    ];
+
+    function makeCheckDone(circle) {
+      circle.classList.add('done');
+      // 打勾动画
+      gsap.fromTo(circle,
+        { scale: 1 },
+        { scale: 1.2, duration: 0.15, yoyo: true, repeat: 1, ease: "power2.inOut" }
+      );
+    }
+
+    function revealNextCheck(index) {
+      if (index >= 3) return;
+      const next = checkItems[index];
+      next.style.display = 'flex';
+      gsap.fromTo(next,
+        { x: -30, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.4, ease: "power3.out" }
+      );
+      // 自动聚焦滚动到下一项
+      setTimeout(() => next.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+    }
+
+    function revealAssignCard() {
+      // 强制显示并置于顶层，触发 ScrollTrigger 已触发的动画
+      assignCard.style.opacity = '1';
+      assignCard.style.transform = 'translateY(0)';
+      assignCard.classList.add('all-done');
+      gsap.fromTo(assignCard,
+        { scale: 1 },
+        { scale: 1.06, duration: 0.3, yoyo: true, repeat: 1, ease: "power2.inOut" }
+      );
+      setTimeout(() => {
+        startArea.style.opacity = '1';
+        startArea.style.transform = 'translateY(0)';
+        startArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 350);
+    }
+
+    circles.forEach((circle, i) => {
+      circle.addEventListener('click', () => {
+        if (circle.classList.contains('done')) return; // 已完成不重复触发
+        makeCheckDone(circle);
+        if (i < 2) {
+          revealNextCheck(i + 1);
         } else {
-          checked.push(i);
+          // 全部完成
+          revealAssignCard();
         }
-        localStorage.setItem('prepChecked', JSON.stringify(checked));
       });
     });
-    // 每天自动重置
-    const today = new Date().toDateString();
-    if (localStorage.getItem('prepDate') !== today) {
-      localStorage.setItem('prepChecked', '[]');
-      localStorage.setItem('prepDate', today);
-    }
+
+    // ── 开始按钮 hover 脉冲 ──
+    const startBtn = document.querySelector('.start-btn');
+    startBtn.addEventListener('mouseenter', () => {
+      gsap.to(startBtn, { scale: 1.04, duration: 0.2, ease: "power2.out" });
+    });
+    startBtn.addEventListener('mouseleave', () => {
+      gsap.to(startBtn, { scale: 1, duration: 0.2, ease: "power2.out" });
+    });
   </script>
 </body>
 </html>
