@@ -1,11 +1,11 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
 **最后更新**: 2026-05-11
-**当前阶段**: assignments 阶段模型重构 + practice_item_id 关联完成
+**当前阶段**: Kid UI Phase 3 UX 优化完成
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
-- 本次 session 全在 main 开发，13个新 commit 直接推送
+- `main` — 本次 session: Phase3 优化
 
 ---
 
@@ -144,10 +144,11 @@ dizical obsidian export 4          # 导出4月报告
 - [x] 录入支持 `item_id:要求` 格式：`dizical practice assign 4:♩=82 1224:♩=80`
 - [x] 历史数据批量回填 `item_id`（weekly_assignments 45条/23条含ID，daily_practices 653条/648条含ID）
 
-## 👧 kid_app 删除按钮 Bug 修复（2026-05-11）
-- [x] `practice.html:774` — onclick 传参去掉引号：`deleteRecord('${it.item_id}')` → `deleteRecord(${it.item_id})`，避免字符串 vs int 类型不一致
-- [x] `app.py:152` — `body.get("id")` 强转为 `int()`，防止前端传字符串导致 `1 != "1"` Python 比较失效
-- [x] 验证：`item_id=1` 传 int → 正确过滤剩1条；传 string `"1"` → 过滤不掉记录仍存在
+## 👧 Kid UI Phase 3 UX 优化（2026-05-11）
+- [x] **fuzzy match 重写** (`practice.py`): `_similarity()` 子串/超串分级(0.85/0.60)，`_levenshtein()` 编辑距离，新评分策略避免泛称误匹配
+- [x] **prepare 页面优化**: 每日鼓励语(date-seeded从12条ENCOURAGEMENTS池选取)，老师要求为空时改为「暂无老师要求，直接开始练习吧！」
+- [x] **achievements 页面增强**: 本周目标进度条(5天/周)，徽章距离提示(fire/medal/week_star)，4格数据标签改为「累计练习时长 hXm」格式
+- [x] **praise 页面重建** (方案A): 展示已解锁徽章+每日表扬语+截图分享，孩子iPad可独立操作，移除 Hermes redirect 依赖
 - pytest 49/49 ✅
 
 ## 👧 数据结构统一（2026-05-10）
