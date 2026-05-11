@@ -2127,6 +2127,254 @@ def export_practice(
         console.print(f"[red]❌ 导出失败: {e}[/red]")
 
 
+# ============== 服务状态监控命令 ==============
+import subprocess
+import urllib.request
+import urllib.error
+import time as _time
+from datetime import datetime, date
+import curses
+
+
+def _check_kid_app_process() -> tuple[bool, int | None]:
+    """检查 kid-app 进程是否存在，返回 (运行中, PID)"""
+    try:
+        result = subprocess.run(
+            ["pgrep", "-f", "uvicorn.*8765"],
+            capture_output=True, text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            pid = int(result.stdout.strip().split()[0])
+            return True, pid
+        return False, None
+    except Exception:
+        return False, None
+
+
+def _check_port_listening(port: int = 8765) -> bool:
+    """检查端口是否在监听"""
+    try:
+        result = subprocess.run(
+            ["lsof", "-i", f":{port}", "-sTCP:LISTEN"],
+            capture_output=True, text=True,
+        )
+        return result.returncode == 0 and result.stdout.strip()
+    except Exception:
+        return False
+
+
+def _check_http_response(port: int = 8765, path: str = "/prepare") -> tuple[int | None, float | None]:
+    """检查 HTTP 响应码和耗时(秒)，失败返回 (None, None)"""
+    url = f"http://localhost:{port}{path}"
+    start = _time.time()
+    try:
+        req = urllib.request.urlopen(url, timeout=3)
+        elapsed = _time.time() - start
+        return req.status, elapsed
+    except urllib.error.HTTPError as e:
+        elapsed = _time.time() - start
+        return e.code, elapsed
+    except Exception:
+        return None, None
+
+
+def _get_local_ip() -> str:
+    try:
+        import socket as _s
+        s = _s.socket(_s.AF_INET, _s.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
+
+def _get_last_practice() -> str | None:
+    """获取最近一次练习记录"""
+    try:
+        from src.database import db
+        from src.models import DailyPractice
+        row = db.query(
+            "SELECT date, minutes, items FROM daily_practice ORDER BY date DESC LIMIT 1"
+        ).fetchone()
+        if row:
+            d, minutes, items_json = row
+            from src.practice import parse_items_json
+            items = parse_items_json(items_json) if items_json else []
+            item_names = [i.get("name", "?") for i in items[:3]]
+            items_str = " / ".join(item_names) if item_names else "无科目"
+            return f"{d}  {minutes}分钟  {items_str}"
+        return None
+    except Exception:
+        return None
+
+
+def _render_dashboard(stdscr, running: bool, pid: int | None, port_ok: bool,
+                       status: int | None, elapsed: float | None,
+                       local_ip: str, last_practice: str | None,
+                       refresh_time: str):
+    """在 curses 窗口上渲染 dashboard"""
+    curses.curs_set(0)
+    stdscr.clear()
+
+    # 颜色初始化
+    if curses.has_colors():
+        curses.start_color()
+        curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+        curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+        curses.init_pair(4, curses.COLOR_CYAN, curses.COLOR_BLACK)
+        curses.init_pair(5, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
+        GREEN = curses.color_pair(1)
+        RED = curses.color_pair(2)
+        YELLOW = curses.color_pair(3)
+        CYAN = curses.color_pair(4)
+        MAGENTA = curses.color_pair(5)
+        BOLD = curses.A_BOLD
+    else:
+        GREEN = RED = YELLOW = CYAN = MAGENTA = 0
+        BOLD = curses.A_BOLD
+
+    h, w = stdscr.getmaxyx()
+    if h < 12 or w < 60:
+        stdscr.addstr(0, 0, "窗口太小，请放大终端")
+        stdscr.refresh()
+        return
+
+    # ---- 标题栏 ----
+    title = "  dizical status  "
+    stdscr.attrset(BOLD | CYAN)
+    stdscr.addstr(0, 0, f"┌{'─' * (w - 2)}┐")
+    stdscr.addstr(1, 0, "│" + title.center(w - 2) + "│")
+    stdscr.addstr(2, 0, f"└{'─' * (w - 2)}┘")
+
+    # ---- 进程状态 ----
+    row = 4
+    stdscr.attrset(BOLD)
+    stdscr.addstr(row, 0, "  🛰  kid-app 进程")
+    row += 1
+    if running and pid:
+        stdscr.attrset(GREEN)
+        stdscr.addstr(row, 2, f"✅ 运行中  (PID {pid})")
+    else:
+        stdscr.attrset(RED)
+        stdscr.addstr(row, 2, "❌ 未运行  →  执行: dizical-kid start")
+    row += 2
+
+    # ---- 端口状态 ----
+    stdscr.attrset(BOLD)
+    stdscr.addstr(row, 0, "  🔌  端口 8765")
+    row += 1
+    if port_ok:
+        stdscr.attrset(GREEN)
+        stdscr.addstr(row, 2, "✅ 监听中")
+    else:
+        stdscr.attrset(RED)
+        stdscr.addstr(row, 2, "❌ 未监听")
+    row += 2
+
+    # ---- HTTP 状态 ----
+    stdscr.attrset(BOLD)
+    stdscr.addstr(row, 0, "  🌐  HTTP /prepare")
+    row += 1
+    if status == 200:
+        elaps_ms = round(elapsed * 1000) if elapsed else 0
+        stdscr.attrset(GREEN)
+        stdscr.addstr(row, 2, f"✅ {status}  ({elaps_ms}ms)")
+    elif status is not None:
+        stdscr.attrset(YELLOW)
+        stdscr.addstr(row, 2, f"⚠️  HTTP {status}")
+    else:
+        stdscr.attrset(RED)
+        stdscr.addstr(row, 2, "❌ 无法访问")
+    row += 2
+
+    # ---- iPad 访问地址 ----
+    stdscr.attrset(BOLD)
+    stdscr.addstr(row, 0, "  📱  iPad 访问")
+    row += 1
+    stdscr.attrset(CYAN)
+    stdscr.addstr(row, 2, f"  http://{local_ip}:8765")
+    row += 2
+
+    # ---- 最近练习 ----
+    stdscr.attrset(BOLD)
+    stdscr.addstr(row, 0, "  🎵  最近练习")
+    row += 1
+    if last_practice:
+        stdscr.attrset(0)
+        stdscr.addstr(row, 2, f"  {last_practice}")
+    else:
+        stdscr.attrset(MAGENTA)
+        stdscr.addstr(row, 2, "  暂无记录")
+    row += 2
+
+    # ---- 刷新时间 + 帮助 ----
+    stdscr.attrset(curses.A_DIM)
+    stdscr.addstr(row, 0, f"  刷新: {refresh_time}    Q=退出  R=手动刷新")
+    row += 1
+
+    stdscr.refresh()
+
+
+def _status_loop(stdscr):
+    """curses 事件循环：支持 Q 退出、R 刷新、自动 3 秒刷新"""
+    local_ip = _get_local_ip()
+    refresh_time = datetime.now().strftime("%H:%M:%S")
+    last_practice = _get_last_practice()
+    auto_refresh_count = 0
+
+    # 初始状态
+    running, pid = _check_kid_app_process()
+    port_ok = _check_port_listening()
+    status, elapsed = _check_http_response()
+    _render_dashboard(stdscr, running, pid, port_ok, status, elapsed,
+                      local_ip, last_practice, refresh_time)
+
+    stdscr.nodelay(True)  # 非阻塞
+
+    while True:
+        # 自动刷新：每 3 秒
+        stdscr.addstr(0, 0, "")  # 重置位置（避免报错）
+        try:
+            key = stdscr.getch()
+            if key != -1:
+                ch = chr(key) if 32 <= key < 127 else ""
+                if ch in ("q", "Q", "\x1b"):  # Q 或 Esc
+                    break
+                if ch in ("r", "R"):
+                    refresh_time = datetime.now().strftime("%H:%M:%S")
+                    last_practice = _get_last_practice()
+                    running, pid = _check_kid_app_process()
+                    port_ok = _check_port_listening()
+                    status, elapsed = _check_http_response()
+                    auto_refresh_count = 0
+                    _render_dashboard(stdscr, running, pid, port_ok, status, elapsed,
+                                      local_ip, last_practice, refresh_time)
+                continue
+        except curses.error:
+            pass
+
+        auto_refresh_count += 1
+        if auto_refresh_count >= 30:  # ~3 秒（100ms * 30）
+            auto_refresh_count = 0
+            refresh_time = datetime.now().strftime("%H:%M:%S")
+            last_practice = _get_last_practice()
+            running, pid = _check_kid_app_process()
+            port_ok = _check_port_listening()
+            status, elapsed = _check_http_response()
+            _render_dashboard(stdscr, running, pid, port_ok, status, elapsed,
+                              local_ip, last_practice, refresh_time)
+        _time.sleep(0.1)
+
+
+@app.command("status")
+def dizical_status():
+    """🎛  实时监控 dizical kid-app 服务状态"""
+    curses.wrapper(_status_loop)
+
+
 # ============== 备份管理命令 ==============
 from .backup import backup_all, list_backups, backup_info
 

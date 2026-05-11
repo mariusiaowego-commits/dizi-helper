@@ -100,6 +100,9 @@ DB_PATH=data/dizi.db
 ## 📦 Commands
 
 ```bash
+# 状态监控
+dizical status                # 实时监控 kid-app（进程/端口/HTTP/最近练习）
+
 # 课程
 dizical lesson list           # 课程表
 dizical lesson calendar       # 日历视图

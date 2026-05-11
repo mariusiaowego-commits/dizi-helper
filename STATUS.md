@@ -57,6 +57,9 @@
 
 ### CLI 命令（完整列表）
 ```bash
+# 状态监控
+dizical status                 # 实时 dashboard（进程/端口/HTTP/练习记录）3秒自动刷新，Q退出
+
 # 课程
 dizical lesson generate 2026-05    # 生成月度课程
 dizical lesson list                 # 课程列表
@@ -150,6 +153,12 @@ dizical obsidian export 4          # 导出4月报告
 - [x] **achievements 页面增强**: 本周目标进度条(5天/周)，徽章距离提示(fire/medal/week_star)，4格数据标签改为「累计练习时长 hXm」格式
 - [x] **praise 页面重建** (方案A): 展示已解锁徽章+每日表扬语+截图分享，孩子iPad可独立操作，移除 Hermes redirect 依赖
 - pytest 49/49 ✅
+
+## 👧 kid-app 服务状态监控（2026-05-11）
+- [x] **`dizical status` 命令**: curses TUI 实时 dashboard，监控 kid-app 进程/PID、端口 8765 监听、HTTP /prepare 响应+耗时
+- [x] **显示内容**: 进程状态 ✅/❌、端口监听 ✅/❌、HTTP 200 ✅/⚠️/❌、iPad 访问地址、最近练习记录
+- [x] **交互**: Q/Esc 退出，R 手动刷新，自动每 3 秒刷新
+- [x] 入口: `dizical status`
 
 ## 👧 prepare 新样式完成（2026-05-11）
 - [x] **新配色**：cream/sage绿/rose粉渐变/lavender紫，iPad 3:2 响应式断点（2266×1488）

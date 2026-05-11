@@ -272,3 +272,20 @@
 
 ### 遗留
 - practice.html 入场动画（CSS transition 替代 GSAP，P2）
+
+---
+
+## 2026-05-11 (Mon) — kid-app 端口僵死 + `dizical status` 监控命令
+
+### 本次完成
+- **故障排查**：kid-app PID 35631 僵死未退出，持续占用端口 8765，导致重启失败
+  - 现象：`curl /prepare` 返回 `Connection reset by peer`
+  - 解决：`kill 35631` → 重启 uvicorn
+- **`dizical status` 命令**：curses TUI dashboard
+  - 监控：进程/PID、端口监听、HTTP /prepare 响应码+耗时
+  - 显示：iPad 访问地址、最近练习记录
+  - 交互：Q/Esc 退出，R 手动刷新，3秒自动刷新
+  - 入口：`dizical status`
+
+### 踩坑
+- `subprocess.socket` → 正确：`import socket; socket.socket()`
