@@ -58,8 +58,6 @@
       gap: 10px;
       align-items: stretch;
       margin-bottom: 12px;
-      padding-right: 20px;
-      margin-right: -12px;
     }
     .panel {
       border-radius: var(--radius);
@@ -69,6 +67,12 @@
       gap: 10px;
       min-height: 0;
       overflow: hidden;
+    }
+    /* 右栏背景延伸到容器右边界 */
+    .panel-extra {
+      margin-right: -16px;
+      padding-right: 30px;
+      border-radius: var(--radius) var(--radius) var(--radius) 0;
     }
 
     /* 左栏 - 老师要求 */
