@@ -205,3 +205,31 @@
 
 ### Git 状态
 - main 与 origin/main 同步，工作区干净
+
+---
+
+## 2026-05-11 (Mon) — kid-app UI/UX 规范文档 + Phase3 全部收尾
+
+### 本次完成
+- **UIUX_STYLE.md 生成**：完整审查 5 个前端页面（prepare/practice/achievements/report/praise），覆盖配色/字体/布局/组件/动画/依赖，写入项目根目录
+- **Push `82a50bb`**：docs: 添加 kid-app UI/UX 样式规范文档
+- **同步 vault**：复制到 `tqob/05-Coding/project-dizical/docs/UIUX_STYLE.md`
+- **Handoff**：`2026-05-11-1400-handoff.md`
+- **Phase3 全部完成**：
+  - fuzzy match 修复（pytest 49/49）
+  - prepare 鼓励语 date-seeded
+  - achievements 本周目标进度条 + 徽章距离提示
+  - praise 页重构
+  - practice 三栏布局重构（计时器/老师要求/额外练习）
+  - 底部导航 `!important` 统一
+  - 计时器 finishEarly + 自然结束 bug 修复
+  - 额外练习自定义输入 + 删除确认
+  - 计时器保护弹窗
+  - 选择练习项目移到三栏上方
+
+### 已知问题（不再处理）
+- **宽屏右边界**：`.panel-extra` 负 margin 在 iPad Safari 不稳定，已放弃
+
+### Git 状态
+- main `82a50bb`，干净
+- 服务器：uvicorn port 8765（proc `proc_eb43175f407c`, PID 27224）
