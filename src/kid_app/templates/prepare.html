@@ -482,7 +482,7 @@
 <body>
 
 <!-- ── HERO ─────────────────────────────────── -->
-<section class="hero" id="hero" onclick="scrollToNextSection()">
+<section class="hero" id="hero">
   <p class="hero-eyebrow">{{eyebrow}}</p>
 
   <h1 class="hero-bless" id="heroBless">
@@ -667,7 +667,7 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 // ── 点击滚一屏 ────────────────────────────────
-const SECTIONS = ['heroSection', 'stepsSection', 'assignmentSection', 'ctaSection'];
+const SECTIONS = ['hero', 'stepsSection', 'assignmentSection', 'ctaSection'];
 let scrollVelocity = 0;
 
 function scrollToNextSection() {
