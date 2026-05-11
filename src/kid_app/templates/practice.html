@@ -18,243 +18,21 @@
       right: 0;
       display: flex;
       gap: 4px;
-      margin-bottom: 0;
       padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
       background: var(--card);
       box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
       z-index: 100;
-      flex-wrap: nowrap;
     }
     .nav a {
-      flex: 1;
-      min-width: 0;
-      padding: 8px 4px;
-      background: transparent;
-      border-radius: var(--radius);
-      text-align: center;
-      text-decoration: none;
-      color: var(--text-light);
-      font-size: 12px;
-      box-shadow: none;
-      transition: transform 0.1s;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
+      flex: 1; min-width: 0; padding: 8px 4px;
+      background: transparent; border-radius: var(--radius);
+      text-align: center; text-decoration: none;
+      color: var(--text-light); font-size: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
     .nav a .nav-icon { font-size: 20px; }
     .nav a:active { transform: scale(0.95); }
     .nav a.active { background: var(--primary); color: white; }
-
-    /* 计时器大字体 */
-    .timer-big { font-size: 72px; font-weight: bold; text-align: center; color: #FF6B6B; padding: 20px 0; }
-    .time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
-    .time-btn { padding: 10px 16px; border: 2px solid #4ECDC4; background: white; border-radius: 20px; font-size: 16px; cursor: pointer; }
-    .time-btn.selected { background: #4ECDC4; color: white; }
-    /* ── 活力色块：练习科目按钮 ── */
-    .item-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin: 12px 0;
-    }
-    .item-btn {
-      width: 100%;
-      min-width: 0;
-      height: 56px;
-      border: none;
-      border-radius: 16px;
-      font-size: 13px;
-      font-weight: 700;
-      font-family: inherit;
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 0 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
-      position: relative;
-      overflow: hidden;
-    }
-    .item-btn:active { transform: scale(0.96); filter: brightness(0.92); }
-
-    /* 默认色块：循环 5 色 */
-    .item-btn:nth-child(5n+1) { background: #00CED1; }   /* 深青 */
-    .item-btn:nth-child(5n+2) { background: #FF6B9D; }   /* 粉红 */
-    .item-btn:nth-child(5n+3) { background: #A855F7; }   /* 紫色 */
-    .item-btn:nth-child(5n+4) { background: #FF9F1C; }   /* 橙黄 */
-    .item-btn:nth-child(5n+5) { background: #10B981; }   /* 翠绿 */
-
-    /* 选中 */
-    .item-btn.selected {
-      background: #FF4D6D !important;
-      box-shadow: 0 4px 0 #C41E3A;
-      transform: translateY(-2px);
-    }
-    .item-btn.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
-
-    /* 老师要求高亮 */
-    .item-btn.has-req {
-      background: #FFE066 !important;
-      color: #5D4037;
-      box-shadow: 0 4px 0 #E6A800;
-      transform: translateY(-2px);
-      animation: req-glow 2s ease-in-out infinite;
-    }
-    .item-btn.has-req.selected {
-      background: #FF4D6D !important;
-      color: white;
-      box-shadow: 0 4px 0 #C41E3A;
-      transform: translateY(-2px);
-      animation: none;
-    }
-    .item-btn.has-req.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
-    @keyframes req-glow {
-      0%, 100% { box-shadow: 0 4px 0 #E6A800, 0 0 0 0 rgba(255,224,102,0.4); }
-      50%       { box-shadow: 0 4px 0 #E6A800, 0 0 0 8px rgba(255,224,102,0); }
-    }
-
-    /* 浮动气泡 */
-    .req-tooltip {
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: #FFE066;
-      color: #333;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 8px;
-      white-space: nowrap;
-      max-width: 180px;
-      white-space: normal;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      z-index: 10;
-      pointer-events: none;
-    }
-    .req-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: #FFE066;
-    }
-    .item-btn-wrap { position: relative; display: inline-block; }
-    .item-btn-wrap .req-tooltip { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-    .item-btn-wrap:hover .req-tooltip { opacity: 1; }
-
-    /* 老师要求提示卡 */
-    #reqTip {
-      display: none;
-      background: linear-gradient(135deg, #FFF9C4, #FFE082);
-      border: 2px solid #FFD54F;
-      border-radius: 12px;
-      padding: 12px 36px 12px 14px;
-      margin: 10px auto 14px;
-      font-size: 14px;
-      color: #5D4037;
-      position: relative;
-      max-width: 320px;
-    }
-    #reqTip.show { display: block; }
-    #reqTip::before {
-      content: '🎯 老师要求';
-      display: block;
-      font-weight: bold;
-      font-size: 13px;
-      color: #E65100;
-      margin-bottom: 6px;
-    }
-    .close-tip {
-      position: absolute;
-      top: 8px;
-      right: 10px;
-      background: none;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      color: #BDBDBD;
-      line-height: 1;
-    }
-
-    /* 打卡按钮 */
-    .start-btn { display: block; width: 100%; padding: 18px; background: #FF6B6B; color: white; border: none; border-radius: 20px; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 16px; }
-    .today-stat { text-align: center; color: #7F8C8D; font-size: 16px; margin-top: 8px; }
-    .confirm-area { display: none; text-align: center; margin-top: 20px; }
-    .confirm-area.show { display: block; }
-    .today-records { margin-top: 20px; }
-    .today-records h3 { font-size: 18px; color: #4ECDC4; margin-bottom: 10px; }
-    .record-item { display: flex; align-items: center; justify-content: space-between; background: #FFF; border: 2px solid #E0E0E0; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
-    .record-item .item-name { font-size: 16px; font-weight: bold; color: #333; }
-    .record-item .item-mins { font-size: 14px; color: #7F8C8D; margin-top: 2px; }
-    .record-item .delete-btn { background: #FF6B6B; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; flex-shrink: 0; line-height: 32px; text-align: center; }
-    .record-item .delete-btn:active { background: #e55a5a; }
-    .empty-records { text-align: center; color: #BDBDBD; font-size: 14px; padding: 12px; }
-
-    /* 老科目折叠 */
-    .archived-toggle {
-      display: block; width: 100%; padding: 12px; background: #F5F5F5;
-      border: 2px dashed #BDBDBD; border-radius: 12px; font-size: 15px;
-      color: #7F8C8D; cursor: pointer; text-align: center; margin-top: 8px;
-    }
-    .archived-toggle:active { background: #EBEBEB; }
-    .archived-section { display: none; margin-top: 12px; }
-    .archived-section.open { display: block; }
-    .archived-section h4 { font-size: 14px; color: #BDBDBD; margin-bottom: 8px; text-align: center; }
-    .archived-item-btn {
-      padding: 10px 8px; background: #E0E0E0; color: #7F8C8D; border: none;
-      border-radius: 10px; font-size: 14px; cursor: pointer; text-align: center; text-decoration: line-through;
-    }
-    .archived-item-btn.selected { background: #FF6B6B; color: white; }
-
-    /* 快速录入 */
-    .quick-add-section {
-      display: none; background: #FFF8E1; border: 2px solid #FFE066;
-      border-radius: 12px; padding: 16px; margin-top: 12px;
-    }
-    .quick-add-section.open { display: block; }
-    .quick-add-section h4 { font-size: 15px; color: #E6A800; margin-bottom: 10px; text-align: center; }
-    .quick-time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
-    .quick-time-btn { padding: 8px 14px; border: 2px solid #FFE066; background: white; border-radius: 16px; font-size: 15px; cursor: pointer; }
-    .quick-time-btn.selected { background: #FFE066; color: #333; }
-    .quick-add-actions { display: flex; gap: 8px; justify-content: center; }
-
-    /* 额外练习时间 */
-    .extra-section {
-      display: none; background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
-      border: 2px solid #66BB6A; border-radius: 12px; padding: 16px; margin-top: 12px;
-    }
-    .extra-section.open { display: block; }
-    .extra-section h4 { font-size: 15px; color: #2E7D32; margin-bottom: 10px; text-align: center; }
-    .extra-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
-    .extra-btn {
-      padding: 8px 14px; border: 2px solid #66BB6A; background: white;
-      border-radius: 16px; font-size: 15px; cursor: pointer; color: #333;
-    }
-    .extra-btn.selected { background: #66BB6A; color: white; }
-    .extra-log-item {
-      display: flex; align-items: center; justify-content: space-between;
-      background: rgba(255,255,255,0.7); border: 1px solid #A5D6A7;
-      border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 14px;
-    }
-    .extra-custom { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
-    .extra-custom input {
-      width: 100px; padding: 8px 12px; border: 2px solid #66BB6A;
-      border-radius: 16px; font-size: 15px; text-align: center;
-    }
-    .extra-log-item .extra-mins { color: #2E7D32; font-weight: bold; }
-    .extra-log-item .extra-del {
-      background: #FF6B6B; color: white; border: none; border-radius: 50%;
-      width: 24px; height: 24px; font-size: 12px; cursor: pointer; flex-shrink: 0;
-    }
 
     /* 计时器保护弹窗 */
     #timerProtectModal {
@@ -272,6 +50,174 @@
     .modal-actions button { padding: 14px; border: none; border-radius: 16px; font-size: 17px; font-weight: bold; cursor: pointer; }
     .modal-actions .btn-stay { background: #4ECDC4; color: white; }
     .modal-actions .btn-leave { background: #FF6B6B; color: white; }
+
+    /* 顶部状态栏 */
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 4px 4px; font-size: 14px; color: #7F8C8D; margin-bottom: 8px;
+    }
+    .top-bar .today-stat { font-size: 15px; color: #4ECDC4; font-weight: bold; }
+    .top-bar .server-clock { font-size: 13px; background: #F8F9FA; border-radius: 12px; padding: 4px 12px; }
+
+    /* 三栏容器 */
+    .timer-layout {
+      display: grid;
+      grid-template-columns: 25% 45% 30%;
+      gap: 10px;
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+    .panel {
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* 左栏 - 老师要求 */
+    .panel-req {
+      background: #FFFDF5;
+      border: 2px solid #F0D060;
+    }
+    .panel-req h4 { font-size: 14px; color: #8B6914; margin: 0; display: flex; align-items: center; gap: 6px; }
+    .panel-req .req-empty { font-size: 15px; color: #A1887F; font-style: italic; margin: auto 0; text-align: center; width: 100%; }
+    .panel-req .req-content { flex: 1; }
+    .panel-req .req-highlight {
+      background: #FFF8E0;
+      border-left: 4px solid #F0D060;
+      padding: 12px 14px;
+      border-radius: 0 12px 12px 0;
+      font-size: 16px;
+      color: #5D4037;
+      line-height: 1.7;
+    }
+    .panel-req .req-label { font-size: 12px; color: #8B6914; font-weight: bold; margin-bottom: 8px; }
+
+    /* 中栏 - 计时器 */
+    .panel-center {
+      background: #F0FCFC;
+      border: 2px solid #A0D8D0;
+    }
+    .panel-center h4 { font-size: 14px; color: #2E7D32; margin: 0; display: flex; align-items: center; gap: 6px; }
+    .timer-display {
+      font-size: 72px; font-weight: bold; text-align: center;
+      color: #FF6B6B; letter-spacing: -2px; line-height: 1;
+    }
+    .timer-display.running { color: #4ECDC4; }
+    .time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .time-btn { padding: 10px 16px; border: 2px solid #4ECDC4; background: white; border-radius: 20px; font-size: 16px; cursor: pointer; }
+    .time-btn.selected { background: #4ECDC4; color: white; }
+    .action-btns { display: flex; gap: 10px; justify-content: center; }
+    .btn { padding: 12px 24px; border: none; border-radius: 24px; font-size: 17px; font-family: inherit; cursor: pointer; transition: transform 0.1s; }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary { background: #FF6B6B; color: white; }
+    .btn-secondary { background: #4ECDC4; color: white; }
+
+    /* 确认区域 */
+    .confirm-area {
+      display: none; text-align: center;
+      background: #EDF7F0; border: 2px solid #A0D8A8;
+      border-radius: var(--radius); padding: 14px;
+    }
+    .confirm-area.show { display: block; }
+    .confirm-area p { font-size: 20px; color: #2E7D32; margin-bottom: 12px; }
+    .confirm-area .confirm-mins { font-size: 48px; font-weight: bold; color: #27AE60; display: block; margin: 8px 0; }
+
+    /* 快速录入 */
+    .quick-add-section {
+      display: none;
+      background: #FFFCF0; border: 2px solid #F0D060;
+      border-radius: var(--radius); padding: 14px;
+    }
+    .quick-add-section.open { display: block; }
+    .quick-add-section h4 { font-size: 15px; color: #8B6914; margin: 0 0 10px; text-align: center; }
+    .quick-time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .quick-time-btn { padding: 8px 14px; border: 2px solid #F0D060; background: white; border-radius: 16px; font-size: 15px; cursor: pointer; }
+    .quick-time-btn.selected { background: #F0D060; color: #333; }
+    .quick-add-actions { display: flex; gap: 8px; justify-content: center; }
+    .quick-add-actions .start-btn { background: #FFE066; color: #333; padding: 12px 20px; border: none; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .quick-add-actions .btn-cancel { background: white; border: 2px solid #E0E0E0; color: #7F8C8D; padding: 10px 16px; border-radius: 16px; font-size: 15px; cursor: pointer; }
+
+    /* 右栏 - 额外练习时间 */
+    .panel-extra {
+      background: #F0F9F0;
+      border: 2px solid #A0C8A0;
+    }
+    .panel-extra h4 { font-size: 14px; color: #2E7D32; margin: 0; display: flex; align-items: center; gap: 6px; }
+    .extra-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .extra-btn { padding: 8px 12px; border: 2px solid #7CB87C; background: white; border-radius: 16px; font-size: 15px; cursor: pointer; color: #333; }
+    .extra-btn.selected { background: #7CB87C; color: white; }
+    .extra-custom { display: flex; gap: 8px; justify-content: center; }
+    .extra-custom input {
+      width: 80px; padding: 8px; border: 2px solid #7CB87C;
+      border-radius: 16px; font-size: 15px; text-align: center; font-family: inherit;
+    }
+    .extra-log-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.7); border: 1px solid #B0D8B0;
+      border-radius: 8px; padding: 8px 12px; font-size: 14px;
+    }
+    .extra-log-item + .extra-log-item { margin-top: 6px; }
+    .extra-log-item .extra-mins { color: #2E7D32; font-weight: bold; }
+    .extra-log-item .extra-del { background: #FF6B6B; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 13px; cursor: pointer; flex-shrink: 0; }
+
+    /* 练习科目 */
+    .item-section { margin-bottom: 12px; }
+    .item-section h2 { color: #FF6B6B; font-size: 20px; margin-bottom: 8px; }
+    .item-section h2 span { font-size: 14px; color: #7F8C8D; font-weight: normal; }
+    .item-filter-wrap { margin-bottom: 10px; }
+    .item-filter-wrap input {
+      width: 100%; padding: 12px; border-radius: 12px;
+      border: 2px solid #E0E0E0; font-size: 16px; box-sizing: border-box;
+    }
+    .item-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .item-btn {
+      width: 100%; min-width: 0; height: 56px; border: none;
+      border-radius: 16px; font-size: 13px; font-weight: 700;
+      font-family: inherit; color: white; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center; padding: 0 8px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      position: relative; overflow: visible;
+    }
+    .item-btn:active { transform: scale(0.96); filter: brightness(0.92); }
+    .item-btn:nth-child(5n+1) { background: #00CED1; }
+    .item-btn:nth-child(5n+2) { background: #FF6B9D; }
+    .item-btn:nth-child(5n+3) { background: #A855F7; }
+    .item-btn:nth-child(5n+4) { background: #FF9F1C; }
+    .item-btn:nth-child(5n+5) { background: #10B981; }
+    .item-btn.selected { background: #FF4D6D !important; box-shadow: 0 4px 0 #C41E3A; transform: translateY(-2px); }
+    .item-btn.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
+    .item-btn .req-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; background: #FFD54F; border-radius: 50%; box-shadow: 0 0 4px #FFD54F; }
+
+    /* 归档 */
+    .archived-toggle { display: block; width: 100%; padding: 12px; background: #F5F5F5; border: 2px dashed #BDBDBD; border-radius: 12px; font-size: 15px; color: #7F8C8D; cursor: pointer; text-align: center; margin-top: 8px; }
+    .archived-section { display: none; margin-top: 10px; }
+    .archived-section.open { display: block; }
+    .archived-section h4 { font-size: 13px; color: #BDBDBD; margin-bottom: 8px; text-align: center; }
+    .archived-item-btn { padding: 10px 8px; background: #E0E0E0; color: #7F8C8D; border: none; border-radius: 10px; font-size: 14px; cursor: pointer; text-align: center; text-decoration: line-through; }
+    .archived-item-btn.selected { background: #FF6B6B; color: white; }
+
+    /* 今日记录 */
+    .today-records { margin-top: 8px; }
+    .today-records h3 { font-size: 18px; color: #4ECDC4; margin-bottom: 10px; }
+    .record-item { display: flex; align-items: center; justify-content: space-between; background: #FFF; border: 2px solid #E0E0E0; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
+    .record-item .item-name { font-size: 16px; font-weight: bold; color: #333; }
+    .record-item .item-mins { font-size: 14px; color: #7F8C8D; margin-top: 2px; }
+    .record-item .delete-btn { background: #FF6B6B; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+    .empty-records { text-align: center; color: #BDBDBD; font-size: 14px; padding: 12px; }
+
+    /* 响应式：iPad竖屏单栏 */
+    @media (max-width: 640px) {
+      .timer-layout { grid-template-columns: 1fr; }
+      .panel-req .req-empty { padding: 20px 0; }
+    }
   </style>
 </head>
 <body>
@@ -295,75 +241,92 @@
     </div>
   </div>
 
-  <div class="card">
-    <h2 style="color:#FF6B6B;">🎵 选择练习项目</h2>
-    <input type="text" id="itemFilter" placeholder="🔍 搜索..." style="width:100%;padding:12px;border-radius:12px;border:2px solid #E0E0E0;font-size:16px;margin-bottom:12px;" oninput="filterItems(this.value)">
-    {{items_html}}
-    <div id="archivedToggleWrap"></div>
+  <!-- 顶部状态栏 -->
+  <div class="top-bar">
     <div class="today-stat">今日已练习: {{today_mins}} 分钟</div>
+    <div class="server-clock" id="serverClock"></div>
   </div>
 
-  <div class="card" id="timer-card" style="display:none;">
-    <h2 style="color:#4ECDC4;">⏱️ 计时器</h2>
-    <div class="timer-big" id="timer-display">00:00</div>
-    <div class="time-btns">
-      <button class="time-btn" onclick="setDuration(5)">5分钟</button>
-      <button class="time-btn selected" onclick="setDuration(10)">10分钟</button>
-      <button class="time-btn" onclick="setDuration(15)">15分钟</button>
-      <button class="time-btn" onclick="setDuration(20)">20分钟</button>
-      <button class="time-btn" onclick="setDuration(30)">30分钟</button>
-    </div>
-    <!-- 老师要求提示（选中科目后显示） -->
-    <div id="reqTip">
-      <button class="close-tip" onclick="closeReqTip()">✕</button>
-      <div id="reqTipContent"></div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button class="btn btn-secondary" id="startBtn" onclick="toggleTimer()">开始</button>
-      <button class="btn btn-primary" onclick="finishEarly()">提前结束</button>
-    </div>
-    <!-- 快速录入模块 -->
-    <div class="quick-add-section" id="quickAddSection">
-      <h4>⚡ 快速录入（不计时）</h4>
-      <div class="quick-time-btns">
-        <button class="quick-time-btn" onclick="setQuickDuration(5)">5分钟</button>
-        <button class="quick-time-btn selected" onclick="setQuickDuration(10)">10分钟</button>
-        <button class="quick-time-btn" onclick="setQuickDuration(15)">15分钟</button>
-        <button class="quick-time-btn" onclick="setQuickDuration(20)">20分钟</button>
-        <button class="quick-time-btn" onclick="setQuickDuration(30)">30分钟</button>
-      </div>
-      <div class="quick-add-actions">
-        <button class="start-btn" style="margin:0;background:#FFE066;color:#333;" onclick="submitQuickLog()">✅ 直接打卡</button>
-        <button style="background:none;border:2px solid #E0E0E0;color:#7F8C8D;padding:10px;border-radius:16px;font-size:15px;cursor:pointer;" onclick="toggleQuickAdd()">取消</button>
+  <!-- 三栏布局 -->
+  <div class="timer-layout" id="timer-layout">
+
+    <!-- 左栏：老师要求 -->
+    <div class="panel panel-req">
+      <h4>🎯 老师要求</h4>
+      <div class="req-content" id="reqTip">
+        <div class="req-empty">选择一个科目<br>查看老师要求</div>
       </div>
     </div>
-    <!-- 额外练习时间模块 -->
-    <div class="extra-section" id="extraSection">
+
+    <!-- 中栏：计时器 -->
+    <div class="panel panel-center">
+      <h4>⏱️ 计时器</h4>
+      <div class="timer-display" id="timer-display">00:00</div>
+      <div class="time-btns">
+        <button class="time-btn" onclick="setDuration(5)">5分钟</button>
+        <button class="time-btn selected" onclick="setDuration(10)">10分钟</button>
+        <button class="time-btn" onclick="setDuration(15)">15分钟</button>
+        <button class="time-btn" onclick="setDuration(20)">20分钟</button>
+        <button class="time-btn" onclick="setDuration(30)">30分钟</button>
+      </div>
+      <div class="action-btns">
+        <button class="btn btn-secondary" id="startBtn" onclick="toggleTimer()">开始</button>
+        <button class="btn btn-primary" onclick="finishEarly()">提前结束</button>
+      </div>
+      <!-- 确认区域 -->
+      <div class="confirm-area" id="confirmArea">
+        <p>练了 <strong id="confirmMins" class="confirm-mins">0</strong> 分钟！</p>
+        <button class="btn btn-primary" onclick="submitPractice()">✅ 打卡完成</button>
+      </div>
+      <!-- 快速录入 -->
+      <div class="quick-add-section" id="quickAddSection">
+        <h4>⚡ 快速录入（不计时）</h4>
+        <div class="quick-time-btns">
+          <button class="quick-time-btn" onclick="setQuickDuration(5)">5分钟</button>
+          <button class="quick-time-btn selected" onclick="setQuickDuration(10)">10分钟</button>
+          <button class="quick-time-btn" onclick="setQuickDuration(15)">15分钟</button>
+          <button class="quick-time-btn" onclick="setQuickDuration(20)">20分钟</button>
+          <button class="quick-time-btn" onclick="setQuickDuration(30)">30分钟</button>
+        </div>
+        <div class="quick-add-actions">
+          <button class="start-btn" onclick="submitQuickLog()">✅ 直接打卡</button>
+          <button class="btn-cancel" onclick="toggleQuickAdd()">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右栏：额外练习时间 -->
+    <div class="panel panel-extra" id="extraSection">
       <h4>🌿 额外练习时间</h4>
       <div class="extra-btns">
-        <button class="extra-btn" onclick="addExtraMins(5)">+5分钟</button>
-        <button class="extra-btn selected" onclick="addExtraMins(10)">+10分钟</button>
-        <button class="extra-btn" onclick="addExtraMins(15)">+15分钟</button>
-        <button class="extra-btn" onclick="addExtraMins(20)">+20分钟</button>
-        <button class="extra-btn" onclick="addExtraMins(30)">+30分钟</button>
+        <button class="extra-btn" onclick="addExtraMins(5)">+5</button>
+        <button class="extra-btn" onclick="addExtraMins(10)">+10</button>
+        <button class="extra-btn" onclick="addExtraMins(15)">+15</button>
+        <button class="extra-btn" onclick="addExtraMins(20)">+20</button>
+        <button class="extra-btn" onclick="addExtraMins(30)">+30</button>
       </div>
       <div class="extra-custom">
-        <input type="number" id="extraCustomMins" placeholder="输入分钟数" min="1" max="480">
+        <input type="number" id="extraCustomMins" placeholder="分钟" min="1" max="480">
         <button class="extra-btn" onclick="addExtraFromInput()">添加</button>
       </div>
       <div id="extraLogList"></div>
     </div>
-    <div class="confirm-area" id="confirmArea">
-      <p style="font-size:20px;margin-bottom:12px;">练了 <strong id="confirmMins">0</strong> 分钟！</p>
-      <button class="start-btn" onclick="submitPractice()">✅ 打卡完成</button>
-    </div>
+
   </div>
 
-  <div class="card today-records" id="todayRecords">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-      <h3>📋 今日练习记录</h3>
-      <div id="serverClock" style="font-size:13px;color:#7F8C8D;background:#F8F9FA;border-radius:12px;padding:4px 12px;flex:1;text-align:right;"></div>
+  <!-- 练习科目选择 -->
+  <div class="item-section card">
+    <h2>🎵 选择练习项目</h2>
+    <div class="item-filter-wrap">
+      <input type="text" id="itemFilter" placeholder="🔍 搜索..." oninput="filterItems(this.value)">
     </div>
+    {{items_html}}
+    <div id="archivedToggleWrap"></div>
+  </div>
+
+  <!-- 今日练习记录 -->
+  <div class="card today-records">
+    <h3>📋 今日练习记录</h3>
     <div id="recordsList"></div>
   </div>
 
@@ -386,7 +349,6 @@
           confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 }, colors });
           if (Date.now() < end) requestAnimationFrame(frame);
         }());
-        // Big center burst
         confetti({ particleCount: 100, spread: 100, origin: { y: 0.6 }, colors });
       } catch(e) {}
     }
@@ -429,9 +391,7 @@
       const mi = String(now.getMinutes()).padStart(2, '0');
       const s = String(now.getSeconds()).padStart(2, '0');
       const pad = document.getElementById('serverClock');
-      if (pad) {
-        pad.textContent = `${y}-${mo}-${d} ${h}:${mi}:${s}`;
-      }
+      if (pad) { pad.textContent = `${y}-${mo}-${d} ${h}:${mi}:${s}`; }
     }
     setInterval(updateClock, 1000);
     updateClock();
@@ -440,7 +400,6 @@
     // ── 老科目加载 ──
     let archivedLoaded = false;
     async function loadArchivedToggle() {
-      // Fetch count of archived items
       try {
         let res = await fetch('/api/items?include_archived=false');
         let data = await res.json();
@@ -457,16 +416,13 @@
     async function toggleArchived() {
       let wrap = document.getElementById('archivedToggleWrap');
       let existing = document.querySelector('.archived-section');
-      if (existing) {
-        existing.classList.toggle('open');
-        return;
-      }
+      if (existing) { existing.classList.toggle('open'); return; }
       try {
         let res = await fetch('/api/items?include_archived=true');
         let data = await res.json();
         let archived = data.items.filter(i => i.is_archived);
         if (archived.length === 0) return;
-        let html = '<div class="archived-section open"><h4>📁 老科目（不显示在列表里了）</h4>';
+        let html = '<div class="archived-section open"><h4>📁 老科目</h4>';
         html += '<div class="item-grid">';
         archived.forEach(it => {
           html += '<button class="archived-item-btn" onclick="selectArchivedItem(\'' + it.name.replace(/'/g, "\\'") + '\', ' + it.id + ', this)">' + it.name + '</button>';
@@ -475,46 +431,32 @@
         wrap.insertAdjacentHTML('beforeend', html);
       } catch(e) {}
     }
+
+    // 更新左栏老师要求显示
+    function updateReqPanel(reqText) {
+      const tip = document.getElementById('reqTip');
+      if (reqText) {
+        tip.innerHTML = '<div class="req-label">🎯 老师要求</div><div class="req-highlight">' + reqText + '</div>';
+      } else {
+        tip.innerHTML = '<div class="req-empty">暂无老师要求<br>直接开始练习吧！</div>';
+      }
+    }
+
     function selectArchivedItem(name, id, btn) {
       document.querySelectorAll('.archived-item-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
       selectedItem = name;
       selectedItemId = id;
-      document.getElementById('timer-card').style.display = 'block';
-      document.getElementById('timer-card').scrollIntoView({behavior: 'smooth'});
       resetTimer();
       refreshExtraSection();
 
-      // 检查老师要求
-      const tip = document.getElementById('reqTip');
-      const tipContent = document.getElementById('reqTipContent');
-      let reqText = '';
-      if (WEEKLY_ASSIGN && WEEKLY_ASSIGN.items) {
-        for (const a of WEEKLY_ASSIGN.items) {
-          if (a.item === name) { reqText = a.requirement || ''; break; }
-        }
-      }
-      if (reqText) {
-        tipContent.textContent = reqText;
-        tip.classList.add('show');
-        gsap.fromTo('#reqTip',
-          { opacity: 0, scale: 0.8, y: -10 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(2)" }
-        );
-      } else {
-        tip.classList.remove('show');
-      }
-    }
-
-    function closeReqTip() {
-      const tip = document.getElementById('reqTip');
-      tip.classList.remove('show');
+      const reqText = btn ? btn.getAttribute('data-req') : null;
+      updateReqPanel(reqText || '');
     }
 
     // ── 计时器防跳出 ──
     function setupTimerProtect() {
-      // 导航栏点击拦截
       document.querySelectorAll('.nav a').forEach(a => {
         a.addEventListener('click', e => {
           if (!timerRunning) return;
@@ -525,18 +467,11 @@
           document.getElementById('timerProtectModal').classList.add('open');
         });
       });
-      // beforeunload
       window.addEventListener('beforeunload', e => {
-        if (timerRunning) {
-          e.preventDefault();
-          e.returnValue = '';
-        }
+        if (timerRunning) { e.preventDefault(); e.returnValue = ''; }
       });
-      // visibilitychange
       document.addEventListener('visibilitychange', () => {
-        if (document.hidden && timerRunning) {
-          pendingNav = null; // don't navigate away
-        }
+        if (document.hidden && timerRunning) { pendingNav = null; }
       });
     }
     function closeTimerProtect() {
@@ -570,16 +505,12 @@
       let json = await res.json();
       if (json.ok) {
         fireConfetti();
-        document.querySelector('.confirm-area p').innerHTML = '⚡ 快速打卡 +' + quickDuration + '分钟！';
+        document.querySelector('#confirmArea p').innerHTML = '⚡ 快速打卡 +' + quickDuration + '分钟！';
         document.getElementById('confirmArea').classList.add('show');
-        gsap.fromTo('#confirmArea',
-          { scale: 0.5, opacity: 0, y: 30 },
-          { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" }
-        );
+        gsap.fromTo('#confirmArea', { scale: 0.5, opacity: 0, y: 30 }, { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" });
         document.getElementById('quickAddSection').classList.remove('open');
         setTimeout(() => {
           document.getElementById('confirmArea').classList.remove('show');
-          document.getElementById('timer-card').style.display = 'none';
           document.querySelectorAll('.item-btn, .archived-item-btn').forEach(b => b.classList.remove('selected'));
           selectedItem = null;
           loadTodayRecords();
@@ -589,33 +520,17 @@
 
     // ── 计时器主逻辑 ──
     function selectItem(name, id) {
-      // Clear archived selection
       document.querySelectorAll('.archived-item-btn').forEach(b => b.classList.remove('selected'));
       document.querySelectorAll('.item-btn').forEach(b => b.classList.remove('selected'));
-      // Find the button that was clicked (supports both regular and archived items)
       const btn = document.querySelector(`.item-btn[data-id='${id}'], .archived-item-btn[data-id='${id}']`);
       if (btn) btn.classList.add('selected');
       selectedItem = name;
       selectedItemId = id;
-      document.getElementById('timer-card').style.display = 'block';
-      document.getElementById('timer-card').scrollIntoView({behavior: 'smooth'});
       resetTimer();
       refreshExtraSection();
 
-      // 检查老师要求
-      const tip = document.getElementById('reqTip');
-      const tipContent = document.getElementById('reqTipContent');
       const reqText = btn ? btn.getAttribute('data-req') : null;
-      if (reqText) {
-        tipContent.textContent = reqText;
-        tip.classList.add('show');
-        gsap.fromTo('#reqTip',
-          { opacity: 0, scale: 0.8, y: -10 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(2)" }
-        );
-      } else {
-        tip.classList.remove('show');
-      }
+      updateReqPanel(reqText || '');
     }
 
     function setDuration(mins) {
@@ -634,7 +549,7 @@
       document.getElementById('startBtn').textContent = '开始';
       document.getElementById('confirmArea').classList.remove('show');
       document.getElementById('quickAddSection').classList.remove('open');
-      document.getElementById('reqTip').classList.remove('show');
+      updateReqPanel('');
     }
 
     function toggleTimer() {
@@ -647,6 +562,7 @@
         started = true;
         timerRunning = true;
         document.getElementById('startBtn').textContent = '暂停';
+        document.getElementById('timer-display').classList.add('running');
         timerInterval = setInterval(() => {
           elapsed++;
           let m = Math.floor(elapsed / 60).toString().padStart(2,'0');
@@ -655,8 +571,11 @@
           if (elapsed >= duration * 60) {
             clearInterval(timerInterval);
             timerRunning = false;
+            started = false;
+            document.getElementById('timer-display').classList.remove('running');
             document.getElementById('confirmMins').textContent = duration;
             document.getElementById('confirmArea').classList.add('show');
+            document.getElementById('startBtn').textContent = '开始';
             playChime();
           }
         }, 1000);
@@ -667,12 +586,13 @@
       clearInterval(timerInterval);
       started = false;
       timerRunning = false;
-      // 保存提前结束时的分钟数，然后立即重置 elapsed 防止带到下次
       const finalMins = Math.floor(elapsed / 60);
       elapsed = 0;
       document.getElementById('timer-display').textContent = '00:00';
+      document.getElementById('timer-display').classList.remove('running');
       document.getElementById('confirmMins').textContent = finalMins;
       document.getElementById('confirmArea').classList.add('show');
+      document.getElementById('startBtn').textContent = '开始';
     }
 
     async function submitPractice() {
@@ -687,20 +607,16 @@
       if (json.ok) {
         timerRunning = false;
         fireConfetti();
-        document.querySelector('.confirm-area p').innerHTML = '🎉 打卡成功！太棒啦！';
+        document.querySelector('#confirmArea p').innerHTML = '🎉 打卡成功！太棒啦！';
         document.getElementById('confirmArea').classList.add('show');
-        // GSAP bounce 进场动画
-        gsap.fromTo('#confirmArea',
-          { scale: 0.5, opacity: 0, y: 30 },
-          { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" }
-        );
-        // 立即刷新今日记录，不要等 2.5 秒
+        gsap.fromTo('#confirmArea', { scale: 0.5, opacity: 0, y: 30 }, { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" });
         loadTodayRecords();
         setTimeout(() => {
           resetTimer();
           document.querySelectorAll('.item-btn, .archived-item-btn').forEach(b => b.classList.remove('selected'));
           selectedItem = null;
-          document.getElementById('timer-card').style.display = 'none';
+          document.getElementById('confirmArea').classList.remove('show');
+          updateReqPanel('');
         }, 2500);
       }
     }
@@ -713,22 +629,15 @@
         let logList = document.getElementById('extraLogList');
         let extras = (data.items || []).filter(it => it.is_extra);
         if (extras.length === 0) {
-          logList.innerHTML = '';
+          logList.innerHTML = '<div style="font-size:13px;color:#A5D6A7;text-align:center;padding:6px;">暂无额外记录</div>';
         } else {
           logList.innerHTML = extras.map(it => `
             <div class="extra-log-item">
-              <span>${it.item} <span style="font-size:11px;color:#AAA;">[#${it.item_id}]</span></span>
+              <span>${it.item}</span>
               <span class="extra-mins">+${it.minutes}分钟</span>
               <button class="extra-del" onclick="deleteExtraRecord('${it.item_id}')">✕</button>
             </div>
           `).join('');
-        }
-        // Toggle section visibility based on whether any item is selected
-        const section = document.getElementById('extraSection');
-        if (selectedItem) {
-          section.classList.add('open');
-        } else {
-          section.classList.remove('open');
         }
       } catch(e) {}
     }
@@ -760,7 +669,6 @@
 
     async function deleteExtraRecord(id) {
       if (!confirm('确定要删除这条额外练习记录吗？')) return;
-      console.log('[deleteExtraRecord] deleting id=' + id);
       try {
         let res = await fetch('/api/log', {
           method: 'DELETE',
@@ -768,16 +676,13 @@
           body: JSON.stringify({date: todayDate, id: id})
         });
         let result = await res.json();
-        console.log('[deleteExtraRecord] result=' + JSON.stringify(result));
         if (result.ok) {
           refreshExtraSection();
           renderTodayRecords(result.items || [], result.total_minutes || 0);
         } else {
           alert('删除失败: ' + (result.error || '未知错误'));
         }
-      } catch(e) {
-        console.error('[deleteExtraRecord] error=' + e.message);
-      }
+      } catch(e) { console.error(e); }
     }
 
     // Load today's records from API
@@ -789,37 +694,29 @@
         recordsList.innerHTML = items.map(it => `
           <div class="record-item">
             <div>
-              <div class="item-name">${it.item} <span style="font-size:11px;color:#AAA;">[#${it.item_id}]</span></div>
+              <div class="item-name">${it.item}</div>
               <div class="item-mins">${it.minutes} 分钟</div>
             </div>
             <button class="delete-btn" onclick="deleteRecord(${it.item_id})">✕</button>
           </div>
         `).join('');
-        gsap.fromTo('.record-item',
-          { opacity: 0, x: 60 },
-          { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" }
-        );
+        gsap.fromTo('.record-item', { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.45, stagger: 0.1, ease: "power3.out" });
       }
-      document.querySelector('.today-stat') && (document.querySelector('.today-stat').textContent = '今日已练习: ' + total + ' 分钟');
+      document.querySelector('.today-stat').textContent = '今日已练习: ' + total + ' 分钟';
     }
 
     async function loadTodayRecords() {
-      console.log('[loadTodayRecords] fetching /api/practices/' + todayDate);
       try {
         let res = await fetch('/api/practices/' + todayDate);
-        console.log('[loadTodayRecords] status=' + res.status);
         let data = await res.json();
-        console.log('[loadTodayRecords] data.items.length=' + (data.items ? data.items.length : 'null'));
         renderTodayRecords(data.items || [], data.total_minutes || 0);
       } catch(e) {
-        console.error('[loadTodayRecords] error: ' + e.message);
         document.getElementById('recordsList').innerHTML = '<div class="empty-records">加载失败: ' + e.message + '</div>';
       }
     }
 
     async function deleteRecord(id) {
       if (!confirm('确定要删除这条练习记录吗？')) return;
-      console.log('[deleteRecord] called, id=' + id + ', todayDate=' + todayDate);
       try {
         let res = await fetch('/api/log', {
           method: 'DELETE',
@@ -827,17 +724,12 @@
           body: JSON.stringify({date: todayDate, id: id})
         });
         let result = await res.json();
-        console.log('[deleteRecord] result=' + JSON.stringify(result));
         if (result.ok) {
-          // 直接用服务端返回的数据更新 UI，避免 re-fetch 竞态
           renderTodayRecords(result.items || [], result.total_minutes || 0);
         } else {
           alert('删除失败: ' + (result.error || '未知错误'));
         }
-      } catch(e) {
-        console.error('[deleteRecord] error=' + e.message);
-        alert('删除失败: ' + e.message);
-      }
+      } catch(e) { console.error(e); }
     }
 
     // Init
@@ -846,11 +738,8 @@
     setupTimerProtect();
 
     // ── 页面加载整体弹入动画 ──
-    const allCards = document.querySelectorAll('.card');
-    gsap.fromTo(allCards,
-      { opacity: 0, scale: 0.88, y: 24 },
-      { opacity: 1, scale: 1, y: 0, duration: 0.6, stagger: 0.12, ease: "back.out(2)" }
-    );
+    const allCards = document.querySelectorAll('.card, .panel');
+    gsap.fromTo(allCards, { opacity: 0, scale: 0.88, y: 24 }, { opacity: 1, scale: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "back.out(2)" });
   </script>
 </body>
 </html>
