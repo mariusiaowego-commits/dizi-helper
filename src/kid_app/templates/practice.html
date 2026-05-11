@@ -180,21 +180,22 @@
     }
     .item-btn {
       width: 100%; min-width: 0; height: 56px; border: none;
-      border-radius: 16px; font-size: 13px; font-weight: 700;
+      border-radius: 16px; font-size: 14px; font-weight: 700;
       font-family: inherit; color: white; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      text-align: center; padding: 0 4px; white-space: nowrap;
+      text-align: center; padding: 0 8px; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis;
       transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
       position: relative; overflow: visible;
       box-sizing: border-box;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.25);
     }
     .item-btn:active { transform: scale(0.96); filter: brightness(0.92); }
-    .item-btn:nth-child(5n+1) { background: #00CED1; }
-    .item-btn:nth-child(5n+2) { background: #FF6B9D; }
-    .item-btn:nth-child(5n+3) { background: #A855F7; }
-    .item-btn:nth-child(5n+4) { background: #FF9F1C; }
-    .item-btn:nth-child(5n+5) { background: #10B981; }
+    .item-btn:nth-child(5n+1) { background: #00A8A8; }
+    .item-btn:nth-child(5n+2) { background: #E8325A; }
+    .item-btn:nth-child(5n+3) { background: #8B2FC9; }
+    .item-btn:nth-child(5n+4) { background: #E07A00; }
+    .item-btn:nth-child(5n+5) { background: #0A8A5A; }
     .item-btn.selected { background: #FF4D6D !important; box-shadow: 0 4px 0 #C41E3A; transform: translateY(-2px); }
     .item-btn.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
     .item-btn .req-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; background: #FFD54F; border-radius: 50%; box-shadow: 0 0 4px #FFD54F; }
