@@ -58,6 +58,7 @@
       gap: 10px;
       align-items: stretch;
       margin-bottom: 12px;
+      padding-right: 4px;
     }
     .panel {
       border-radius: var(--radius);
@@ -230,6 +231,9 @@
     @media (max-width: 640px) {
       .timer-layout { grid-template-columns: 1fr; }
       .panel-req .req-empty { padding: 20px 0; }
+    }
+    @media (min-width: 641px) {
+      .timer-layout { padding-right: 4px; }
     }
   </style>
 </head>
