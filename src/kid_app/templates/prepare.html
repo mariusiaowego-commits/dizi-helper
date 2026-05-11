@@ -1,113 +1,688 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>练习准备 - 竹笛助手</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/style.css">
-  <style>
-    body { background: #FFF8F0; font-family: 'ZCOOL KuaiLe', -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; padding-bottom: 80px; }
-    /* Fixed bottom nav */
-    .nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      display: flex; gap: 4px;
-      margin-bottom: 0; padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-      background: var(--card, #fff); box-shadow: 0 -2px 12px rgba(0,0,0,0.1); z-index: 100;
-    }
-    .nav a {
-      flex: 1; min-width: 0; padding: 14px 8px !important; background: transparent; border-radius: 16px;
-      text-align: center; text-decoration: none; color: #7F8C8D; font-size: 16px !important;
-      box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 2px;
-    }
-    .nav a:active { transform: scale(0.95); }
-    .nav a.active { background: #FF6B6B; color: white; }
-    .nav-icon { font-size: 20px; }
-    .greeting { font-size: 36px; font-weight: bold; text-align: center; padding: 16px 0; color: #FF6B6B; }
-    .date-info { text-align: center; color: #7F8C8D; font-size: 20px; margin-bottom: 16px; }
-    .section-title { font-size: 22px; color: #4ECDC4; margin: 20px 0 12px; font-weight: bold; }
-    .check-item { display: flex; align-items: center; gap: 16px; padding: 18px 0; border-bottom: 1px solid #F0F0F0; font-size: 24px; }
-    .check-item:last-child { border-bottom: none; }
-    .check-circle { width: 44px; height: 44px; border-radius: 50%; border: 3px solid #4ECDC4; background: white; cursor: pointer; flex-shrink: 0; transition: all 0.2s; }
-    .check-circle.done { background: #4ECDC4; }
-    .check-circle.done::after { content: "✓"; color: white; display: flex; align-items: center; justify-content: center; height: 100%; font-size: 22px; }
-    .start-btn { display: block; width: 100%; padding: 20px; background: #FF6B6B; color: white; border: none; border-radius: 24px; font-size: 26px; font-weight: bold; cursor: pointer; margin-top: 24px; }
-    .streak-bar { display: flex; align-items: center; justify-content: center; gap: 8px; background: #FFF0E0; padding: 14px; border-radius: 16px; margin-bottom: 16px; font-size: 22px; color: #FF6B35; }
-    .card { background: #FFFFFF; border-radius: 20px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .card h2 { font-size: 26px; margin-bottom: 16px; color: #FF6B6B; }
-    .card ul { padding-left: 24px; font-size: 22px; line-height: 2.2; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>练习准备 - 竹笛助手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  :root {
+    --sage:       #a8d5ba;
+    --sage-dk:    #7cb98a;
+    --cream:       #f5e6d3;
+    --rose:        #e8b4bc;
+    --rose-dk:     #d4869a;
+    --lavender:    #c5b8d9;
+    --lavender-dk: #9b8bc0;
+    --text:        #3d3d3d;
+    --text-light:  #6b6b6b;
+    --white:       #ffffff;
+    --radius:      20px;
+    --radius-lg:   28px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding: 0;
+    padding-bottom: 90px; /* bottom nav height */
+  }
+
+  /* ── hero ─────────────────────────────────────── */
+  .hero {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168,213,186,0.35) 0%, transparent 70%);
+    top: -200px; right: -150px;
+    pointer-events: none;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,180,188,0.3) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--sage-dk);
+    margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  /* ── 可配置祝福语（后端注入 / JS 填充）────────── */
+  .hero-bless {
+    font-size: clamp(2.2rem, 7vw, 3.6rem);
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text);
+    margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .hero-bless .accent { font-style: normal; color: var(--sage-dk); }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    color: var(--text-light);
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .hero-meta .streak-badge {
+    background: #FFF0E0;
+    color: var(--rose-dk);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .hero-sub {
+    font-size: 1rem;
+    color: var(--text-light);
+    max-width: 440px;
+    line-height: 1.7;
+    margin-bottom: 36px;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  /* ── tap-scroll hint (hero only) ─────────────── */
+  .tap-hint {
+    position: absolute;
+    bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-light);
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tap-hint .dots {
+    display: flex; gap: 5px;
+  }
+
+  .tap-hint .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--sage-dk);
+    animation: dotPulse 1.6s ease-in-out infinite;
+  }
+  .tap-hint .dot:nth-child(2) { animation-delay: 0.2s; }
+  .tap-hint .dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotPulse {
+    0%, 100% { opacity: 0.3; transform: scale(0.8); }
+    50%       { opacity: 1;   transform: scale(1.2); }
+  }
+
+  /* ── steps section ──────────────────────────────── */
+  .steps-section {
+    padding: 72px 24px 100px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 0.78rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--lavender-dk);
+    margin-bottom: 10px;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .section-title {
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 40px;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .step-card {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 24px 28px;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+    opacity: 0;
+    transform: translateY(40px);
+    cursor: pointer;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+    user-select: none;
+  }
+
+  .step-card:hover {
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    transform: translateY(-2px) !important;
+  }
+
+  .step-card:active { transform: scale(0.98) !important; }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .step-num.sage     { background: var(--sage); }
+  .step-num.rose     { background: var(--rose); }
+  .step-num.lavender { background: var(--lavender); }
+  .step-num.gold     { background: #f0c060; }
+
+  .step-body { flex: 1; text-align: left; }
+
+  .step-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .step-desc {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    line-height: 1.55;
+  }
+
+  .step-check {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    color: transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .step-check.done {
+    background: var(--sage);
+    border-color: var(--sage);
+    color: var(--white);
+  }
+
+  /* ── assignment reveal ──────────────────────────── */
+  .assignment-section {
+    padding: 0 24px 80px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .assignment-card {
+    background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dk) 100%);
+    border-radius: var(--radius-lg);
+    padding: 36px 32px;
+    color: var(--white);
+    opacity: 0;
+    transform: translateY(30px);
+    box-shadow: 0 8px 40px rgba(124,185,138,0.3);
+  }
+
+  .assignment-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 10px;
+  }
+
+  .assignment-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    line-height: 1.3;
+  }
+
+  .assignment-items {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .assignment-items li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.92rem;
+    opacity: 0.9;
+  }
+
+  .assignment-items li::before {
+    content: '♩';
+    font-size: 1rem;
+  }
+
+  /* ── cta section ───────────────────────────────── */
+  .cta-section {
+    min-height: 60dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 24px;
+    position: relative;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    width: 480px; height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(197,184,217,0.3) 0%, transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .cta-content {
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  .cta-title {
+    font-size: clamp(1.7rem, 5vw, 2.6rem);
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .cta-sub {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    margin-bottom: 36px;
+  }
+
+  .btn-start {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 48px;
+    background: linear-gradient(135deg, var(--rose) 0%, var(--rose-dk) 100%);
+    color: var(--white);
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 4px 24px rgba(232,180,188,0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    cursor: pointer;
+    border: none;
+  }
+
+  .btn-start:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 8px 32px rgba(232,180,188,0.65);
+  }
+
+  .btn-start:active { transform: scale(0.97) !important; }
+
+  .btn-start .arrow { font-size: 1.2rem; transition: transform 0.2s ease; }
+  .btn-start:hover .arrow { transform: translateX(4px); }
+
+  /* ── 全局浮动 tap 提示 ─────────────────────────── */
+  #floatingTap {
+    position: fixed;
+    bottom: 96px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-light);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 200;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    background: rgba(245, 230, 211, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 9px 18px 7px;
+    border-radius: 22px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  }
+
+  #floatingTap.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  #floatingTap .chevrons { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+
+  #floatingTap .chevron {
+    width: 13px; height: 13px;
+    border-right: 2px solid var(--sage-dk);
+    border-bottom: 2px solid var(--sage-dk);
+    transform: rotate(45deg);
+    animation: chevronBounce 1.4s ease-in-out infinite;
+  }
+  #floatingTap .chevron:nth-child(2) { animation-delay: 0.15s; opacity: 0.7; }
+  #floatingTap .chevron:nth-child(3) { animation-delay: 0.3s; opacity: 0.4; }
+
+  @keyframes chevronBounce {
+    0%, 100% { transform: rotate(45deg) translate(0, 0); }
+    50%       { transform: rotate(45deg) translate(2px, 2px); }
+  }
+
+  /* ── 底部导航（保持原有） ──────────────────────── */
+  .nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    gap: 4px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    background: var(--white);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.10);
+    z-index: 100;
+  }
+
+  .nav a {
+    flex: 1; min-width: 0;
+    padding: 12px 4px;
+    background: transparent;
+    border-radius: 16px;
+    text-align: center;
+    text-decoration: none;
+    color: #7F8C8D;
+    font-size: 13px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .nav a:active { transform: scale(0.95); }
+  .nav a.active { background: #FF6B6B; color: white !important; }
+  .nav-icon { font-size: 20px; }
+
+  /* ── iPad mini landscape 2266×1488 (≈3:2) ─────── */
+  @media screen and (min-width: 1488px) and (max-height: 1600px) {
+    .hero-bless { font-size: 3.4rem; }
+    .steps-section { max-width: 860px; }
+    .step-card { padding: 28px 36px; gap: 28px; }
+    .step-num { width: 56px; height: 56px; font-size: 1.3rem; }
+    .step-title { font-size: 1.15rem; }
+    .step-desc { font-size: 0.92rem; }
+    .assignment-card { padding: 44px 48px; }
+  }
+
+  /* ── iPhone 小屏 ─────────────────────────────── */
+  @media (max-width: 480px) {
+    .hero-bless { font-size: 2rem; }
+    .step-card { padding: 18px 20px; gap: 14px; }
+    .step-num { width: 44px; height: 44px; font-size: 1rem; }
+    .step-title { font-size: 0.98rem; }
+    .assignment-card { padding: 26px 22px; }
+  }
+</style>
 </head>
 <body>
-  <div class="nav">
-    <a href="/prepare" class="nav-item active"><span class="nav-icon">🏠</span><span>准备</span></a>
-    <a href="/practice" class="nav-item"><span class="nav-icon">🎵</span><span>练习</span></a>
-    <a href="/achievements" class="nav-item"><span class="nav-icon">🏆</span><span>成就</span></a>
-    <a href="/report" class="nav-item"><span class="nav-icon">📊</span><span>报告</span></a>
-    <a href="/praise" class="nav-item"><span class="nav-icon">⭐</span><span>表扬</span></a>
+
+<!-- ── HERO ─────────────────────────────────── -->
+<section class="hero" id="hero" onclick="scrollToNextSection()">
+  <p class="hero-eyebrow">{{eyebrow}}</p>
+
+  <h1 class="hero-bless" id="heroBless">
+    {{bless_main}}<br><span class="accent">{{bless_accent}}</span>
+  </h1>
+
+  <div class="hero-meta">
+    <span>{{weekday}} · {{today_str}}</span>
+    <span class="streak-badge">🔥 {{streak}}天连续</span>
   </div>
 
-  <div class="greeting">{{child_name}}，准备练习啦！</div>
-  <div class="date-info">{{weekday}} · {{today_str}}</div>
+  <p class="hero-sub">{{encouragement}}</p>
 
-  <div class="streak-bar">🔥 连续练习 {{streak}} 天</div>
-  <div style="text-align:center; font-size:20px; color:#FF6B35; margin-bottom:12px;">{{encouragement}}</div>
-
-  <div class="card">
-    <h2>🎯 练习前检查</h2>
-    <div class="check-item">
-      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
-      <span>谱架摆好了吗？</span>
-    </div>
-    <div class="check-item">
-      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
-      <span>小镜子竖好了吗？</span>
-    </div>
-    <div class="check-item">
-      <div class="check-circle" onclick="this.classList.toggle('done')"></div>
-      <span>笛膜检查一下，贴好了吗？</span>
+  <div class="tap-hint">
+    <span>点击任意处继续</span>
+    <div class="dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
     </div>
   </div>
+</section>
 
-  <div class="card">
-    <h2>📋 本周老师要求</h2>
-    <ul style="padding-left: 20px; font-size: 18px; line-height: 2;">
-      {{assign_html}}
+<!-- ── STEPS ────────────────────────────────── -->
+<section class="steps-section" id="stepsSection">
+  <p class="section-label">准备步骤</p>
+  <h2 class="section-title">做好开始练习的准备</h2>
+
+  <!-- 后端注入的步骤列表（见 app.py prepare_page）-->
+  {{steps_html}}
+</section>
+
+<!-- ── ASSIGNMENT ────────────────────────────── -->
+<section class="assignment-section" id="assignmentSection">
+  <div class="assignment-card">
+    <p class="assignment-eyebrow">{{assign_eyebrow}}</p>
+    <h3 class="assignment-title">{{assign_title}}</h3>
+    <ul class="assignment-items">
+      {{assign_items_html}}
     </ul>
   </div>
+</section>
 
-  <div class="card">
-    <h2>💡 今日建议</h2>
-    <ul style="padding-left: 20px; font-size: 18px; line-height: 2;">
-      {{suggestions}}
-    </ul>
+<!-- ── CTA ─────────────────────────────────── -->
+<section class="cta-section" id="ctaSection">
+  <div class="cta-content">
+    <h2 class="cta-title">{{cta_title}}</h2>
+    <p class="cta-sub">{{cta_sub}}</p>
+    <a href="/practice" class="btn-start" id="btnStart">
+      {{cta_btn_text}}
+      <span class="arrow">→</span>
+    </a>
   </div>
+</section>
 
-  <a href="/practice"><button class="start-btn">准备好了！开始练习 🎵</button></a>
+<!-- ── 全局浮动 tap 提示 ─────────────────────── -->
+<div id="floatingTap" onclick="scrollToNextSection()">
+  <span>点击继续</span>
+  <div class="chevrons">
+    <div class="chevron"></div>
+    <div class="chevron"></div>
+    <div class="chevron"></div>
+  </div>
+</div>
 
-  <script>
-    // 页面加载时检查准备状态
-    const checked = JSON.parse(localStorage.getItem('prepChecked') || '[]');
-    document.querySelectorAll('.check-circle').forEach((el, i) => {
-      if (checked.includes(i)) el.classList.add('done');
-    });
-    document.querySelectorAll('.check-circle').forEach((el, i) => {
-      el.addEventListener('click', () => {
-        if (el.classList.contains('done')) {
-          checked.splice(checked.indexOf(i), 1);
-        } else {
-          checked.push(i);
-        }
-        localStorage.setItem('prepChecked', JSON.stringify(checked));
-      });
-    });
-    // 每天自动重置
-    const today = new Date().toDateString();
-    if (localStorage.getItem('prepDate') !== today) {
-      localStorage.setItem('prepChecked', '[]');
-      localStorage.setItem('prepDate', today);
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+// ── Hero entrance ──────────────────────────────
+const heroTl = gsap.timeline({ delay: 0.2 });
+heroTl
+  .to('.hero-eyebrow', { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' })
+  .to('.hero-bless',   { opacity: 1, y: 0, duration: 0.85, ease: 'power3.out' }, '-=0.4')
+  .to('.hero-meta',    { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.5')
+  .to('.hero-sub',     { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+  .to('.tap-hint',     { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+
+// ── Section labels ────────────────────────────
+gsap.to('.section-label', {
+  opacity: 1, y: 0, duration: 0.6, ease: 'power2.out',
+  scrollTrigger: { trigger: '.steps-section', start: 'top 80%' },
+});
+gsap.to('.section-title', {
+  opacity: 1, y: 0, duration: 0.7, ease: 'power3.out',
+  scrollTrigger: { trigger: '.steps-section', start: 'top 80%' },
+});
+
+// ── Step cards ────────────────────────────────
+const stepColors = ['sage', 'rose', 'lavender', 'gold'];
+const allStepCards = document.querySelectorAll('.step-card');
+allStepCards.forEach((card, i) => {
+  gsap.to(card, {
+    opacity: 1, y: 0, duration: 0.75, ease: 'power3.out',
+    scrollTrigger: {
+      trigger: card,
+      start: 'top 86%',
+      toggleActions: 'play none none reverse',
+    },
+    delay: i * 0.1,
+  });
+  // subtle glow on enter
+  gsap.to(card, {
+    scrollTrigger: {
+      trigger: card,
+      start: 'top 88%',
+      onEnter: () => gsap.fromTo(card,
+        { boxShadow: '0 2px 16px rgba(0,0,0,0.06)' },
+        { boxShadow: '0 4px 28px rgba(168,213,186,0.32)', duration: 0.45, yoyo: true, repeat: 1, ease: 'power2.out' }
+      ),
+    },
+  });
+});
+
+// ── Assignment card ────────────────────────────
+gsap.to('.assignment-card', {
+  opacity: 1, y: 0, duration: 0.9, ease: 'power3.out',
+  scrollTrigger: {
+    trigger: '.assignment-section',
+    start: 'top 76%',
+    toggleActions: 'play none none reverse',
+  },
+});
+
+// ── CTA ──────────────────────────────────────
+gsap.to('.cta-content', {
+  opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
+  scrollTrigger: { trigger: '.cta-section', start: 'top 76%' },
+});
+gsap.to('#btnStart', {
+  opacity: 1, y: 0, duration: 0.7, ease: 'back.out(1.4)',
+  scrollTrigger: { trigger: '.cta-section', start: 'top 72%' },
+});
+
+// ── 点击 step card → 切换勾选状态 ─────────────
+function toggleStep(card) {
+  const check = card.querySelector('.step-check');
+  check.classList.toggle('done');
+  // localStorage 持久化（每日重置）
+  const today = new Date().toDateString();
+  const stored = JSON.parse(localStorage.getItem('prepStepChecked') || '{}');
+  if (!stored.date || stored.date !== today) {
+    stored.date = today;
+    stored.steps = {};
+  }
+  const stepId = card.id;
+  stored.steps[stepId] = check.classList.contains('done');
+  localStorage.setItem('prepStepChecked', JSON.stringify(stored));
+}
+
+// 恢复今日勾选状态
+const today2 = new Date().toDateString();
+const stored2 = JSON.parse(localStorage.getItem('prepStepChecked') || '{}');
+if (stored2.date === today2 && stored2.steps) {
+  Object.entries(stored2.steps).forEach(([stepId, done]) => {
+    if (done) {
+      const card = document.getElementById(stepId);
+      if (card) card.querySelector('.step-check').classList.add('done');
     }
-  </script>
+  });
+}
+
+// 每天自动清除
+if (stored2.date && stored2.date !== today2) {
+  localStorage.setItem('prepStepChecked', JSON.stringify({}));
+}
+
+// ── 浮动 tap hint 滚动控制 ───────────────────
+const floatingTap = document.getElementById('floatingTap');
+let tapShown = false;
+
+window.addEventListener('scroll', () => {
+  const stepsTop = document.getElementById('stepsSection').offsetTop;
+  const ctaTop = document.getElementById('ctaSection').offsetTop;
+  const scrollY = window.scrollY;
+  const winH = window.innerHeight;
+
+  if (scrollY > stepsTop - winH * 0.4 && scrollY < ctaTop - winH * 0.5) {
+    if (!tapShown) { floatingTap.classList.add('visible'); tapShown = true; }
+  } else {
+    if (tapShown) { floatingTap.classList.remove('visible'); tapShown = false; }
+  }
+}, { passive: true });
+
+// ── 点击滚一屏 ────────────────────────────────
+let scrollVelocity = 0;
+function scrollToNextSection() {
+  if (scrollVelocity) return;
+  const stepsEl = document.getElementById('stepsSection');
+  stepsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollVelocity = setTimeout(() => { scrollVelocity = 0; }, 900);
+}
+
+// keyboard: Space / Enter
+document.addEventListener('keydown', (e) => {
+  if ((e.code === 'Space' || e.code === 'Enter') &&
+      window.scrollY < document.getElementById('stepsSection').offsetTop - 100) {
+    e.preventDefault();
+    scrollToNextSection();
+  }
+});
+</script>
 </body>
 </html>

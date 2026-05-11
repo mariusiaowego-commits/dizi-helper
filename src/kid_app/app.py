@@ -208,6 +208,31 @@ ENCOURAGEMENTS = [
     "今天的你比昨天更好 💐",
 ]
 
+# 可配置的祝福语池（按日期 seed 选取）
+BLESS_POOL = [
+    {"main": "每一次练习",    "accent": "都是新的进步"},
+    {"main": "坚持练习",      "accent": "让音乐自然流淌"},
+    {"main": "今天的你",      "accent": "比昨天更棒"},
+    {"main": "一步一步",      "accent": "奏出属于自己的旋律"},
+    {"main": "练习不撒谎",    "accent": "汗水不会白费"},
+    {"main": "每一次吹奏",    "accent": "都在靠近更好"},
+    {"main": "认真对待",      "accent": "每一个音符"},
+    {"main": "吹得好不好",     "accent": "只有你自己知道"},
+    {"main": "日积月累",      "accent": "终成大器"},
+    {"main": "慢慢来",        "accent": "比较快"},
+    {"main": "不怕慢",        "accent": "只怕站"},
+    {"main": "音乐是",        "accent": "一辈子的朋友"},
+]
+
+
+# 可配置的准备步骤（后端可通过设置表动态调整）
+PREPARE_STEPS = [
+    {"title": "热身呼吸",    "desc": "深呼吸 3~5 次，放松身体，让气息更顺畅。", "color": "sage"},
+    {"title": "基础音阶练习", "desc": "从低音到高音慢速吹奏，熟悉指法位置。",    "color": "rose"},
+    {"title": "复习老师要求", "desc": "查看本周练习重点，有针对性地练习。",        "color": "lavender"},
+]
+
+
 def _daily_encouragement() -> str:
     """按今天日期 seed 选固定的鼓励语（同一天刷新也同一条）"""
     today = dt.date.today()
@@ -216,47 +241,81 @@ def _daily_encouragement() -> str:
     return ENCOURAGEMENTS[idx]
 
 
+def _bless_for_today() -> dict:
+    """按日期 seed 从祝福语池选取一条（主标题 + 高亮词）"""
+    today = dt.date.today()
+    seed = today.year * 10000 + today.month * 100 + today.day
+    idx = seed % len(BLESS_POOL)
+    return BLESS_POOL[idx]
+
+
+def _build_steps_html(steps: list[dict]) -> str:
+    """把步骤列表渲染成 HTML card 字符串"""
+    html = ""
+    for i, step in enumerate(steps, 1):
+        cid = step['color']
+        html += f"""
+  <div class="step-card" id="step{i}" onclick="toggleStep(this)">
+    <div class="step-num {cid}">{i}</div>
+    <div class="step-body">
+      <h3 class="step-title">{step['title']}</h3>
+      <p class="step-desc">{step['desc']}</p>
+    </div>
+    <div class="step-check" id="check{i}">✓</div>
+  </div>"""
+    return html
+
+
 @app.get("/prepare", response_class=HTMLResponse)
 def prepare_page():
     today = dt.date.today()
     ws = week_start_of(today)
+
+    # 祝福语
+    bless = _bless_for_today()
+
+    # 本周老师要求
     assign = db.get_weekly_assignment_for_week(today)
-
     if assign and assign.get("items"):
-        assign_html = ""
+        assign_eyebrow = f"本周练习要求 · 第 {assign.get('stage_order', '?')} 课"
+        stage_start = assign.get('stage_start', today)
+        stage_end   = assign.get('stage_end', today)
+        # 确保 start ≤ end（数据可能有误，统一兜底）
+        if stage_start and stage_end:
+            if hasattr(stage_start, 'strftime') and hasattr(stage_end, 'strftime'):
+                if stage_start > stage_end:
+                    stage_start, stage_end = stage_end, stage_start
+                assign_title = f"{stage_start.strftime('%m月%d日')} ~ {stage_end.strftime('%m月%d日')}"
+            else:
+                assign_title = str(stage_start) + " ~ " + str(stage_end)
+        else:
+            assign_title = "本周练习安排"
+        assign_items_html = ""
         for it in assign["items"]:
-            assign_html += "<li><strong>" + it["item"] + "</strong>: " + it["requirement"] + "</li>"
+            assign_items_html += f"<li>{it['item']} {it.get('requirement', '')}</li>"
     else:
-        assign_html = "<li>暂无老师要求，直接开始练习吧！🎵</li>"
+        assign_eyebrow  = "本周老师要求"
+        assign_title    = "暂无老师要求"
+        assign_items_html = "<li>直接开始练习吧！🎵</li>"
 
-    yesterday = today - dt.timedelta(days=1)
-    y_practice = db.get_daily_practice(yesterday)
-    suggestions_list = []
-    if y_practice and y_practice.get("items"):
-        for it in y_practice["items"]:
-            if it["minutes"] < 10:
-                suggestions_list.append(
-                    "昨天" + it["item"] + "只练了" + str(it["minutes"]) + "分钟，今天加油多练一会儿呀！💪"
-                )
-
-    if not suggestions_list:
-        suggestions_html = "<li>太棒啦！今天继续保持 ✨</li>"
-    else:
-        suggestions_html = ""
-        for s in suggestions_list:
-            suggestions_html += "<li>" + s + "</li>"
-
-    weekday_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    weekday_names = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
     return render(
         "prepare",
-        child_name=child_name(),
-        today_str=today.strftime("%m/%d"),
+        eyebrow="竹笛练习准备",
+        bless_main=bless["main"],
+        bless_accent=bless["accent"],
+        today_str=today.strftime("%m月%d日"),
         weekday=weekday_names[today.weekday()],
-        assign_html=assign_html,
-        suggestions=suggestions_html,
         streak=streak_days(),
         encouragement=_daily_encouragement(),
+        steps_html=_build_steps_html(PREPARE_STEPS),
+        assign_eyebrow=assign_eyebrow,
+        assign_title=assign_title,
+        assign_items_html=assign_items_html,
+        cta_title="准备好啦！",
+        cta_sub="三个步骤都完成后，开始今天的练习。",
+        cta_btn_text="开始行动",
     )
 
 @app.get("/practice", response_class=HTMLResponse)
