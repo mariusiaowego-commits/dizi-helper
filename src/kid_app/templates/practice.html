@@ -646,6 +646,7 @@
           if (elapsed >= duration * 60) {
             clearInterval(timerInterval);
             timerRunning = false;
+            document.getElementById('confirmMins').textContent = duration;
             document.getElementById('confirmArea').classList.add('show');
             playChime();
           }
@@ -666,11 +667,12 @@
     }
 
     async function submitPractice() {
-      if (!selectedItem || elapsed === 0) return;
+      let finalMins = parseInt(document.getElementById('confirmMins').textContent) || 0;
+      if (!selectedItem || finalMins === 0) return;
       let res = await fetch('/api/log', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: Math.floor(elapsed / 60), log: ''})
+        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: finalMins, log: ''})
       });
       let json = await res.json();
       if (json.ok) {
