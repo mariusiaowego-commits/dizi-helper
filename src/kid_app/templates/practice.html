@@ -12,14 +12,14 @@
 
     /* 固定底部导航 */
     .nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
       display: flex;
       gap: 4px;
       padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-      background: var(--card);
+      background: var(--card) !important;
       box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
       z-index: 100;
     }
@@ -69,10 +69,12 @@
     }
     .panel {
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 14px 14px 14px 14px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      min-height: 0;
+      overflow: hidden;
     }
 
     /* 左栏 - 老师要求 */
@@ -181,10 +183,11 @@
       border-radius: 16px; font-size: 13px; font-weight: 700;
       font-family: inherit; color: white; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      text-align: center; padding: 0 8px; white-space: nowrap;
+      text-align: center; padding: 0 4px; white-space: nowrap;
       overflow: hidden; text-overflow: ellipsis;
       transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
       position: relative; overflow: visible;
+      box-sizing: border-box;
     }
     .item-btn:active { transform: scale(0.96); filter: brightness(0.92); }
     .item-btn:nth-child(5n+1) { background: #00CED1; }
@@ -195,6 +198,23 @@
     .item-btn.selected { background: #FF4D6D !important; box-shadow: 0 4px 0 #C41E3A; transform: translateY(-2px); }
     .item-btn.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
     .item-btn .req-dot { position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; background: #FFD54F; border-radius: 50%; box-shadow: 0 0 4px #FFD54F; }
+
+    /* 金黄色有老师要求的科目 */
+    .item-btn.has-req { background: #FFE066 !important; color: #5D4037; box-shadow: 0 4px 0 #E6A800; transform: translateY(-2px); }
+    .item-btn.has-req.selected { background: #FF4D6D !important; color: white; box-shadow: 0 4px 0 #C41E3A; transform: translateY(-2px); }
+    .item-btn.has-req.selected:active { transform: scale(0.96) translateY(0); box-shadow: none; }
+
+    /* 老师要求气泡 */
+    .item-btn-wrap { position: relative; display: inline-block; }
+    .req-tooltip {
+      position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+      background: #FFE066; color: #333; font-size: 12px; padding: 6px 10px;
+      border-radius: 8px; white-space: normal; max-width: 180px; text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; pointer-events: none;
+    }
+    .req-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #FFE066; }
+    .item-btn-wrap .req-tooltip { display: none; }
+    .item-btn-wrap:hover .req-tooltip { display: block; }
 
     /* 归档 */
     .archived-toggle { display: block; width: 100%; padding: 12px; background: #F5F5F5; border: 2px dashed #BDBDBD; border-radius: 12px; font-size: 15px; color: #7F8C8D; cursor: pointer; text-align: center; margin-top: 8px; }
