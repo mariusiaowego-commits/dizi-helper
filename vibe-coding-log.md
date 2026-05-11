@@ -233,3 +233,22 @@
 ### Git 状态
 - main `82a50bb`，干净
 - 服务器：uvicorn port 8765（proc `proc_eb43175f407c`, PID 27224）
+
+## 2026-05-11 (Mon) PM — prepare tab GSAP ScrollTrigger 动画（失败回退）
+
+### 本次完成
+- **全部回退**：`practice.html` 和 `app.py` 恢复到 HEAD 状态
+- **原因**：尝试在 `practice.html` 恢复 GSAP 弹入动画（ScrollTrigger 方案），Mac 浏览器始终看不到动画；点击练习科目后无法正确移动到计时器模块
+- **服务器重启**：恢复正常
+
+### 失败记录
+- `practice.html` ScrollTrigger 动画：尝试了 `gsap.set()` → `gsap.to()`、`window.load` 延迟、`DOMContentLoaded` 保护等方案，均无效
+- 根因未定位：可能是 Mac Chrome 对 `browser_console` 多行 JS 表达式有 "Object reference chain is too long" 限制，导致无法调试
+- **经验**：下次改用 CSS `transition` / `animation` 做入场动画，不依赖 GSAP
+
+### 未完成（handoff）
+- prepare tab GSAP ScrollTrigger 动画流程（用户原始需求，**未开始**）
+- "开始行动"按钮去下划线（未确认是否有）
+
+### 文件
+- Handoff：`260511-handoff.md`
