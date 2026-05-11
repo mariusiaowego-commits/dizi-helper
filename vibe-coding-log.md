@@ -252,3 +252,23 @@
 
 ### 文件
 - Handoff：`260511-handoff.md`
+
+## 2026-05-11 (Mon) — prepare 新样式 + tap-scroll 完成
+
+### 完成
+- **新配色**：cream/sage绿/rose粉渐变/lavender紫，maximatherapy 风格
+- **GSAP ScrollTrigger**：hero 渐次淡入、step cards 滚动触发、CTA 弹性按钮
+- **全局点击滚一屏**：逐屏 hero→steps→assignment→CTA（修正：DOM id `hero` 非 `heroSection`）
+- **floatingTap**：右下角浮动提示，steps 区域显示，CTA 后消失
+- **后端可配置**：BLESS_POOL(12条)/PREPARE_STEPS/CTA 文案
+- **toggleStep**：点击勾选 + localStorage 每日重置
+- **DB 修复**：weekly_assignments id=56，stage_end 2026-03-14→2026-05-17
+- PR #26 merged，Commit 8eae04a
+
+### 踩坑
+- `SECTIONS` 数组中 `heroSection` 与实际 DOM id `hero` 不符，导致第一屏点击跳到最后
+- GH API 网络 EOF，重试后成功
+- merge 冲突：`--ours` 直接保留新版样式
+
+### 遗留
+- practice.html 入场动画（CSS transition 替代 GSAP，P2）

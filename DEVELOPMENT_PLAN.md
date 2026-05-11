@@ -5,7 +5,7 @@
 
 **作者**: mtt
 **创建时间**: 2026-04-25
-**最后更新**: 2026-05-10（item_id 四位数重编号 + assignments fuzzy-match 完善）
+**最后更新**: 2026-05-11（prepare 新样式 + tap-scroll + 可配置化）
 
 ---
 

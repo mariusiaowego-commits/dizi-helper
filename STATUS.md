@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
 **最后更新**: 2026-05-11
-**当前阶段**: Kid UI Phase 3 UX 优化完成
+**当前阶段**: Kid UI Phase 3 UX 优化完成 + prepare 新样式完成
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
@@ -150,6 +150,16 @@ dizical obsidian export 4          # 导出4月报告
 - [x] **achievements 页面增强**: 本周目标进度条(5天/周)，徽章距离提示(fire/medal/week_star)，4格数据标签改为「累计练习时长 hXm」格式
 - [x] **praise 页面重建** (方案A): 展示已解锁徽章+每日表扬语+截图分享，孩子iPad可独立操作，移除 Hermes redirect 依赖
 - pytest 49/49 ✅
+
+## 👧 prepare 新样式完成（2026-05-11）
+- [x] **新配色**：cream/sage绿/rose粉渐变/lavender紫，iPad 3:2 响应式断点（2266×1488）
+- [x] **GSAP ScrollTrigger 入场动画**：hero 渐次淡入、step cards 滚动触发、CTA 弹性按钮
+- [x] **全局点击滚一屏**：逐屏 hero→steps→assignment→CTA，floatingTap 浮动提示（右下角）
+- [x] **后端可配置化**：BLESS_POOL(12条)/PREPARE_STEPS/CTA 文案，app.py render 动态生成
+- [x] **toggleStep**：点击勾选 + localStorage 每日重置持久化
+- [x] **DB 修复**：weekly_assignments stage_end 2026-03-14→2026-05-17
+- [x] **swap 兜底**：stage_start > stage_end 时自动交换
+- Commit: `8eae04a` | PR #26 ✅
 
 ## 👧 数据结构统一（2026-05-10）
 - [x] `practice_items.id` → `item_id`（表列已改名）

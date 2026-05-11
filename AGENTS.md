@@ -18,7 +18,7 @@
 - dizical-kid deployed to `~/Library/Python/3.14/bin` (copied from hermes profile path, not pip reinstalled)
 - Service runs on port 8765
 - Full kid-friendly iPad web UI: prepare/practice/achievements/report/praise pages
-- commit 44be8f8 pushed to main
+- commit 8eae04a pushed to main
 
 ## 用户偏好
 - 偏好通知简洁，不用客气话
