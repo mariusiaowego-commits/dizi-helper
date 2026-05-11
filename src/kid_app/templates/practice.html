@@ -685,12 +685,13 @@
           { scale: 0.5, opacity: 0, y: 30 },
           { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: "back.out(2)" }
         );
+        // 立即刷新今日记录，不要等 2.5 秒
+        loadTodayRecords();
         setTimeout(() => {
           resetTimer();
           document.querySelectorAll('.item-btn, .archived-item-btn').forEach(b => b.classList.remove('selected'));
           selectedItem = null;
           document.getElementById('timer-card').style.display = 'none';
-          loadTodayRecords();
         }, 2500);
       }
     }
