@@ -245,6 +245,11 @@
       background: rgba(255,255,255,0.7); border: 1px solid #A5D6A7;
       border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 14px;
     }
+    .extra-custom { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+    .extra-custom input {
+      width: 100px; padding: 8px 12px; border: 2px solid #66BB6A;
+      border-radius: 16px; font-size: 15px; text-align: center;
+    }
     .extra-log-item .extra-mins { color: #2E7D32; font-weight: bold; }
     .extra-log-item .extra-del {
       background: #FF6B6B; color: white; border: none; border-radius: 50%;
@@ -341,6 +346,10 @@
         <button class="extra-btn" onclick="addExtraMins(15)">+15分钟</button>
         <button class="extra-btn" onclick="addExtraMins(20)">+20分钟</button>
         <button class="extra-btn" onclick="addExtraMins(30)">+30分钟</button>
+      </div>
+      <div class="extra-custom">
+        <input type="number" id="extraCustomMins" placeholder="输入分钟数" min="1" max="480">
+        <button class="extra-btn" onclick="addExtraFromInput()">添加</button>
       </div>
       <div id="extraLogList"></div>
     </div>
@@ -741,7 +750,16 @@
       } catch(e) {}
     }
 
+    async function addExtraFromInput() {
+      let input = document.getElementById('extraCustomMins');
+      let mins = parseInt(input.value);
+      if (!mins || mins < 1 || mins > 480) { alert('请输入1-480之间的分钟数'); return; }
+      await addExtraMins(mins);
+      input.value = '';
+    }
+
     async function deleteExtraRecord(id) {
+      if (!confirm('确定要删除这条额外练习记录吗？')) return;
       console.log('[deleteExtraRecord] deleting id=' + id);
       try {
         let res = await fetch('/api/log', {
