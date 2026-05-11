@@ -193,17 +193,41 @@ def gsap_demo():
     demo_path = Path(__file__).parent.parent.parent / "gsap-demo.html"
     return HTMLResponse(demo_path.read_text())
 
+ENCOURAGEMENTS = [
+    "今天也要加油哦！💪",
+    "练习是最好的礼物 🎁",
+    "吹笛子真好听 🎵",
+    "坚持就是胜利 🏆",
+    "爸爸相信你！🌟",
+    "一天比一天进步 📈",
+    "音乐小达人 🥁",
+    "认真练习的样子真棒 👍",
+    "加油！你是最棒的 ✨",
+    "笛声悠扬，真好听 🎶",
+    "练完就可以去玩啦 🎮",
+    "今天的你比昨天更好 💐",
+]
+
+def _daily_encouragement() -> str:
+    """按今天日期 seed 选固定的鼓励语（同一天刷新也同一条）"""
+    today = dt.date.today()
+    seed = today.year * 10000 + today.month * 100 + today.day
+    idx = seed % len(ENCOURAGEMENTS)
+    return ENCOURAGEMENTS[idx]
+
+
 @app.get("/prepare", response_class=HTMLResponse)
 def prepare_page():
     today = dt.date.today()
     ws = week_start_of(today)
     assign = db.get_weekly_assignment_for_week(today)
 
-    assign_html = "<li>还没录本周要求 💭 告诉爸爸帮你加上哦</li>"
     if assign and assign.get("items"):
         assign_html = ""
         for it in assign["items"]:
             assign_html += "<li><strong>" + it["item"] + "</strong>: " + it["requirement"] + "</li>"
+    else:
+        assign_html = "<li>暂无老师要求，直接开始练习吧！🎵</li>"
 
     yesterday = today - dt.timedelta(days=1)
     y_practice = db.get_daily_practice(yesterday)
@@ -232,6 +256,7 @@ def prepare_page():
         assign_html=assign_html,
         suggestions=suggestions_html,
         streak=streak_days(),
+        encouragement=_daily_encouragement(),
     )
 
 @app.get("/practice", response_class=HTMLResponse)
@@ -350,14 +375,51 @@ def achievements_page():
     if not badge_html:
         badge_html = "<p style='color:#7F8C8D;text-align:center;'>还没有徽章，继续加油！</p>"
 
+    # 本周目标进度（默认目标：每周5天，每天≥10分钟）
+    WEEK_GOAL_DAYS = 5
+    week_progress = min(week_days / WEEK_GOAL_DAYS, 1.0)
+    week_progress_pct = int(week_progress * 100)
+    week_progress_text = f"{week_days}/{WEEK_GOAL_DAYS} 天"
+
+    # 徽章距离提示
+    badge_hints = []
+    # 火徽章（连续streak）
+    next_fire = None
+    if streak < 3:
+        next_fire = 3 - streak
+    elif streak < 7:
+        next_fire = 7 - streak
+    if next_fire is not None:
+        badge_hints.append(("fire", next_fire, "🔥"))
+    # 练习达人（总分钟）
+    if total_mins < 60:
+        mins_left = 60 - total_mins
+        badge_hints.append(("medal", mins_left, "🏅"))
+    # 本周之星（本周分钟）
+    if week_mins < 60:
+        mins_left_w = 60 - week_mins
+        badge_hints.append(("week_star", mins_left_w, "⭐"))
+
+    badge_hint_html = ""
+    for _btype, remaining, icon in badge_hints:
+        if _btype == "fire":
+            badge_hint_html += f"<div style='text-align:center;padding:6px 0;font-size:14px;color:#7F8C8D;'>距离 🔥 下一徽章还差 <strong style='color:#FF6B35;'>{remaining} 天</strong></div>"
+        elif _btype == "medal":
+            badge_hint_html += f"<div style='text-align:center;padding:6px 0;font-size:14px;color:#7F8C8D;'>距离 🏅 练习达人还差 <strong style='color:#FF6B35;'>{remaining} 分钟</strong></div>"
+        elif _btype == "week_star":
+            badge_hint_html += f"<div style='text-align:center;padding:6px 0;font-size:14px;color:#7F8C8D;'>距离 ⭐ 本周之星还差 <strong style='color:#FF6B35;'>{remaining} 分钟</strong></div>"
+
     return render(
         "achievements",
         child_name=child_name(),
         streak=str(streak),
         total_hours=str(total_mins // 60),
-        total_mins=str(total_mins % 60),
+        total_mins_rem=str(total_mins % 60),
         week_mins=str(week_mins),
         week_days=str(week_days),
+        week_progress_pct=week_progress_pct,
+        week_progress_text=week_progress_text,
+        badge_hint_html=badge_hint_html,
         badge_html=badge_html,
     )
 
@@ -425,11 +487,48 @@ async def api_verify_pin(request: Request):
 
 @app.get("/praise", response_class=HTMLResponse)
 def praise_page():
-    has_pin = bool(get_setting("dad_pin"))
+    # 获取当前成就数据
+    today = dt.date.today()
+    streak = streak_days()
+    total_mins = total_practice_minutes()
+    ws = week_start_of(today)
+    week_prac = db.get_daily_practices_in_range(ws, today)
+    week_mins = sum(p["total_minutes"] for p in week_prac)
+    week_days = len([p for p in week_prac if p.get("total_minutes", 0) > 0])
+
+    # 当前解锁的徽章
+    unlocked = []
+    if streak >= 3:
+        unlocked.append({"type": "fire", "label": f"🔥 {streak}天连续", "desc": "坚持练习"})
+    if streak >= 7:
+        unlocked.append({"type": "star7", "label": "⭐ 7天连续达成", "desc": "超棒毅力"})
+    if total_mins >= 60:
+        unlocked.append({"type": "medal", "label": "🏅 练习达人", "desc": "累计60分钟+"})
+    if week_mins >= 60:
+        unlocked.append({"type": "weekstar", "label": "⭐ 本周之星", "desc": "本周60分钟+"})
+
+    # 预设表扬语
+    PRAISE_MSGS = [
+        "太棒了！今天的你比昨天更好！🌟",
+        "坚持就是胜利，你是最棒的！💪",
+        "笛声悠扬，继续加油！🎵",
+        "认真练习的样子真美！✨",
+        "今天的进步爸爸都看到了！👍",
+        "音乐小达人就是你！🥁",
+        "练完就可以开心去玩啦！🎮",
+    ]
+    import random
+    seed = today.year * 10000 + today.month * 100 + today.day
+    random.seed(seed)
+    daily_praise = random.choice(PRAISE_MSGS)
+    random.seed()  # 恢复随机种子
+
     return render(
         "praise",
         child_name=child_name(),
-        pin_locked="true" if has_pin else "false",
-        PIN_OVERLAY_DISPLAY="display:flex" if has_pin else "display:none",
-        PRAISE_CONTENT_DISPLAY="display:block" if not has_pin else "display:none",
+        pin_locked="true" if get_setting("dad_pin") else "false",
+        PIN_OVERLAY_DISPLAY="display:flex" if get_setting("dad_pin") else "display:none",
+        PRAISE_CONTENT_DISPLAY="display:block" if not get_setting("dad_pin") else "display:none",
+        unlocked=unlocked,
+        daily_praise=daily_praise,
     )

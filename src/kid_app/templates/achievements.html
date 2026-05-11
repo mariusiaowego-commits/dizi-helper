@@ -47,8 +47,8 @@
         <div style="font-size:14px;color:#7F8C8D;">总练习小时</div>
       </div>
       <div style="text-align:center;padding:16px;background:#FFF8E1;border-radius:12px;">
-        <div style="font-size:36px;font-weight:bold;color:#F57C00;">{{total_mins}}</div>
-        <div style="font-size:14px;color:#7F8C8D;">总分钟(余)</div>
+        <div style="font-size:36px;font-weight:bold;color:#F57C00;">{{total_hours}}h{{total_mins_rem}}m</div>
+        <div style="font-size:14px;color:#7F8C8D;">累计练习时长</div>
       </div>
       <div style="text-align:center;padding:16px;background:#E3F2FD;border-radius:12px;">
         <div style="font-size:36px;font-weight:bold;color:#1976D2;">{{week_mins}}</div>
@@ -61,11 +61,23 @@
     </div>
   </div>
 
+  <div class="card" style="padding:20px 24px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:18px;font-weight:bold;color:#FF6B35;">📅 本周目标</span>
+      <span style="font-size:16px;color:#7F8C8D;">{{week_progress_text}}</span>
+    </div>
+    <div style="background:#F0F0F0;border-radius:12px;height:24px;overflow:hidden;">
+      <div style="background:linear-gradient(90deg,#FF6B35,#FF8C5A);height:100%;width:{{week_progress_pct}}%;border-radius:12px;transition:width 0.6s ease;"></div>
+    </div>
+    <div style="text-align:center;margin-top:6px;font-size:14px;color:#7F8C8D;">{{week_progress_pct}}% 完成</div>
+  </div>
+
   <div class="card">
     <h2>🏆 成就徽章</h2>
     <div style="text-align:center;padding:16px 0;">
       {{badge_html}}
     </div>
+    {{badge_hint_html}}
     <p style="font-size:13px;color:#7F8C8D;text-align:center;margin-top:8px;">徽章根据累计练习达成，不限本周</p>
   </div>
   <script>

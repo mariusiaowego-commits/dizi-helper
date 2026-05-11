@@ -65,27 +65,74 @@ def parse_practice_input(text: str) -> List[Dict[str, any]]:
 def _similarity(a: str, b: str) -> float:
     """
     计算两个字符串的相似度（0.0 ~ 1.0）。
-    同时考虑子串匹配和编辑距离。
+    评分策略（从高到低）：
+      1. 精确匹配 → 1.0
+      2. 首字母全匹配（快速筛选）→ 0.9
+      3. 子串/超串：输入是候选的子串（候选更具体）→ 0.85
+      4. 子串/超串：候选是输入的子串（输入更宽泛）→ 0.60（降低误匹配）
+      5. 字符重叠率（≥50%字符重叠）→ 0.4
+      6. 编辑距离 → 0.2~0.35
     """
     a_lower = a.lower()
     b_lower = b.lower()
-    # 完全相同
+
+    # 1. 精确匹配
     if a_lower == b_lower:
         return 1.0
-    # 子串 / 超串匹配
+
+    # 2. 首字母全匹配（a 的首字母都在 b 开头出现）
+    a_initials = ''.join(c for c in a_lower if c.isalnum())[:3]
+    if a_initials and b_lower.startswith(a_initials):
+        return 0.9
+
+    len_a, len_b = len(a_lower), len(b_lower)
+    # 3. a 是 b 的子串（b 更具体/更长，输入是简称）
     if a_lower in b_lower:
+        # 短输入命中长名称：置信度高（例："单吐" in "单吐练习"）
         return 0.85
+    # 4. b 是 a 的子串（a 更宽泛，输入是父类名）
     if b_lower in a_lower:
-        return 0.80
-    # 包含任一字符
-    if any(c in b_lower for c in a_lower):
-        return 0.5
-    # 编辑距离（简单版：长度差过大直接排除）
-    if abs(len(a) - len(b)) > max(len(a), len(b)) * 0.5:
+        # 长输入试图匹配短名称：降低权重避免泛称误匹配
+        return 0.60
+
+    # 5. 字符重叠率（公共字符 / 总字符）
+    a_chars = set(a_lower)
+    b_chars = set(b_lower)
+    overlap = len(a_chars & b_chars)
+    # 长度差异过大直接排除
+    if max(len_a, len_b) == 0 or abs(len_a - len_b) > max(len_a, len_b) * 0.6:
         return 0.0
-    # 公共字符占比
-    common = sum(1 for c in a_lower if c in b_lower)
-    return common / max(len(a), len(b)) * 0.4
+    overlap_ratio = overlap / max(len_a, len_b)
+    if overlap_ratio >= 0.5:
+        return 0.4 + overlap_ratio * 0.1  # 0.45 ~ 0.5
+
+    # 6. 编辑距离（Levenshtein 简化版）
+    # 只对中等长度字符串做，避免性能开销
+    if max(len_a, len_b) <= 8:
+        ed = _levenshtein(a_lower, b_lower)
+        max_ed = max(len_a, len_b)
+        return (1 - ed / max_ed) * 0.35 if ed < max_ed else 0.0
+
+    return 0.0
+
+
+def _levenshtein(a: str, b: str) -> int:
+    """最小编辑距离（插入/删除/替换代价均为1）"""
+    if len(a) < len(b):
+        a, b = b, a
+    if len(b) == 0:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a):
+        curr = [i + 1]
+        for j, cb in enumerate(b):
+            curr.append(min(
+                prev[j + 1] + 1,   # 删除
+                curr[j] + 1,       # 插入
+                prev[j] + (ca != cb)  # 替换
+            ))
+        prev = curr
+    return prev[-1]
 
 
 def find_similar_items(name: str, threshold: float = 0.3) -> List[Tuple[int, str, float]]:
