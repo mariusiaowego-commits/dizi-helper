@@ -800,6 +800,7 @@
     }
 
     async function deleteRecord(id) {
+      if (!confirm('确定要删除这条练习记录吗？')) return;
       console.log('[deleteRecord] called, id=' + id + ', todayDate=' + todayDate);
       try {
         let res = await fetch('/api/log', {
