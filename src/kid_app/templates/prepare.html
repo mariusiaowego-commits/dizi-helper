@@ -383,9 +383,10 @@
   /* ── 全局浮动 tap 提示 ─────────────────────────── */
   #floatingTap {
     position: fixed;
-    bottom: 96px;
-    left: 50%;
-    transform: translateX(-50%) translateY(16px);
+    bottom: 28px;
+    right: 20px;
+    left: auto;
+    transform: none;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -407,7 +408,7 @@
 
   #floatingTap.visible {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: none;
   }
 
   #floatingTap .chevrons { display: flex; flex-direction: column; align-items: center; gap: 1px; }
