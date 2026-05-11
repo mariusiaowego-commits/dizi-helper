@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>练习打卡 - 三栏布局原型</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+  :root {
+    --bg: #FFF8F0;
+    --card: #FFFFFF;
+    --primary: #FF6B6B;
+    --secondary: #4ECDC4;
+    --accent: #FFE66D;
+    --text: #2C3E50;
+    --text-light: #7F8C8D;
+    --streak: #FF6B35;
+    --success: #27AE60;
+    --radius: 16px;
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 20px;
+    min-height: 100vh;
+    padding: 16px 16px 100px;
+  }
+
+  /* 顶部状态栏 */
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 14px;
+    color: var(--text-light);
+  }
+  .today-stat { font-weight: bold; color: var(--secondary); font-size: 15px; }
+  #serverClock { background: #F8F9FA; border-radius: 12px; padding: 4px 12px; }
+
+  /* 三栏容器 */
+  .timer-layout {
+    display: grid;
+    grid-template-columns: 25% 45% 30%;
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 14px;
+  }
+  .panel {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 16px 14px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .panel > * + * { margin-top: 0; } /* 由 gap 接管间距 */
+
+  /* 左栏 - 老师要求 */
+  .panel-req {
+    background: #FFFDF5;
+    border: 2px solid #F0D060;
+    flex: 1;
+  }
+  .panel-req h4 { font-size: 15px; color: #8B6914; display: flex; align-items: center; gap: 6px; }
+  .panel-req .req-content { flex: 1; font-size: 16px; }
+  .panel-req .req-empty { font-size: 15px; color: #A1887F; font-style: italic; }
+  .panel-req .req-highlight {
+    background: #FFF8E0;
+    border-left: 4px solid #F0D060;
+    padding: 12px 14px;
+    border-radius: 0 12px 12px 0;
+    font-size: 16px;
+    color: #5D4037;
+    line-height: 1.7;
+  }
+  /* 中栏 - 计时器 */
+  .panel-center {
+    background: #F0FCFC;
+    border: 2px solid #A0D8D0;
+    flex: 1.8;
+  }
+  .panel-center h4 { font-size: 15px; color: #2E7D32; display: flex; align-items: center; gap: 6px; }
+  .timer-display {
+    font-size: 72px;
+    font-weight: bold;
+    text-align: center;
+    color: var(--primary);
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .timer-display.running { color: var(--streak); }
+  .time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .time-btn { padding: 12px 18px; border: 2px solid #4ECDC4; background: white; border-radius: 20px; font-size: 17px; cursor: pointer; transition: all 0.15s; }
+  .time-btn.selected { background: #4ECDC4; color: white; }
+  .time-btn:active { transform: scale(0.95); }
+
+  .action-btns { display: flex; gap: 10px; justify-content: center; }
+  .btn {
+    padding: 13px 28px;
+    border: none;
+    border-radius: 24px;
+    font-size: 18px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.1s, filter 0.1s;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-secondary { background: #4ECDC4; color: white; }
+  .btn-ghost { background: #F0F0F0; color: var(--text); }
+
+  /* 确认区域 */
+  .confirm-area {
+    display: none;
+    background: #EDF7F0;
+    border: 2px solid #A0D8A8;
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .confirm-area.show { display: block; }
+  .confirm-area p { font-size: 20px; color: #2E7D32; }
+  .confirm-area .confirm-mins { font-size: 48px; font-weight: bold; color: #27AE60; display: block; margin: 8px 0; }
+
+  /* 快速录入 */
+  .quick-add-section {
+    display: none;
+    background: #FFFCF0;
+    border: 2px solid #F0D060;
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .quick-add-section.open { display: block; }
+  .quick-add-section h4 { font-size: 15px; color: #8B6914; }
+  .quick-time-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .quick-time-btn {
+    padding: 10px 16px;
+    border: 2px solid #F0D060;
+    background: white;
+    border-radius: 16px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .quick-time-btn.selected { background: #F0D060; color: #333; }
+  .quick-add-actions { display: flex; gap: 8px; justify-content: center; margin-top: 10px; }
+  .btn-quick { background: #F0D060; color: #333; padding: 12px 22px; border: none; border-radius: 16px; font-size: 16px; cursor: pointer; }
+
+  /* 右栏 - 额外练习时间 */
+  .panel-extra {
+    background: #F0F9F0;
+    border: 2px solid #A0C8A0;
+    flex: 1;
+  }
+  .panel-extra h4 { font-size: 15px; color: #2E7D32; display: flex; align-items: center; gap: 6px; }
+  .extra-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .extra-btn {
+    padding: 10px 14px;
+    border: 2px solid #7CB87C;
+    background: white;
+    border-radius: 16px;
+    font-size: 16px;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.15s;
+  }
+  .extra-btn.selected { background: #7CB87C; color: white; }
+  .extra-btn:active { transform: scale(0.95); }
+  .extra-custom { display: flex; gap: 8px; justify-content: center; }
+  .extra-custom input {
+    width: 88px;
+    padding: 10px 8px;
+    border: 2px solid #7CB87C;
+    border-radius: 16px;
+    font-size: 16px;
+    text-align: center;
+    font-family: inherit;
+  }
+  .extra-log-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid #B0D8B0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+    animation: slideIn 0.25s ease;
+  }
+  .extra-log-item + .extra-log-item { margin-top: 6px; }
+  .extra-log-item .extra-mins { color: #2E7D32; font-weight: bold; }
+  .extra-log-item .extra-del {
+    background: #FF6B6B;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 练习科目网格 */
+  .section-label { font-size: 16px; color: var(--text-light); margin-bottom: 8px; font-weight: bold; }
+  .item-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .item-btn {
+    height: 64px;
+    border: none;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 8px;
+    transition: transform 0.15s, filter 0.15s, box-shadow 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .item-btn:active { transform: scale(0.94); filter: brightness(0.9); }
+  .item-btn.selected {
+    box-shadow: 0 0 0 3px white, 0 0 0 5px #4ECDC4;
+    transform: scale(0.97);
+  }
+  .item-btn .req-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 9px;
+    height: 9px;
+    background: #FFD54F;
+    border-radius: 50%;
+    box-shadow: 0 0 5px #FFD54F;
+  }
+
+  /* 今日记录 */
+  .card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
+  .record-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .record-header h3 { font-size: 16px; color: var(--secondary); }
+  .record-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #FFF;
+    border: 2px solid #E0E0E0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    animation: slideIn 0.3s ease;
+  }
+  .record-item .item-name { font-size: 15px; font-weight: bold; color: #333; }
+  .record-item .item-mins { font-size: 13px; color: var(--text-light); margin-top: 2px; }
+  .delete-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .empty-records { text-align: center; color: #BDBDBD; font-size: 13px; padding: 12px; }
+
+  /* 固定底部导航 */
+  .nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    display: flex;
+    gap: 4px;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+    background: var(--card);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.1);
+    z-index: 100;
+  }
+  .nav a {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 4px;
+    background: transparent;
+    border-radius: var(--radius);
+    text-align: center;
+    text-decoration: none;
+    color: var(--text-light);
+    font-size: 13px;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .nav a .nav-icon { font-size: 22px; }
+  .nav a.active { background: var(--primary); color: white; }
+  .nav a:active { transform: scale(0.95); }
+
+  /* 动画 */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes bounce {
+    0%,100% { transform: scale(1); }
+    50%      { transform: scale(1.06); }
+  }
+
+  /* 响应式 */
+  @media (max-width: 640px) {
+    .timer-layout { grid-template-columns: 1fr; }
+    .panel-req .req-content { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 顶部状态栏 -->
+<div class="top-bar">
+  <span class="today-stat">今日已练习: <span id="todayTotal">6</span> 分钟</span>
+  <div id="serverClock">2026-05-11 10:00:00</div>
+</div>
+
+<!-- 三栏布局 -->
+<div class="timer-layout">
+
+  <!-- 左栏: 老师要求 -->
+  <div class="panel panel-req" id="panelReq">
+    <h4>🎯 老师要求</h4>
+    <div id="reqContent">
+      <div class="req-highlight">长音要吹满8秒，吸气要深，嘴型保持不变。</div>
+    </div>
+  </div>
+
+  <!-- 中栏: 计时器 -->
+  <div class="panel panel-center">
+    <div class="timer-display" id="timerDisplay">00:00</div>
+
+    <div class="time-btns">
+      <button class="time-btn" onclick="setDuration(5)">5分钟</button>
+      <button class="time-btn selected" onclick="setDuration(10)">10分钟</button>
+      <button class="time-btn" onclick="setDuration(15)">15分钟</button>
+      <button class="time-btn" onclick="setDuration(20)">20分钟</button>
+      <button class="time-btn" onclick="setDuration(30)">30分钟</button>
+    </div>
+
+    <div class="action-btns">
+      <button class="btn btn-secondary" id="startBtn" onclick="toggleTimer()">开始</button>
+      <button class="btn btn-ghost" onclick="finishEarly()">提前结束</button>
+    </div>
+
+    <!-- 快速录入 -->
+    <div class="quick-add-section" id="quickAddSection">
+      <h4>⚡ 快速录入（不计时）</h4>
+      <div class="quick-time-btns">
+        <button class="quick-time-btn" onclick="setQuick(5)">5分钟</button>
+        <button class="quick-time-btn selected" onclick="setQuick(10)">10分钟</button>
+        <button class="quick-time-btn" onclick="setQuick(15)">15分钟</button>
+        <button class="quick-time-btn" onclick="setQuick(20)">20分钟</button>
+        <button class="quick-time-btn" onclick="setQuick(30)">30分钟</button>
+      </div>
+      <div class="quick-add-actions">
+        <button class="btn-quick" onclick="submitQuickLog()">✅ 直接打卡</button>
+        <button class="btn btn-ghost" style="padding:10px 16px;font-size:14px;" onclick="toggleQuickAdd()">取消</button>
+      </div>
+    </div>
+
+    <!-- 确认区域 -->
+    <div class="confirm-area" id="confirmArea">
+      <p>练了 <span class="confirm-mins" id="confirmMins">10</span> 分钟！</p>
+      <button class="btn btn-primary" onclick="submitPractice()">✅ 打卡完成</button>
+    </div>
+  </div>
+
+  <!-- 右栏: 额外练习时间 -->
+  <div class="panel panel-extra" id="panelExtra">
+    <h4>🌿 额外练习时间</h4>
+    <div class="extra-btns">
+      <button class="extra-btn" onclick="addExtra(5)">+5分钟</button>
+      <button class="extra-btn selected" onclick="addExtra(10)">+10分钟</button>
+      <button class="extra-btn" onclick="addExtra(15)">+15分钟</button>
+      <button class="extra-btn" onclick="addExtra(20)">+20分钟</button>
+      <button class="extra-btn" onclick="addExtra(30)">+30分钟</button>
+    </div>
+    <div class="extra-custom">
+      <input type="number" id="extraCustomMins" placeholder="分钟数" min="1" max="480">
+      <button class="extra-btn" onclick="addExtraFromInput()">添加</button>
+    </div>
+    <div id="extraLogList"></div>
+  </div>
+
+</div>
+
+<!-- 练习科目网格 -->
+<div class="section-label">选择练习项目</div>
+<div class="item-grid" id="itemGrid">
+  <!-- 动态生成 -->
+</div>
+
+<!-- 今日练习记录 -->
+<div class="card">
+  <div class="record-header">
+    <h3>📋 今日练习记录</h3>
+  </div>
+  <div id="recordsList">
+    <div class="empty-records">还没有练习记录，开始练习吧！</div>
+  </div>
+</div>
+
+<!-- 固定底部导航 -->
+<div class="nav">
+  <a href="/prepare" class="active">
+    <span class="nav-icon">📋</span>
+    <span>准备</span>
+  </a>
+  <a href="/practice">
+    <span class="nav-icon">⏱️</span>
+    <span>练习</span>
+  </a>
+  <a href="/achievements">
+    <span class="nav-icon">🏆</span>
+    <span>成就</span>
+  </a>
+  <a href="/praise">
+    <span class="nav-icon">🌟</span>
+    <span>表扬</span>
+  </a>
+  <a href="/report">
+    <span class="nav-icon">📊</span>
+    <span>报告</span>
+  </a>
+</div>
+
+<script>
+// ── 状态 ──────────────────────────────────────────────
+let selectedItem = null;
+let selectedDuration = 10;
+let quickDuration = 10;
+let timerRunning = false;
+let elapsed = 0;
+let timerInterval = null;
+let extraRecords = [];
+
+// 练习科目数据（模拟）
+const ITEMS = [
+  { name: '长音练习', color: '#4ECDC4', hasReq: true },
+  { name: '颤音练习', color: '#FF6B6B', hasReq: false },
+  { name: '回娘家', color: '#FFE66D', colorText: '#333', hasReq: true },
+  { name: '呼吸训练', color: '#C3B1E1', hasReq: false },
+  { name: '吐音练习', color: '#FF9A9E', hasReq: false },
+  { name: '乐句划分', color: '#96E6A1', hasReq: true },
+  { name: '基本功', color: '#FFB347', colorText: '#333', hasReq: false },
+  { name: '综合练习', color: '#87CEEB', hasReq: false },
+];
+
+const REQ_TEXT = '长音要吹满8秒，吸气要深，嘴型保持不变。';
+
+// ── 时钟 ──────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  document.getElementById('serverClock').textContent =
+    now.toISOString().slice(0,10) + ' ' + now.toTimeString().slice(0,8);
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ── 科目网格渲染 ──────────────────────────────────────
+function renderItemGrid() {
+  const grid = document.getElementById('itemGrid');
+  grid.innerHTML = ITEMS.map((item, i) => {
+    const isSelected = selectedItem === item.name;
+    return `<button class="item-btn ${isSelected ? 'selected' : ''}"
+      style="background:${item.color}; color:${item.colorText || 'white'};"
+      onclick="selectItem('${item.name}')">
+      ${item.hasReq ? '<span class="req-dot"></span>' : ''}
+      ${item.name}
+    </button>`;
+  }).join('');
+}
+renderItemGrid();
+
+// ── 选中科目 ──────────────────────────────────────────
+function selectItem(name) {
+  selectedItem = selectedItem === name ? null : name;
+  renderItemGrid();
+
+  const reqContent = document.getElementById('reqContent');
+  const item = ITEMS.find(it => it.name === name);
+  if (selectedItem && item && item.hasReq) {
+    reqContent.innerHTML = `<div class="req-highlight">${REQ_TEXT}</div>`;
+    document.getElementById('panelReq').style.display = 'block';
+  } else if (selectedItem) {
+    reqContent.innerHTML = `<div class="req-empty">暂无老师要求</div>`;
+  } else {
+    reqContent.innerHTML = `<div class="req-empty">选择科目后查看老师要求</div>`;
+  }
+}
+
+// ── 时间选择 ──────────────────────────────────────────
+function setDuration(mins) {
+  if (timerRunning) return;
+  selectedDuration = mins;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+function setQuick(mins) {
+  quickDuration = mins;
+  document.querySelectorAll('.quick-time-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+}
+
+function toggleQuickAdd() {
+  const el = document.getElementById('quickAddSection');
+  el.classList.toggle('open');
+}
+
+// ── 计时器 ────────────────────────────────────────────
+function toggleTimer() {
+  if (!selectedItem) { alert('请先选择一个科目'); return; }
+  if (timerRunning) {
+    stopTimer();
+  } else {
+    startTimer();
+  }
+}
+
+function startTimer() {
+  timerRunning = true;
+  elapsed = 0;
+  document.getElementById('startBtn').textContent = '暂停';
+  document.getElementById('startBtn').style.background = '#FF9A9E';
+  document.getElementById('timerDisplay').classList.add('running');
+  document.getElementById('confirmArea').classList.remove('show');
+  document.getElementById('quickAddSection').classList.remove('open');
+
+  timerInterval = setInterval(() => {
+    elapsed++;
+    updateTimerDisplay();
+    if (elapsed >= selectedDuration * 60) {
+      finishTimer();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  document.getElementById('startBtn').textContent = '开始';
+  document.getElementById('startBtn').style.background = '';
+  document.getElementById('timerDisplay').classList.remove('running');
+}
+
+function finishTimer() {
+  stopTimer();
+  timerRunning = false;
+  document.getElementById('confirmMins').textContent = selectedDuration;
+  document.getElementById('confirmArea').classList.add('show');
+  fireConfetti();
+}
+
+function finishEarly() {
+  if (!timerRunning && elapsed === 0) { alert('计时器未启动'); return; }
+  const finalMins = Math.max(1, Math.round(elapsed / 60));
+  stopTimer();
+  timerRunning = false;
+  elapsed = 0;
+  document.getElementById('confirmMins').textContent = finalMins;
+  document.getElementById('confirmArea').classList.add('show');
+  document.getElementById('timerDisplay').textContent = '00:00';
+  fireConfetti();
+}
+
+function updateTimerDisplay() {
+  const remaining = Math.max(0, selectedDuration * 60 - elapsed);
+  const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+  const s = String(remaining % 60).padStart(2, '0');
+  document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+}
+
+function resetTimer() {
+  elapsed = 0;
+  document.getElementById('timerDisplay').textContent = '00:00';
+  document.getElementById('timerDisplay').classList.remove('running');
+  document.getElementById('confirmArea').classList.remove('show');
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.time-btn')[1].classList.add('selected');
+  selectedDuration = 10;
+}
+
+// ── 打卡 ──────────────────────────────────────────────
+function submitPractice() {
+  const mins = parseInt(document.getElementById('confirmMins').textContent) || 0;
+  if (!selectedItem || mins === 0) return;
+
+  addRecord(selectedItem, mins);
+  document.querySelector('.confirm-area p').innerHTML = '🎉 打卡成功！太棒啦！';
+  document.getElementById('confirmArea').classList.add('show');
+
+  gsap && gsap.fromTo('#confirmArea',
+    { scale: 0.5, opacity: 0, y: 30 },
+    { scale: 1, opacity: 1, y: 0, duration: 0.6, ease: 'back.out(2)' }
+  );
+
+  setTimeout(() => {
+    resetTimer();
+    selectedItem = null;
+    renderItemGrid();
+    document.getElementById('todayTotal').textContent =
+      parseInt(document.getElementById('todayTotal').textContent) + mins;
+  }, 2200);
+}
+
+function submitQuickLog() {
+  if (!selectedItem) { alert('请先选择一个科目'); return; }
+  addRecord(selectedItem, quickDuration);
+  document.getElementById('quickAddSection').classList.remove('open');
+  document.getElementById('todayTotal').textContent =
+    parseInt(document.getElementById('todayTotal').textContent) + quickDuration;
+}
+
+// ── 额外练习时间 ──────────────────────────────────────
+function addExtra(mins) {
+  if (!selectedItem) { alert('请先选择一个科目'); return; }
+  extraRecords.push({ item: selectedItem, mins, id: Date.now() });
+  renderExtraLog();
+  fireConfetti();
+}
+
+function addExtraFromInput() {
+  const input = document.getElementById('extraCustomMins');
+  const mins = parseInt(input.value);
+  if (!mins || mins < 1 || mins > 480) { alert('请输入1-480之间的分钟数'); return; }
+  addExtra(mins);
+  input.value = '';
+}
+
+function deleteExtra(id) {
+  if (!confirm('确定要删除这条额外练习记录吗？')) return;
+  extraRecords = extraRecords.filter(r => r.id !== id);
+  renderExtraLog();
+}
+
+function renderExtraLog() {
+  const list = document.getElementById('extraLogList');
+  if (extraRecords.length === 0) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = extraRecords.map(r => `
+    <div class="extra-log-item">
+      <span>${r.item}</span>
+      <span class="extra-mins">+${r.mins}分钟</span>
+      <button class="extra-del" onclick="deleteExtra(${r.id})">✕</button>
+    </div>
+  `).join('');
+}
+
+// ── 今日记录 ──────────────────────────────────────────
+let records = [
+  { item: '回娘家', mins: 1, id: 1 },
+  { item: '回娘家', mins: 5, id: 2 },
+];
+
+function addRecord(item, mins) {
+  records.push({ item, mins, id: Date.now() });
+  renderRecords();
+}
+
+function deleteRecord(id) {
+  if (!confirm('确定要删除这条练习记录吗？')) return;
+  records = records.filter(r => r.id !== id);
+  renderRecords();
+  const total = records.reduce((s, r) => s + r.mins, 0);
+  document.getElementById('todayTotal').textContent = total;
+}
+
+function renderRecords() {
+  const list = document.getElementById('recordsList');
+  if (records.length === 0) {
+    list.innerHTML = '<div class="empty-records">还没有练习记录，开始练习吧！</div>';
+    return;
+  }
+  list.innerHTML = records.map(r => `
+    <div class="record-item">
+      <div>
+        <div class="item-name">${r.item}</div>
+        <div class="item-mins">${r.mins} 分钟</div>
+      </div>
+      <button class="delete-btn" onclick="deleteRecord(${r.id})">✕</button>
+    </div>
+  `).join('');
+}
+renderRecords();
+
+// ── 撒花 ──────────────────────────────────────────────
+function fireConfetti() {
+  if (typeof confetti === 'function') {
+    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 }, colors: ['#FF6B6B','#4ECDC4','#FFE66D','#96E6A1','#C3B1E1'] });
+  }
+}
+</script>
+</body>
+</html>
