@@ -667,18 +667,45 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 // ── 点击滚一屏 ────────────────────────────────
+const SECTIONS = ['heroSection', 'stepsSection', 'assignmentSection', 'ctaSection'];
 let scrollVelocity = 0;
+
 function scrollToNextSection() {
   if (scrollVelocity) return;
-  const stepsEl = document.getElementById('stepsSection');
-  stepsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  scrollVelocity = setTimeout(() => { scrollVelocity = 0; }, 900);
+  const scrollY = window.scrollY;
+  const winH = window.innerHeight;
+  const midY = scrollY + winH * 0.3;
+
+  // 找到当前所在屏
+  let nextIdx = SECTIONS.length; // 默认最后
+  for (let i = 0; i < SECTIONS.length; i++) {
+    const el = document.getElementById(SECTIONS[i]);
+    if (el && midY < el.offsetTop + el.offsetHeight * 0.6) {
+      nextIdx = i + 1;
+      break;
+    }
+  }
+  if (nextIdx >= SECTIONS.length) return; // 已在最底
+
+  const target = document.getElementById(SECTIONS[nextIdx]);
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollVelocity = setTimeout(() => { scrollVelocity = 0; }, 900);
+  }
 }
+
+// 全局点击（非交互元素区域）→ 滚一屏
+document.addEventListener('click', (e) => {
+  const tag = e.target.tagName;
+  if (tag === 'A' || tag === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) return;
+  if (e.target.closest('.step-card')) return;
+  if (e.target.closest('#floatingTap')) return;
+  scrollToNextSection();
+}, { passive: true });
 
 // keyboard: Space / Enter
 document.addEventListener('keydown', (e) => {
-  if ((e.code === 'Space' || e.code === 'Enter') &&
-      window.scrollY < document.getElementById('stepsSection').offsetTop - 100) {
+  if (e.code === 'Space' || e.code === 'Enter') {
     e.preventDefault();
     scrollToNextSection();
   }
