@@ -58,6 +58,226 @@ def total_practice_minutes():
     practices = db.get_daily_practices_in_range(dt.date(2020, 1, 1), dt.date.today())
     return sum(p["total_minutes"] for p in practices)
 
+
+def _calc_max_consecutive_streak():
+    """计算最长连续练习天数（断掉后重新接上也能恢复）"""
+    today = dt.date.today()
+    practices = db.get_daily_practices_in_range(dt.date(2020, 1, 1), today)
+    # date -> total_minutes
+    day_mins = {p["date"]: p.get("total_minutes", 0) for p in practices}
+
+    # 从最早有练习的日期到今天，逐天扫描
+    if not day_mins:
+        return 0
+
+    dates_sorted = sorted(day_mins.keys())
+    first_day = dates_sorted[0]
+
+    max_streak = 0
+    cur_streak = 0
+    d = first_day
+    while d <= today:
+        if day_mins.get(d, 0) > 0:
+            cur_streak += 1
+            max_streak = max(max_streak, cur_streak)
+        else:
+            cur_streak = 0
+        d += dt.timedelta(days=1)
+    return max_streak
+
+
+def _calc_peak_week():
+    """返回 (peak_mins, peak_label) peak_label='YYYY-MM-DD ~ YYYY-MM-DD'"""
+    assignments = db.get_weekly_assignments_in_range(
+        dt.date(2020, 1, 1), dt.date.today() + dt.timedelta(days=30)
+    )
+    if not assignments:
+        return 0, ""
+
+    best_mins = 0
+    best_label = ""
+    for a in assignments:
+        ss = a.get("stage_start")
+        se = a.get("stage_end")
+        if not ss or not se:
+            continue
+        start = dt.date.fromisoformat(ss) if isinstance(ss, str) else ss
+        end = dt.date.fromisoformat(se) if isinstance(se, str) else se
+        practices = db.get_daily_practices_in_range(start, end)
+        mins = sum(p.get("total_minutes", 0) for p in practices)
+        if mins > best_mins:
+            best_mins = mins
+            best_label = f"{ss} ~ {se}"
+    return best_mins, best_label
+
+
+def _calc_peak_month():
+    """返回 (peak_mins, peak_label) peak_label='YYYY年MM月'"""
+    today = dt.date.today()
+    start_year = 2020
+
+    best_mins = 0
+    best_label = ""
+    for year in range(start_year, today.year + 2):
+        for month in range(1, 13):
+            if year == today.year and month > today.month:
+                break
+            if year == start_year and month < 1:
+                continue
+            sm = dt.date(year, month, 1)
+            if month == 12:
+                em = dt.date(year + 1, 1, 1) - dt.timedelta(days=1)
+            else:
+                em = dt.date(year, month + 1, 1) - dt.timedelta(days=1)
+            practices = db.get_daily_practices_in_range(sm, em)
+            mins = sum(p.get("total_minutes", 0) for p in practices)
+            if mins > best_mins:
+                best_mins = mins
+                best_label = f"{year}年{month}月"
+    return best_mins, best_label
+
+
+def _calc_top_items():
+    """返回 [(item_name, total_mins), ...] 按累计时长降序，取前3"""
+    practices = db.get_daily_practices_in_range(dt.date(2020, 1, 1), dt.date.today())
+    item_mins = {}
+    for p in practices:
+        for it in p.get("items", []):
+            name = it.get("item", "未知")
+            item_mins[name] = item_mins.get(name, 0) + it.get("minutes", 0)
+    sorted_items = sorted(item_mins.items(), key=lambda x: x[1], reverse=True)
+    return sorted_items[:3]
+
+
+def _get_current_week_range():
+    """返回当前周（基于最近的 weekly_assignment）的 stage_start, stage_end"""
+    today = dt.date.today()
+    # 找包含今天的 weekly_assignment
+    assignments = db.get_weekly_assignments_in_range(
+        today - dt.timedelta(days=30), today + dt.timedelta(days=30)
+    )
+    for a in assignments:
+        ss = a.get("stage_start")
+        se = a.get("stage_end")
+        if not ss or not se:
+            continue
+        start = dt.date.fromisoformat(ss) if isinstance(ss, str) else ss
+        end = dt.date.fromisoformat(se) if isinstance(se, str) else se
+        if start <= today <= end:
+            return start, end
+    # fallback: calendar week
+    ws = today - dt.timedelta(days=today.weekday())
+    we = ws + dt.timedelta(days=6)
+    return ws, we
+
+
+def _week_progress():
+    """本周练习进度：返回 (pct, text)"""
+    start, end = _get_current_week_range()
+    today = dt.date.today()
+    # 不超出今天
+    end = min(end, today)
+    if end < start:
+        return 0, "0/7 天"
+    practices = db.get_daily_practices_in_range(start, end)
+    days = len([p for p in practices if p.get("total_minutes", 0) > 0])
+    goal = 7
+    pct = min(int(days / goal * 100), 100)
+    return pct, f"{days}/{goal} 天"
+
+
+def _calc_yesterday_mins():
+    yesterday = dt.date.today() - dt.timedelta(days=1)
+    p = db.get_daily_practice(yesterday)
+    return p.get("total_minutes", 0) if p else 0
+
+
+def _calc_week_mins_and_days():
+    today = dt.date.today()
+    ws = today - dt.timedelta(days=today.weekday())
+    practices = db.get_daily_practices_in_range(ws, today)
+    mins = sum(p.get("total_minutes", 0) for p in practices)
+    days = len([p for p in practices if p.get("total_minutes", 0) > 0])
+    return mins, days
+
+
+def _calc_month_mins_and_days():
+    today = dt.date.today()
+    start = dt.date(today.year, today.month, 1)
+    if today.month == 12:
+        end = dt.date(today.year + 1, 1, 1) - dt.timedelta(days=1)
+    else:
+        end = dt.date(today.year, today.month + 1, 1) - dt.timedelta(days=1)
+    end = min(end, today)
+    practices = db.get_daily_practices_in_range(start, end)
+    mins = sum(p.get("total_minutes", 0) for p in practices)
+    days = len([p for p in practices if p.get("total_minutes", 0) > 0])
+    return mins, days
+
+
+def _ring_diff(current, previous):
+    """计算环比差异文字和方向: (diff_text, is_positive)"""
+    if previous == 0:
+        return "", False
+    diff = current - previous
+    if diff == 0:
+        return "与上周持平", False
+    sign = "+" if diff > 0 else ""
+    unit = "分" if current < 100 else "天"
+    return f"{sign}{diff}{unit} vs上周", diff > 0
+
+
+def _milestone_html():
+    """生成勋章展示区 HTML（当前已获得的 milestone 勋章）"""
+    streak = streak_days()
+    total_mins = total_practice_minutes()
+    peak_week_mins, _ = _calc_peak_week()
+    peak_month_mins, _ = _calc_peak_month()
+    top_items = _calc_top_items()
+
+    items_html = ""
+
+    def _badge_img(bid: str) -> str:
+        return f"<img src='/static/badges/{bid}.png' alt='' style='width:40px;height:40px;object-fit:contain;'>"
+
+    # 1. 变得更强
+    h = total_mins // 60
+    m = total_mins % 60
+    label = f"{h}小时{m}分钟"
+    desc = "累计练习时长，笛子都为你骄傲！"
+    items_html += f"<div class='milestone-item'>{_badge_img('total_60')}<div><div class='milestone-label'>变得更强</div><div class='milestone-value'>{label}</div><div class='milestone-desc'>{desc}</div></div></div>"
+
+    # 2. 连续吹爆
+    label2 = f"{streak}天"
+    desc2 = "最长连续练习天数，断掉也能接回来！"
+    items_html += f"<div class='milestone-item'>{_badge_img('streak_3')}<div><div class='milestone-label'>连续吹爆</div><div class='milestone-value'>{label2}</div><div class='milestone-desc'>{desc2}</div></div></div>"
+
+    # 3. 巅峰周
+    if peak_week_mins > 0:
+        label3 = f"{peak_week_mins}分钟"
+    else:
+        label3 = "暂无数据"
+    desc3 = "按练习周累计练习时长最高的那一周"
+    items_html += f"<div class='milestone-item'>{_badge_img('week_champ')}<div><div class='milestone-label'>巅峰周</div><div class='milestone-value'>{label3}</div><div class='milestone-desc'>{desc3}</div></div></div>"
+
+    # 4. 巅峰月
+    if peak_month_mins > 0:
+        label4 = f"{peak_month_mins}分钟"
+    else:
+        label4 = "暂无数据"
+    desc4 = "自然月纬度累计练习时长最高的那个月"
+    items_html += f"<div class='milestone-item'>{_badge_img('full_month')}<div><div class='milestone-label'>巅峰月</div><div class='milestone-value'>{label4}</div><div class='milestone-desc'>{desc4}</div></div></div>"
+
+    # 5. 最熟悉的你 TOP3
+    if top_items:
+        top_html = ", ".join([f"{n}({m}分钟)" for n, m in top_items])
+    else:
+        top_html = "暂无数据"
+    desc5 = "累计练习时长最长的科目 TOP3"
+    items_html += f"<div class='milestone-item'>{_badge_img('top1')}<div><div class='milestone-label'>最熟悉的你</div><div class='milestone-value'>{top_html}</div><div class='milestone-desc'>{desc5}</div></div></div>"
+
+    return items_html
+
 # ─── API: 某日练习明细 ─────────────────────────────────────────────────────
 @app.get("/api/practices/{date_str}")
 def api_practice_day(date_str: str):
@@ -434,83 +654,181 @@ def practice_page():
 @app.get("/achievements", response_class=HTMLResponse)
 def achievements_page():
     today = dt.date.today()
-    ws = week_start_of(today)
 
-    week_prac = db.get_daily_practices_in_range(ws, today)
-    week_mins = sum(p["total_minutes"] for p in week_prac)
-    week_days = len([p for p in week_prac if p.get("total_minutes", 0) > 0])
+    # ── 卡片1: 本周目标进度 ─────────────────────────────
+    week_pct, week_pct_text = _week_progress()
 
+    # ── 卡片2: 练习看板 ────────────────────────────────
     streak = streak_days()
-    total_mins = total_practice_minutes()
+    yesterday_mins = _calc_yesterday_mins()
+    yesterday_prev = 0  # 简化：暂无上周数据
 
-    badges = []
-    if streak >= 3:
-        badges.append(("fire", str(streak) + " 天连续", "flame"))
-    if streak >= 7:
-        badges.append(("star", "7天连续达成！", "star"))
-    if total_mins >= 60:
-        badges.append(("medal", "练习达人", "star2"))
-    if week_mins >= 60:
-        badges.append(("week_star", "本周之星", "strong"))
+    week_mins, week_days_count = _calc_week_mins_and_days()
+    # 上上周
+    ws_prev = today - dt.timedelta(days=today.weekday() + 7)
+    we_prev = ws_prev + dt.timedelta(days=6)
+    practices_prev = db.get_daily_practices_in_range(ws_prev, we_prev)
+    week_mins_prev = sum(p.get("total_minutes", 0) for p in practices_prev)
+    week_days_prev = len([p for p in practices_prev if p.get("total_minutes", 0) > 0])
 
-    badge_html = ""
-    for icon_type, label, cls in badges:
-        badge_html += (
-            "<div class='badge-wrap'>"
-            "<img src='/static/badges/" + icon_type + "_badge.png' alt='" + label + "' class='badge-img " + cls + "'>"
-            "<div class='badge-label " + cls + "'>" + label + "</div>"
-            "</div>"
-        )
-    if not badge_html:
-        badge_html = "<p style='color:#7F8C8D;text-align:center;'>还没有徽章，继续加油！</p>"
+    month_mins, month_days_count = _calc_month_mins_and_days()
+    # 上月同周期
+    if today.month == 1:
+        month_start_prev = dt.date(today.year - 1, 12, 1)
+    else:
+        month_start_prev = dt.date(today.year, today.month - 1, 1)
+    if today.month == 12:
+        month_end_prev = dt.date(today.year + 1, 1, 1) - dt.timedelta(days=1)
+    else:
+        month_end_prev = dt.date(today.year, today.month, 1) - dt.timedelta(days=1)
+    month_end_prev = min(month_end_prev, today - dt.timedelta(days=28))  # 粗略
+    practices_m_prev = db.get_daily_practices_in_range(month_start_prev, month_end_prev)
+    month_mins_prev = sum(p.get("total_minutes", 0) for p in practices_m_prev)
 
-    # 本周目标进度（默认目标：每周5天，每天≥10分钟）
-    WEEK_GOAL_DAYS = 5
-    week_progress = min(week_days / WEEK_GOAL_DAYS, 1.0)
-    week_progress_pct = int(week_progress * 100)
-    week_progress_text = f"{week_days}/{WEEK_GOAL_DAYS} 天"
+    # 环比文字
+    yd_diff_txt, yd_pos = _ring_diff(yesterday_mins, yesterday_prev)
+    wm_diff_txt, wm_pos = _ring_diff(week_days_count, week_days_prev)
+    mm_diff_txt, mm_pos = _ring_diff(month_days_count, len([p for p in practices_m_prev if p.get("total_minutes", 0) > 0]))
 
-    # 徽章距离提示
-    badge_hints = []
-    # 火徽章（连续streak）
-    next_fire = None
-    if streak < 3:
-        next_fire = 3 - streak
-    elif streak < 7:
-        next_fire = 7 - streak
-    if next_fire is not None:
-        badge_hints.append(("fire", next_fire, "🔥"))
-    # 练习达人（总分钟）
-    if total_mins < 60:
-        mins_left = 60 - total_mins
-        badge_hints.append(("medal", mins_left, "🏅"))
-    # 本周之星（本周分钟）
-    if week_mins < 60:
-        mins_left_w = 60 - week_mins
-        badge_hints.append(("week_star", mins_left_w, "⭐"))
+    # ── 卡片3: 勋章展示 ────────────────────────────────
+    milestone_html = _milestone_html()
 
-    badge_hint_html = ""
-    for _btype, remaining, icon in badge_hints:
-        if _btype == "fire":
-            badge_hint_html += f"<div style='text-align:center;padding:6px 0;font-size:14px;color:#7F8C8D;'>距离 🔥 下一徽章还差 <strong style='color:#FF6B35;'>{remaining} 天</strong></div>"
-        elif _btype == "medal":
-            badge_hint_html += f"<div style='text-align:center;padding:6px 0;font-size:14px;color:#7F8C8D;'>距离 🏅 练习达人还差 <strong style='color:#FF6B35;'>{remaining} 分钟</strong></div>"
-        elif _btype == "week_star":
-            badge_hint_html += f"<div style='text-align:center;padding:6px 0;font-size:14px;color:#7F8C8D;'>距离 ⭐ 本周之星还差 <strong style='color:#FF6B35;'>{remaining} 分钟</strong></div>"
+    # ── 卡片4: 更多勋章入口 ────────────────────────────
+    recent_badges_html = ""  # 暂留空，勋章生成后补
 
     return render(
         "achievements",
         child_name=child_name(),
+        week_pct=week_pct,
+        week_pct_text=week_pct_text,
         streak=str(streak),
-        total_hours=str(total_mins // 60),
-        total_mins_rem=str(total_mins % 60),
-        week_mins=str(week_mins),
-        week_days=str(week_days),
-        week_progress_pct=week_progress_pct,
-        week_progress_text=week_progress_text,
-        badge_hint_html=badge_hint_html,
-        badge_html=badge_html,
+        yesterday_mins=str(yesterday_mins),
+        yesterday_diff=yd_diff_txt,
+        yesterday_pos="up" if yd_pos else "",
+        week_days=str(week_days_count),
+        week_diff=wm_diff_txt,
+        week_pos="up" if wm_pos else "",
+        month_days=str(month_days_count),
+        month_diff=mm_diff_txt,
+        month_pos="up" if mm_pos else "",
+        milestone_html=milestone_html,
+        recent_badges_html=recent_badges_html,
     )
+
+@app.get("/badges", response_class=HTMLResponse)
+def badges_page():
+    """勋章墙完整页"""
+    streak = streak_days()
+    total_mins = total_practice_minutes()
+    peak_week_mins, peak_week_label = _calc_peak_week()
+    peak_month_mins, peak_month_label = _calc_peak_month()
+    top_items = _calc_top_items()
+
+    # 全部 20 个勋章定义（类型：common/rare/legendary）
+    ALL_BADGES = [
+        # 连续练习类
+        {"id": "streak_1",   "name": "初试啼声",   "condition": "连续练习 ≥ 1 天",  "type": "common",   "icon": "🎵"},
+        {"id": "streak_3",   "name": "小火焰",     "condition": "连续练习 ≥ 3 天",  "type": "common",   "icon": "🔥"},
+        {"id": "streak_7",   "name": "周冠军",     "condition": "连续练习 ≥ 7 天",  "type": "rare",     "icon": "🏅"},
+        {"id": "streak_14",  "name": "双周传说",   "condition": "连续练习 ≥ 14 天", "type": "rare",     "icon": "⭐"},
+        {"id": "streak_30",  "name": "月度王者",   "condition": "连续练习 ≥ 30 天", "type": "rare",     "icon": "👑"},
+        {"id": "streak_100", "name": "百日传奇",   "condition": "连续练习 ≥ 100 天","type": "legendary","icon": "🌟"},
+        # 练习时长类
+        {"id": "total_60",   "name": "初露锋芒",   "condition": "累计 ≥ 60 分钟",   "type": "common",   "icon": "🌱"},
+        {"id": "total_300",  "name": "五小时战士",  "condition": "累计 ≥ 300 分钟",  "type": "rare",     "icon": "⚔️"},
+        {"id": "total_600",  "name": "十小时大师",  "condition": "累计 ≥ 600 分钟",  "type": "rare",     "icon": "📖"},
+        {"id": "total_1000", "name": "千分钟传奇",  "condition": "累计 ≥ 1000 分钟", "type": "legendary","icon": "🚀"},
+        # 特殊成就类
+        {"id": "first_log",  "name": "第一声",      "condition": "完成第一次练习打卡", "type": "common",   "icon": "🎉"},
+        {"id": "all_items",  "name": "全能选手",    "condition": "同一天练习所有科目", "type": "rare",     "icon": "🌈"},
+        {"id": "double",     "name": "加练狂魔",    "condition": "同一天完成 ≥2 次打卡", "type": "common", "icon": "⚡"},
+        {"id": "week_champ", "name": "周末冠军",    "condition": "本周练习 ≥ 5 天且每天 ≥ 10 分钟", "type": "rare", "icon": "🏆"},
+        {"id": "full_month", "name": "满月战士",    "condition": "当月每天都有练习记录", "type": "legendary","icon": "🌕"},
+        # TOP科目类（动态）
+        {"id": "top1",       "name": "TOP1 之王",  "condition": "科目累计时长排名第1", "type": "rare",     "icon": "🥇"},
+        {"id": "top2",       "name": "TOP2 卷王",  "condition": "科目累计时长排名第2", "type": "rare",     "icon": "🥈"},
+        {"id": "top3",       "name": "TOP3 新星",  "condition": "科目累计时长排名第3", "type": "common",   "icon": "🥉"},
+    ]
+
+    # 检查每个勋章是否获得
+    def check(b):
+        bid = b["id"]
+        if bid == "streak_1":   return streak >= 1
+        if bid == "streak_3":   return streak >= 3
+        if bid == "streak_7":   return streak >= 7
+        if bid == "streak_14":  return streak >= 14
+        if bid == "streak_30":  return streak >= 30
+        if bid == "streak_100": return streak >= 100
+        if bid == "total_60":   return total_mins >= 60
+        if bid == "total_300":  return total_mins >= 300
+        if bid == "total_600":  return total_mins >= 600
+        if bid == "total_1000": return total_mins >= 1000
+        # first_log: 只要有练习记录就算
+        if bid == "first_log":  return total_mins > 0
+        # week_champ: 本周练习天数 >= 5 且每天 >= 10 分钟
+        if bid == "week_champ":
+            start, end = _get_current_week_range()
+            today2 = dt.date.today()
+            end = min(end, today2)
+            practices = db.get_daily_practices_in_range(start, end)
+            days = len([p for p in practices if p.get("total_minutes", 0) >= 10])
+            return days >= 5
+        # TOP 科目
+        if bid in ("top1", "top2", "top3") and top_items:
+            rank = int(bid[-1])
+            if len(top_items) >= rank:
+                return True
+        return False
+
+    # TOP 科目名称替换
+    earned_items = []
+    for b in ALL_BADGES:
+        earned = check(b)
+        bname = b["name"]
+        # 动态替换
+        if b["id"] == "top1" and len(top_items) >= 1:
+            bname = f"{top_items[0][0]}之王"
+        elif b["id"] == "top2" and len(top_items) >= 2:
+            bname = f"{top_items[1][0]}卷王"
+        elif b["id"] == "top3" and len(top_items) >= 3:
+            bname = f"{top_items[2][0]}新星"
+        earned_items.append({**b, "earned": earned, "earned_name": bname})
+
+    # 按类型分组
+    COMMON = [b for b in earned_items if b["type"] == "common"]
+    RARE   = [b for b in earned_items if b["type"] == "rare"]
+    LEGEND = [b for b in earned_items if b["type"] == "legendary"]
+
+    # 排序：已获得排前面
+    for group in (COMMON, RARE, LEGEND):
+        group.sort(key=lambda x: (not x["earned"], x["id"]))
+
+    def render_badge_item(b):
+        cls = "badge-item earned" if b["earned"] else "badge-item locked"
+        img_url = f"/static/badges/{b['id']}.png"
+        icon_html = f"<div class='badge-icon-wrap'><img src='{img_url}' alt='{b['earned_name']}' style='width:48px;height:48px;object-fit:contain;'></div>"
+        name_html = f"<div class='badge-name'>{b['earned_name']}</div>"
+        cond_html = f"<div class='badge-cond'>{b['condition']}</div>"
+        return f"<div class='{cls}'>{icon_html}{name_html}{cond_html}</div>"
+
+    def render_group(group, title):
+        if not group:
+            return ""
+        items = "".join(render_badge_item(b) for b in group)
+        return f"<div class='badge-group'><h3 class='badge-group-title'>{title}</h3><div class='badge-grid'>{items}</div></div>"
+
+    body_html = (
+        render_group(COMMON, "✨ 常见勋章")
+        + render_group(RARE, "💎 珍稀勋章")
+        + render_group(LEGEND, "🌟 传说勋章")
+    )
+
+    return render(
+        "badges",
+        child_name=child_name(),
+        body_html=body_html,
+    )
+
 
 @app.get("/report", response_class=HTMLResponse)
 def report_page():

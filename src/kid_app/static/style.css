@@ -255,3 +255,196 @@ textarea {
 .celebrate {
   animation: celebrate 0.6s ease 3;
 }
+
+/* ── achievements 重构 4卡片 ── */
+.page-header {
+  padding: 20px 16px 8px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* 4卡片 grid */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 12px 12px;
+}
+@media (min-width: 600px) {
+  .cards-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+}
+
+/* 通用卡片 */
+.ac-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px;
+  opacity: 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+/* 卡片1: 本周目标 */
+.card-week { grid-column: 1 / -1; }
+@media (min-width: 600px) {
+  .card-week { grid-column: auto; }
+}
+.week-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.week-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--primary, #FF6B35);
+}
+.week-sub { font-size: 14px; color: #7F8C8D; }
+.week-bar-bg {
+  background: #F0F0F0;
+  border-radius: 12px;
+  height: 22px;
+  overflow: hidden;
+}
+.week-bar-fill {
+  background: linear-gradient(90deg, #FF6B35, #FF8C5A);
+  height: 100%;
+  border-radius: 12px;
+  transition: width 0.6s ease;
+}
+.week-pct-text {
+  text-align: center;
+  margin-top: 5px;
+  font-size: 13px;
+  color: #7F8C8D;
+}
+
+/* 卡片2: 练习看板 */
+.board-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.board-cell {
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 14px;
+}
+.board-cell:nth-child(1) { background: #FFF3E0; }
+.board-cell:nth-child(2) { background: #E8F5E9; }
+.board-cell:nth-child(3) { background: #E3F2FD; }
+.board-cell:nth-child(4) { background: #FCE4EC; }
+.board-num {
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+}
+.board-cell:nth-child(1) .board-num { color: #FF6B35; }
+.board-cell:nth-child(2) .board-num { color: #27AE60; }
+.board-cell:nth-child(3) .board-num { color: #1976D2; }
+.board-cell:nth-child(4) .board-num { color: #E91E8C; }
+.board-label { font-size: 12px; color: #7F8C8D; margin-top: 4px; }
+.board-diff { font-size: 11px; margin-top: 2px; color: #aaa; }
+.board-diff.up { color: #27AE60; }
+
+/* 卡片3: 勋章展示（里程碑） */
+.milestone-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+.milestone-item:last-child { border-bottom: none; }
+.milestone-icon { font-size: 28px; flex-shrink: 0; width: 44px; text-align: center; }
+.milestone-label { font-size: 13px; font-weight: bold; color: #FF6B35; }
+.milestone-value { font-size: 14px; color: #333; margin: 2px 0; }
+.milestone-desc { font-size: 11px; color: #aaa; }
+
+/* 卡片4: 更多勋章入口 */
+.more-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 16px;
+  background: #fafafa;
+  text-decoration: none;
+  color: inherit;
+  height: 100%;
+  min-height: 120px;
+}
+.more-card:active { transform: scale(0.97); }
+.more-icons { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; }
+.more-icon-chip { font-size: 22px; }
+.more-arrow { font-size: 20px; color: #FF6B35; margin-top: 4px; }
+.more-label { font-size: 14px; color: #7F8C8D; margin-top: 4px; }
+
+/* 勋章墙页面 */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #FF6B35;
+  text-decoration: none;
+  font-weight: bold;
+}
+.back-btn:active { opacity: 0.7; }
+.page-title {
+  padding: 0 16px 16px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+.badge-section { padding: 0 16px 20px; }
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid transparent;
+}
+.section-title.common { color: #555; border-color: #ddd; }
+.section-title.rare { color: #7B68EE; border-color: #7B68EE; }
+.section-title.legendary { color: #FF6B35; border-color: #FF6B35; }
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (min-width: 500px) {
+  .badge-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (min-width: 700px) {
+  .badge-grid { grid-template-columns: repeat(5, 1fr); }
+}
+.badge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px 8px;
+  border-radius: 16px;
+  background: #f9f9f9;
+}
+.badge-cell.earned {
+  background: linear-gradient(135deg, #FFF8F0, #FFF0E0);
+  border: 2px solid #FFD700;
+}
+.badge-cell.locked {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+.badge-icon { font-size: 36px; line-height: 1; margin-bottom: 6px; }
+.badge-name { font-size: 12px; font-weight: bold; color: #333; margin-bottom: 3px; }
+.badge-cond { font-size: 10px; color: #999; line-height: 1.3; }
+.earned .badge-name { color: #FF6B35; }

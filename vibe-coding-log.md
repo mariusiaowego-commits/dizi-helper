@@ -1,39 +1,37 @@
 # dizical vibe coding log
 
-## 2026-05-10 (Sun) — assignments 字段治理 + 阶段模型重构
+## 2026-05-12 (Mon) — achievements 重构 + badge 生图
 
 ### 本次完成
-- **删除错误记录**：`2026-05-05` 单独一条的单吐练习（05-02课才上完，05-05不可能有新课）
-- **修正 lesson_date**：`2026-05-04` → `2026-05-02`
-- **修正科目名**：`04-11课` "单独练习" → "单吐练习"
 
-#### 阶段模型重构
-- `weekly_assignments` 表新增 `stage_start DATE`、`stage_end DATE`、`stage_order INTEGER`
-- `stage_start` = 上一次已上课的后一天
-- `stage_end` = 下一节（attended + scheduled）课当天
-- `stage_order` = 该课是第几次已上课（1-based）
-- **显示改为**：`第4课  04-19  ~  04-25  单吐练习  ♩=82...`
-- 修复 bug：回填时 stage_end 错用所有 scheduled 课里最早的，应为"按时间顺序下一节课"
+#### SQLite 并发修复
+- **问题**: `unable to open database file` — macOS 多线程并发 connect() WAL 数据库
+- **修复**: `_get_connection()` 改为单连接复用 `self._conn`，去掉 WAL journal mode
+- **服务启动**: `uvicorn --workers 1`（单进程避免并发）
 
-#### item_id 关联（字段已统一为 item_id）
-- `items` JSON 数组新增 `item_id` 字段（fuzzy match 自动关联）
-- `kid_app` practice 页优先用 `item_id` 精确匹配，fallback 名称匹配（兼容历史）
-- 录入支持 `item_id:要求` 格式精准命中：`dizical practice assign 1003:♩=82 1026:♩=80`
-- 新增 `database.get_practice_item_by_id()` 方法
-- 历史数据批量迁移：回填 item_id
+#### achievements 布局重构
+- 去掉 2 列 grid → 单列全宽卡片（与 practice/prepare/report 一致）
+- 本周目标 `goal = 5` → `goal = 7`（用户指出周应该7天）
 
-#### item_id 四位数重编号
-- `practice_items.item_id` 从原值（1~1335）重写为 1001~1039 四位序号
-- `weekly_assignments.items` / `daily_practices.items` JSON 全部同步更新
-- 修正历史错配：`基本功-长音`→1037，`基本功-颤音`→1035
-- 修复 save_weekly/daily_assignment 入参 string→date 转换 bug
-- 迁移脚本：`src/migrate_renumber_item_id.py`
+#### Badge 生图（20张）
+- 全部通过 Hermes Nous subscription 生成，存至 `src/kid_app/static/badges/`
+- 覆盖 20 个 badge ID：streak_1/3/7/14/30/100, total_60/300/600/1000, first_log, double, week_champ, full_month, all_items, night_owl, one_breath, comeback, song_end, top1/2/3
 
-#### 涉及文件
-- `src/database.py`：schema 迁移 + 三个 get 方法 + save + fuzzy match + get_practice_item_by_id
-- `src/cli.py`：显示格式 + ID 模式录入解析
-- `src/kid_app/app.py`：精确匹配逻辑
-- `data/dizi.db`：migration 回填 stage_* 字段 + practice_item_id
+#### 前端接入 badge 图片
+- `_milestone_html()`: emoji → `<img>` 标签
+- `badges_page` `render_badge_item()`: emoji → `<img>`
+- achievements more-card: emoji → 真实 badge 图片
+
+#### badges.html 网格优化
+- 手机 2 列，平板 3 列，大屏 4 列，gap 加大
+### 待办
+- 勋章可配置化（praise tab 勋章配置功能）
+- milestone 幽默描述优化
+- Git 提交 + PR
+
+---
+
+## 2026-05-11 (Sun) — fuzzy match 重写 + prepare 新样式 + Kid UI Phase 3
 
 ---
 

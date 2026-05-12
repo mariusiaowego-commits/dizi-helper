@@ -1,7 +1,7 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-11
-**当前阶段**: Kid UI Phase 3 UX 优化完成 + prepare 新样式完成
+**最后更新**: 2026-05-12
+**当前阶段**: Kid UI Phase 3 完成（achievements勋章墙/badge图片/布局），待提交 PR
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
@@ -12,17 +12,7 @@
 ## 📂 项目位置
 
 - **main 分支 (生产)**: `/Users/mt16/dev/dizical/`
-- **hermes 分支 (当前会话)**: `/Users/mt16/dev/dizical/.worktrees/hermes-xxx/`
-- **Git 模式**: worktree 模式，hermes 与 main 完全同步
-- **remote**: origin/main 已切 SSH，正常连接
-
----
-
-## 📂 项目位置
-
-- **main 分支 (生产)**: `/Users/mt16/dev/dizical/`
-- **hermes 分支 (当前会话 worktree)**: `/Users/mt16/dev/dizical/.worktrees/hermes-3bb46bdd/`
-- **Git 模式**: worktree 模式，hermes/hermes-a761b8a5 与 main 完全同步
+- **Git 模式**: 直接在 main 开发，未使用 worktree
 - **remote**: origin/main 已切 SSH，正常连接
 
 ---
@@ -150,7 +140,7 @@ dizical obsidian export 4          # 导出4月报告
 ## 👧 Kid UI Phase 3 UX 优化（2026-05-11）
 - [x] **fuzzy match 重写** (`practice.py`): `_similarity()` 子串/超串分级(0.85/0.60)，`_levenshtein()` 编辑距离，新评分策略避免泛称误匹配
 - [x] **prepare 页面优化**: 每日鼓励语(date-seeded从12条ENCOURAGEMENTS池选取)，老师要求为空时改为「暂无老师要求，直接开始练习吧！」
-- [x] **achievements 页面增强**: 本周目标进度条(5天/周)，徽章距离提示(fire/medal/week_star)，4格数据标签改为「累计练习时长 hXm」格式
+- [x] **achievements 页面增强**: 本周目标进度条(7天/周)，勋章墙落地页/badge图片，布局改为单列全宽卡片
 - [x] **praise 页面重建** (方案A): 展示已解锁徽章+每日表扬语+截图分享，孩子iPad可独立操作，移除 Hermes redirect 依赖
 - pytest 49/49 ✅
 
