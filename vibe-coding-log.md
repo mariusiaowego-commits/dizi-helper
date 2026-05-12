@@ -294,8 +294,12 @@
 
 ## 2026-05-12 accumulate | 合并不完整 + 文档不同步
 
-### 发现问题
-- feat/prepare-gsap-scrolltrigger 分支（10d929e）完成但从未合并 main
+### 完成
+- bless_pool扩至32条，替换7条push过强文案
+- 随机刷新（每次打开页面换一条，不再按日期seed）
+- praise页爸爸模式：增删祝福语（PIN验证）
+- API: GET/PUT /api/bless-pool
+- ~~feat/prepare-gsap-scrolltrigger~~（已删除）：半成品（215行模板），style与main不兼容，**决定舍弃**
 - main 当前版本（8eae04a）无"步骤式检查逻辑"（三个准备工作→展示assignment→滚动）
 - STATUS.md 未记录该分支存在，handoff 文件信息不准确
 - egg-info 被 git track 导致工作区 dirty，两个 commit 未 push
