@@ -175,11 +175,87 @@
       <div class="share-note">点击后选择「存储图像」或分享给家人</div>
       <div id="shareSuccess">✅ 已保存/分享！真棒！🎊</div>
     </div>
+
+    <!-- 爸爸模式：祝福语管理 -->
+    <div id="dadModeSection" class="card" style="padding:20px 24px;display:none;">
+      <h2 style="font-size:22px;margin-bottom:12px;">💬 祝福语配置</h2>
+      <p style="color:#7F8C8D;font-size:14px;margin-bottom:16px;">共 <span id="poolCount">0</span> 条，每次打开页面随机展示一条</p>
+      <div id="blessList" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input id="newMain" placeholder="主标题，如：吹笛真棒" style="flex:1;padding:10px;border:2px solid #4ECDC4;border-radius:12px;font-size:15px;">
+        <input id="newAccent" placeholder="高亮词，如：为你鼓掌👏" style="flex:1;padding:10px;border:2px solid #4ECDC4;border-radius:12px;font-size:15px;">
+      </div>
+      <button onclick="addBlessItem()" style="width:100%;padding:14px;background:#4ECDC4;color:white;border:none;border-radius:16px;font-size:17px;font-weight:bold;cursor:pointer;">➕ 添加</button>
+      <div id="blessSaveMsg" style="text-align:center;color:#27AE60;font-size:16px;margin-top:10px;display:none;">✅ 保存成功！</div>
+    </div>
   </div>
 
   <script>
-    // PIN verify
+    // ── PIN verify ───────────────────────────────────────────────
     const hasPin = '{{pin_locked}}' === 'true';
+    let currentPool = [];
+    let currentPin = '';
+
+    function showDadMode(pin) {
+      currentPin = pin;
+      document.getElementById('dadModeSection').style.display = 'block';
+      loadBlessPool();
+    }
+
+    async function loadBlessPool() {
+      const res = await fetch('/api/bless-pool');
+      const data = await res.json();
+      currentPool = data.pool || [];
+      renderBlessList();
+    }
+
+    function renderBlessList() {
+      const el = document.getElementById('blessList');
+      document.getElementById('poolCount').textContent = currentPool.length;
+      el.innerHTML = currentPool.map((item, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:#FFF8F0;border-radius:12px;">
+          <span style="flex:1;font-size:15px;">
+            <span style="color:#333;">${item.main}</span>
+            <span style="color:#4ECDC4;font-weight:bold;"> · ${item.accent}</span>
+          </span>
+          <button onclick="deleteBlessItem(${i})" style="padding:4px 10px;background:#FF6B6B;color:white;border:none;border-radius:8px;font-size:13px;cursor:pointer;">删除</button>
+        </div>
+      `).join('');
+    }
+
+    function addBlessItem() {
+      const main = document.getElementById('newMain').value.trim();
+      const accent = document.getElementById('newAccent').value.trim();
+      if (!main || !accent) { alert('请填写主标题和高亮词'); return; }
+      currentPool.push({main, accent});
+      renderBlessList();
+      saveBlessPool();
+      document.getElementById('newMain').value = '';
+      document.getElementById('newAccent').value = '';
+    }
+
+    function deleteBlessItem(idx) {
+      currentPool.splice(idx, 1);
+      renderBlessList();
+      saveBlessPool();
+    }
+
+    async function saveBlessPool() {
+      const msg = document.getElementById('blessSaveMsg');
+      const res = await fetch('/api/bless-pool', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({pin: currentPin, pool: currentPool})
+      });
+      const data = await res.json();
+      if (data.ok) {
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 2000);
+      } else {
+        alert('保存失败：' + (data.error || '未知错误'));
+      }
+    }
+
     if (hasPin) {
       const pinInput = document.getElementById('pinInput');
       pinInput.addEventListener('keydown', (e) => {
@@ -192,6 +268,7 @@
             if (res.ok) {
               document.getElementById('pinOverlay').style.display = 'none';
               document.getElementById('praiseContent').style.display = 'block';
+              showDadMode(pinInput.value);
             } else {
               document.getElementById('pinError').textContent = 'PIN 不对哦，再试一次 😊';
               pinInput.value = '';
@@ -199,6 +276,9 @@
           });
         }
       });
+    } else {
+      // 无 PIN，直接显示爸爸模式入口
+      showDadMode('');
     }
 
     async function sharePraise() {

@@ -208,21 +208,52 @@ ENCOURAGEMENTS = [
     "今天的你比昨天更好 💐",
 ]
 
-# 可配置的祝福语池（按日期 seed 选取）
-BLESS_POOL = [
-    {"main": "每一次练习",    "accent": "都是新的进步"},
-    {"main": "坚持练习",      "accent": "让音乐自然流淌"},
-    {"main": "今天的你",      "accent": "比昨天更棒"},
-    {"main": "一步一步",      "accent": "奏出属于自己的旋律"},
-    {"main": "练习不撒谎",    "accent": "汗水不会白费"},
-    {"main": "每一次吹奏",    "accent": "都在靠近更好"},
-    {"main": "认真对待",      "accent": "每一个音符"},
-    {"main": "吹得好不好",     "accent": "只有你自己知道"},
-    {"main": "日积月累",      "accent": "终成大器"},
-    {"main": "慢慢来",        "accent": "比较快"},
-    {"main": "不怕慢",        "accent": "只怕站"},
-    {"main": "音乐是",        "accent": "一辈子的朋友"},
+# 默认祝福语池（settings 表无数据时的 fallback）
+_DEFAULT_BLESS_POOL = [
+    {"main": "每一次练习",     "accent": "都是新的进步"},
+    {"main": "坚持练习",       "accent": "让音乐自然流淌"},
+    {"main": "今天的你",       "accent": "比昨天更棒"},
+    {"main": "一步一步",       "accent": "奏出属于自己的旋律"},
+    {"main": "认真吹过",       "accent": "就是最好的练习"},
+    {"main": "每一次吹奏",     "accent": "都在靠近更好"},
+    {"main": "认真对待",       "accent": "每一个音符"},
+    {"main": "不必比较",       "accent": "你有你的节奏"},
+    {"main": "慢慢积累",       "accent": "笛声会越来越好听"},
+    {"main": "慢慢来",         "accent": "比较快"},
+    {"main": "不怕慢",         "accent": "只怕站"},
+    {"main": "音乐是",         "accent": "一辈子的朋友"},
+    {"main": "吹笛真棒",       "accent": "为你鼓掌👏"},
+    {"main": "音符在等你",     "accent": "去拥抱它"},
+    {"main": "笛声响起",       "accent": "世界更美好"},
+    {"main": "每天进步一点点", "accent": "就是最好的成长"},
+    {"main": "练习时专注的你", "accent": "闪闪发光✨"},
+    {"main": "音乐是魔法",     "accent": "你就是魔法师🪄"},
+    {"main": "坚持吹奏",       "accent": "会越来越动听"},
+    {"main": "累了休息一下",   "accent": "再继续也不迟"},
+    {"main": "吹得真棒",       "accent": "再玩一会儿吧"},
+    {"main": "音乐之路",       "accent": "你才刚开始"},
+    {"main": "每个音符",       "accent": "都是小小的胜利"},
+    {"main": "爸爸爱听",       "accent": "你吹的每一首曲子"},
+    {"main": "不用和别人比",   "accent": "只要比昨天好"},
+    {"main": "声音会说话",     "accent": "告诉世界你在"},
+    {"main": "你的笛声",       "accent": "是家里最美的音乐"},
+    {"main": "今天也坚持了",   "accent": "真了不起🌟"},
+    {"main": "音乐相伴",       "accent": "快乐成长🎵"},
+    {"main": "笛子会说",       "accent": "谢谢你的陪伴"},
+    {"main": "吹久一些",       "accent": "也许会有新发现"},
 ]
+
+
+def _get_bless_pool() -> list[dict]:
+    """从 settings 表读取 bless_pool，fallback 到默认列表"""
+    try:
+        raw = db.get_setting("bless_pool")
+        if raw:
+            import json as _json
+            return _json.loads(raw)
+    except Exception:
+        pass
+    return _DEFAULT_BLESS_POOL
 
 
 # 可配置的准备步骤（后端可通过设置表动态调整）
@@ -233,20 +264,19 @@ PREPARE_STEPS = [
 ]
 
 
+def _bless_for_today() -> dict:
+    """每次调用随机选一条（每次打开页面都会刷新）"""
+    import random
+    pool = _get_bless_pool()
+    return random.choice(pool)
+
+
 def _daily_encouragement() -> str:
     """按今天日期 seed 选固定的鼓励语（同一天刷新也同一条）"""
     today = dt.date.today()
     seed = today.year * 10000 + today.month * 100 + today.day
     idx = seed % len(ENCOURAGEMENTS)
     return ENCOURAGEMENTS[idx]
-
-
-def _bless_for_today() -> dict:
-    """按日期 seed 从祝福语池选取一条（主标题 + 高亮词）"""
-    today = dt.date.today()
-    seed = today.year * 10000 + today.month * 100 + today.day
-    idx = seed % len(BLESS_POOL)
-    return BLESS_POOL[idx]
 
 
 def _build_steps_html(steps: list[dict]) -> str:
@@ -532,8 +562,36 @@ def report_page():
 def get_setting(key, default=""):
     try:
         return db.get_setting(key) or default
-    except:
+    except Exception:
         return default
+
+
+@app.get("/api/bless-pool", response_class=JSONResponse)
+def api_get_bless_pool():
+    """返回当前祝福语池（需 PIN 验证）"""
+    pin = get_setting("dad_pin")
+    if not pin:
+        pool = _get_bless_pool()
+        return JSONResponse({"pool": pool})
+    # 无 PIN 时也返回池内容（编辑需验证）
+    return JSONResponse({"pool": _get_bless_pool()})
+
+
+@app.put("/api/bless-pool", response_class=JSONResponse)
+async def api_put_bless_pool(request: Request):
+    """更新祝福语池（需 PIN 验证）"""
+    body = json.loads(await request.body())
+    pin = body.get("pin", "")
+    stored_pin = get_setting("dad_pin")
+    if stored_pin and pin != stored_pin:
+        return JSONResponse({"ok": False, "error": "PIN 不对"}, status_code=401)
+
+    new_pool = body.get("pool", [])
+    if not isinstance(new_pool, list):
+        return JSONResponse({"ok": False, "error": "格式错误"}, status_code=400)
+
+    db.set_setting("bless_pool", json.dumps(new_pool, ensure_ascii=False))
+    return JSONResponse({"ok": True})
 
 @app.post("/api/verify-pin")
 async def api_verify_pin(request: Request):
