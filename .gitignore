@@ -17,3 +17,4 @@ venv/
 .worktrees/
 .morning_check.json
 build/
+dizical.egg-info/
