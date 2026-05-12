@@ -9,6 +9,7 @@ class Database:
     def __init__(self, db_path: Optional[str] = None):
         self.db_path = db_path or settings.db_path
         self._ensure_db_directory()
+        self._conn: Optional[sqlite3.Connection] = None
         self._init_tables()
 
     def _ensure_db_directory(self) -> None:
@@ -16,9 +17,11 @@ class Database:
         db_path.parent.mkdir(parents=True, exist_ok=True)
 
     def _get_connection(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        if self._conn is None:
+            self._conn = sqlite3.connect(self.db_path, timeout=30, check_same_thread=False)
+            # macOS 上 WAL 偶发 unable to open database file，改用默认 DELETE journal
+            self._conn.row_factory = sqlite3.Row
+        return self._conn
 
     def _init_tables(self) -> None:
         with self._get_connection() as conn:
