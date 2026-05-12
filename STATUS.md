@@ -170,6 +170,10 @@ dizical obsidian export 4          # 导出4月报告
 - [x] **swap 兜底**：stage_start > stage_end 时自动交换
 - Commit: `8eae04a` | PR #26 ✅
 
+### ⚠️ 历史遗留问题（未合并）
+- **feat/prepare-gsap-scrolltrigger 分支**（commit `10d929e`）：实现了完整的"步骤式检查逻辑"——三个准备工作依次点完→展示本周 assignment→流畅滚动到开始按钮。该分支**从未合并到 main**，代码留在远程分支。
+- **待办**：将步骤式逻辑以 CSS transition 方式重新实现到 main 当前版本（或合并分支时解决冲突）
+
 ## 👧 数据结构统一（2026-05-10）
 - [x] `practice_items.id` → `item_id`（表列已改名）
 - [x] `practice_items` 表外键：`category_id`（引用 `practice_categories.id`）

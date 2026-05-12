@@ -289,3 +289,27 @@
 
 ### 踩坑
 - `subprocess.socket` → 正确：`import socket; socket.socket()`
+
+---
+
+## 2026-05-12 accumulate | 合并不完整 + 文档不同步
+
+### 发现问题
+- feat/prepare-gsap-scrolltrigger 分支（10d929e）完成但从未合并 main
+- main 当前版本（8eae04a）无"步骤式检查逻辑"（三个准备工作→展示assignment→滚动）
+- STATUS.md 未记录该分支存在，handoff 文件信息不准确
+- egg-info 被 git track 导致工作区 dirty，两个 commit 未 push
+
+### 今日处理
+- git rm --cached dizical.egg-info/ + 加入 .gitignore → commit 0511075
+- push a26c8b7 + 0511075 到 main
+- STATUS.md 新增「历史遗留问题」段落记录未合并分支
+- 工作区清理：删除 260511-handoff.md prepare-scroll-demo.html
+
+### P0 待办
+- prepare 步骤式检查逻辑：三个准备工作依次点完→展示本周assignment→流畅滚动到开始按钮
+
+### 教训
+1. 分支做完必须当天合并 main 或明确记录在 STATUS.md
+2. PR 合入 main 后立即更新 STATUS.md + DEVELOPMENT_PLAN.md
+3. handoff 文件要对照 git log 核实，不能凭记忆写
