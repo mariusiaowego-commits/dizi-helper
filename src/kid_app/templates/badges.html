@@ -105,9 +105,21 @@
     .badge-card.locked .b-name { color: #c0b898; }
 
     .b-tag {
-      font-size: 14px; font-weight: 700; color: #ccc;
-      margin-top: 5px; letter-spacing: 0.5px;
+      font-size: 11px; font-weight: 400;
+      color: #aaa;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-top: 5px;
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(0,0,0,0.08);
+      background: rgba(240,235,225,0.5);
     }
+    .badge-card[data-tag="突破"]   .b-tag { background: rgba(255,210,210,0.5); border-color: rgba(220,120,120,0.25); }
+    .badge-card[data-tag="段位"]   .b-tag { background: rgba(255,240,180,0.5); border-color: rgba(220,180,60,0.30); }
+    .badge-card[data-tag="巅峰"]   .b-tag { background: rgba(230,210,255,0.5); border-color: rgba(180,130,230,0.25); }
+    .badge-card[data-tag="执着"]   .b-tag { background: rgba(210,230,255,0.5); border-color: rgba(120,170,220,0.25); }
+    .badge-card[data-tag="晋级"]   .b-tag { background: rgba(210,250,220,0.5); border-color: rgba(100,200,130,0.25); }
 
     .b-lock { width: 16px; height: 16px; opacity: 0.3; margin-top: 5px; }
 
