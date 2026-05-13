@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方向A 定制版 Demo v2</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0ede8; padding: 24px 16px 80px; }
+.page-header { padding: 20px 16px 8px; font-size: 22px; font-weight: bold; color: #333; }
+.page-sub { font-size: 13px; color: #aaa; margin-bottom: 20px; padding: 0 4px; }
+.ac-card { background: #fff; border-radius: 20px; padding: 16px; margin: 0 4px 12px; }
+.section-label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 28px 0 8px 4px; }
+.ri { font-size: 11px; color: #bbb; margin: 0 0 10px 4px; }
+
+/* ── 主卡片结构 ── */
+.card-a {
+  display: flex; align-items: center;
+  padding: 30px 22px;
+  border-radius: 22px;
+  background: #fffdf8;
+  border: 2px solid #f5e8c0;
+  box-shadow: 0 4px 16px rgba(200,160,60,0.12);
+  position: relative; overflow: hidden;
+  min-height: 180px;
+}
+.card-a::before {
+  content: ''; position: absolute; top: -20px; left: -20px;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* badge */
+.badge-wrap { width: 120px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.badge-img { width: 120px; height: 120px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(180,140,20,0.4)); }
+
+/* 文字区：1:2 */
+.info { flex: 2; min-width: 0; padding-left: 20px; }
+
+/* ── 标签行：pill + label 分离 ── */
+.label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.pill {
+  display: inline-block;
+  background: linear-gradient(135deg, #FF6B35, #FF8C5A);
+  color: #fff; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0;
+}
+.label-text {
+  font-size: 21px; font-weight: 900; color: #c8860a;
+  letter-spacing: 0.5px; line-height: 1.2;
+}
+
+/* ── 数字行（单值型）── */
+.value-row { display: flex; align-items: baseline; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+.value-num {
+  font-size: 38px; font-weight: 900; color: #FF6B35;
+  line-height: 1; letter-spacing: -1px;
+}
+.value-unit { font-size: 14px; color: #bbb; font-weight: 500; }
+
+/* ── 数字行（列表型）── */
+.value-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.item-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #fff3e0; border: 1px solid #f5d090;
+  color: #c8860a; font-size: 12px; font-weight: 600;
+  padding: 4px 10px; border-radius: 20px;
+}
+.item-pill .mins { color: #aaa; font-weight: 400; font-size: 11px; }
+
+/* ── 暂无数据 ── */
+.value-empty { font-size: 16px; color: #ccc; font-weight: 600; margin-bottom: 10px; }
+
+/* ── 描述行 ── */
+.desc { font-size: 14px; color: #a08060; line-height: 1.55; padding-right: 10px; }
+
+/* 撑满版 */
+.fill-label { font-size: 22px; font-weight: 900; color: #c8860a; letter-spacing: 0.5px; line-height: 1.2; display: block; }
+.fill-value { font-size: 40px; font-weight: 900; color: #FF6B35; line-height: 1; letter-spacing: -1px; }
+.fill-desc { font-size: 14px; color: #a08060; line-height: 1.55; background: #f9f0e0; border-radius: 8px; padding: 8px 10px; display: block; }
+
+/* ripple */
+@keyframes rp { to { transform: scale(4); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="page-header">🏆 我的成就</div>
+<p class="page-sub">v2 — 复原 A-1 标准版（pill+label分离）· 右侧留白 · 1:2</p>
+
+<!-- 标准版 -->
+<div class="section-label">标准版 — pill + label 分离</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="label-text">变得更强</span>
+      </div>
+      <div class="value-row">
+        <span class="value-num">5</span><span class="value-unit">小时</span>
+        <span class="value-num">20</span><span class="value-unit">分钟</span>
+      </div>
+      <div class="desc">一屁股坐下去，笛子都认识你了！</div>
+    </div>
+  </div>
+</div>
+
+<!-- 撑满版 -->
+<div class="section-label">撑满版</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="fill-label">变得更强真的超厉害der～</span>
+      </div>
+      <div class="value-row">
+        <span class="fill-value">99</span><span class="value-unit">小时</span>
+        <span class="fill-value">59</span><span class="value-unit">分钟</span>
+      </div>
+      <span class="fill-desc">一屁股坐下去，笛子都认识你了！这句话的意思是说，当你坐在那里吹笛子的时候，甚至连笛子都能记住你的样子和气息啦！超厉害der～</span>
+    </div>
+  </div>
+</div>
+
+<!-- 类型2：X天 -->
+<div class="section-label">类型 2 — X天</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="label-text">连续吹爆</span>
+      </div>
+      <div class="value-row">
+        <span class="value-num">12</span><span class="value-unit">天</span>
+      </div>
+      <div class="desc">连续打卡，笛子都被你吹服了！</div>
+    </div>
+  </div>
+</div>
+
+<!-- 类型3：X分钟 -->
+<div class="section-label">类型 3 — X分钟</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="label-text">巅峰周</span>
+      </div>
+      <div class="value-row">
+        <span class="value-num">600</span><span class="value-unit">分钟</span>
+      </div>
+      <div class="desc">那一周，你就是时间管理大师！</div>
+    </div>
+  </div>
+</div>
+
+<!-- 类型3b：暂无数据 -->
+<div class="section-label">类型 3b — 暂无数据</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="label-text">巅峰周</span>
+      </div>
+      <div class="value-empty">暂无数据</div>
+      <div class="desc">那一周，你就是时间管理大师！</div>
+    </div>
+  </div>
+</div>
+
+<!-- 类型4：列表 -->
+<div class="section-label">类型 4 — 列表（最熟悉的你）</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="label-text">最熟悉的你</span>
+      </div>
+      <div class="value-list">
+        <span class="item-pill">月光<span class="mins">(120分钟)</span></span>
+        <span class="item-pill">彩云追月<span class="mins">(80分钟)</span></span>
+        <span class="item-pill">小城故事<span class="mins">(45分钟)</span></span>
+      </div>
+      <div class="desc">你跟这些曲目最熟，它们也最想你！</div>
+    </div>
+  </div>
+</div>
+
+<!-- 类型4：撑满版 -->
+<div class="section-label">类型 4 — 撑满版</div>
+<div class="ac-card">
+  <div class="card-a">
+    <div class="badge-wrap">
+      <img class="badge-img" src="https://cdn.fal.media/files/b/0a99e4d1/0uM0xQ_3RiS0v5tK_6sKLA_cache.png" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill">🏅 成就</span>
+        <span class="fill-label">最熟悉的你TOP3</span>
+      </div>
+      <div class="value-list">
+        <span class="item-pill">月光下想起故乡的笛声<span class="mins">(120分钟)</span></span>
+        <span class="item-pill">彩云追月<span class="mins">(80分钟)</span></span>
+        <span class="item-pill">小城故事<span class="mins">(45分钟)</span></span>
+        <span class="item-pill">牧羊曲<span class="mins">(30分钟)</span></span>
+      </div>
+      <span class="fill-desc">你跟这些曲目最熟，它们也最想你！这句话的意思是说，当你吹奏这些曲子时，笛子都会忍不住为你鼓掌！超厉害der～</span>
+    </div>
+  </div>
+</div>
+
+<div style="height:80px"></div>
+
+<script>
+document.querySelectorAll('.card-a').forEach((card, i) => {
+  gsap.fromTo(card, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, delay: i * 0.05, ease: 'back.out(1.6)' });
+  card.addEventListener('mouseenter', () => gsap.to(card, { y: -3, duration: 0.2, ease: 'power2.out' }));
+  card.addEventListener('mouseleave', () => gsap.to(card, { y: 0, duration: 0.25, ease: 'power2.out' }));
+  card.addEventListener('click', function(e) {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    const ripple = document.createElement('div');
+    ripple.style.cssText = `position:absolute;border-radius:50%;background:rgba(255,200,50,0.35);width:40px;height:40px;left:${x-20}px;top:${y-20}px;pointer-events:none;transform:scale(0);animation:rp 0.5s ease-out forwards`;
+    card.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  });
+});
+</script>
+</body>
+</html>

@@ -240,53 +240,65 @@ def _milestone_html():
     def _badge_img(bid: str) -> str:
         return f"<img src='/static/badges/{bid}.png' alt=''>"
 
-    def _card(bid: str, label: str, value: str, desc: str) -> str:
+    TAG_MAP = {
+        '突破':  '🌟 突破',
+        '执着':  '🔥 执着',
+        '巅峰':  '⚡ 巅峰',
+        '晋级':  '🎓 晋级',
+        '神秘':  '❓ 神秘',
+    }
+
+    def _card(bid: str, label: str, value: str, desc: str, tag: str = '🏆 成就') -> str:
+        pill_html = f"<span class='milestone-pill'>{TAG_MAP.get(tag, tag)}</span>"
         return (
-            f"<div class='milestone-card' data-badge='{bid}'>"
+            f"<div class='milestone-card' data-badge='{bid}' data-tag='{tag}'>"
             f"  <div class='milestone-badge-wrap'>{_badge_img(bid)}</div>"
             f"  <div class='milestone-info'>"
-            f"    <div class='milestone-label'>{label}</div>"
+            f"    <div class='milestone-label-row'>"
+            f"      {pill_html}"
+            f"      <span class='milestone-label'>{label}</span>"
+            f"    </div>"
             f"    <div class='milestone-value'>{value}</div>"
             f"    <div class='milestone-desc'>{desc}</div>"
             f"  </div>"
             f"</div>"
         )
 
-    # 1. 变得更强
+    # 1. 变得更强 — 突破
     h = total_mins // 60
     m = total_mins % 60
-    label = f"{h}小时{m}分钟"
-    desc = "一屁股坐下去，笛子都认识你了！"
-    items_html += _card('total_60', '变得更强', label, desc)
+    value1 = f"{h}小时{m}分钟"
+    desc1 = "一屁股坐下去，笛子都认识你了！"
+    items_html += _card('total_60', '变得更强', value1, desc1, tag='突破')
 
-    # 2. 连续吹爆
-    label2 = f"{streak}天"
+    # 2. 连续吹爆 — 执着
+    value2 = f"{streak}天"
     desc2 = "连续打卡，笛子都被你吹服了！"
-    items_html += _card('streak_3', '连续吹爆', label2, desc2)
+    items_html += _card('streak_3', '连续吹爆', value2, desc2, tag='执着')
 
-    # 3. 巅峰周
+    # 3. 巅峰周 — 巅峰
     if peak_week_mins > 0:
-        label3 = f"{peak_week_mins}分钟"
+        value3 = f"{peak_week_mins}分钟"
     else:
-        label3 = "暂无数据"
+        value3 = "暂无数据"
     desc3 = "那一周，你就是时间管理大师！"
-    items_html += _card('week_champ', '巅峰周', label3, desc3)
+    items_html += _card('week_champ', '巅峰周', value3, desc3, tag='巅峰')
 
-    # 4. 巅峰月
+    # 4. 巅峰月 — 巅峰
     if peak_month_mins > 0:
-        label4 = f"{peak_month_mins}分钟"
+        value4 = f"{peak_month_mins}分钟"
     else:
-        label4 = "暂无数据"
+        value4 = "暂无数据"
     desc4 = "整月打卡，整条街最亮的笛子就是你！"
-    items_html += _card('full_month', '巅峰月', label4, desc4)
+    items_html += _card('full_month', '巅峰月', value4, desc4, tag='巅峰')
 
-    # 5. 最熟悉的你 TOP3
+    # 5. 最熟悉的你 TOP3 — 突破
     if top_items:
-        top_html = ", ".join([f"{n}({mm}分钟)" for n, mm in top_items])
+        value5 = ", ".join([f"{n}({mm}分钟)" for n, mm in top_items])
     else:
-        top_html = "暂无数据"
+        value5 = "暂无数据"
     desc5 = "你跟这些曲目最熟，它们也最想你！"
-    items_html += _card('top1', '最熟悉的你', top_html, desc5)
+    items_html += _card('top1', '最熟悉的你', value5, desc5, tag='突破')
 
     return items_html
 
