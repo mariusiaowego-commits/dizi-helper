@@ -836,11 +836,12 @@ def badges_page():
     cur = conn.execute("SELECT COALESCE(SUM(total_minutes),0) FROM daily_practices")
     total_mins = cur.fetchone()[0]
 
-    # TOP 科目
+    # TOP 科目（仅未归档的活跃科目）
     cur = conn.execute("""
         SELECT pi.name, SUM(json_each.value->>'$.minutes') as m
         FROM daily_practices dp, json_each(dp.items)
         JOIN practice_items pi ON pi.item_id = json_each.value->>'$.item_id'
+        WHERE pi.is_archived = 0
         GROUP BY pi.name ORDER BY m DESC LIMIT 3
     """)
     top_items = [(r[0], int(r[1])) for r in cur.fetchall()]
@@ -937,36 +938,55 @@ def badges_page():
         **{f"grade_{n}": f"grade_{n}-u.png" for n in range(1, 11)},
     }
 
+    # condition 映射（非 top 类成就用静态文案）
+    CONDITIONS = {
+        "streak_1": "连续 ≥ 1 天",   "streak_3": "连续 ≥ 3 天",
+        "streak_7": "连续 ≥ 7 天",   "streak_14": "连续 ≥ 14 天",
+        "streak_30": "连续 ≥ 30 天", "streak_100": "连续 ≥ 100 天",
+        "total_60": "累计 ≥ 60 分钟",  "total_300": "累计 ≥ 300 分钟",
+        "total_600": "累计 ≥ 600 分钟", "total_1000": "累计 ≥ 1000 分钟",
+        "first_log": "完成第一次练习", "all_items": "同一天练所有科目",
+        "double": "同日 ≥ 2 次打卡",  "week_champ": "本周 ≥ 5 天",
+        "full_month": "当月每天打卡",
+    }
+
     def calc(aid):
         s = astats.get(aid, {})
-        if aid == "streak_1":   return (streak >= 1,    streak,    s.get("achieved_at"))
-        if aid == "streak_3":   return (streak >= 3,    streak,    s.get("achieved_at") if streak >= 3 else None)
-        if aid == "streak_7":   return (streak >= 7,    streak,    s.get("achieved_at") if streak >= 7 else None)
-        if aid == "streak_14":  return (streak >= 14,   streak,    s.get("achieved_at") if streak >= 14 else None)
-        if aid == "streak_30":  return (streak >= 30,   streak,    s.get("achieved_at") if streak >= 30 else None)
-        if aid == "streak_100": return (streak >= 100,  streak,    s.get("achieved_at") if streak >= 100 else None)
-        if aid == "total_60":   return (total_mins >= 60,   total_mins, s.get("achieved_at") if total_mins >= 60 else None)
-        if aid == "total_300":  return (total_mins >= 300,  total_mins, s.get("achieved_at") if total_mins >= 300 else None)
-        if aid == "total_600":  return (total_mins >= 600,  total_mins, s.get("achieved_at") if total_mins >= 600 else None)
-        if aid == "total_1000": return (total_mins >= 1000, total_mins, s.get("achieved_at") if total_mins >= 1000 else None)
-        if aid == "first_log":  return (total_mins > 0,    total_mins, s.get("achieved_at") if total_mins > 0 else None)
-        if aid == "all_items":  return (has_all_items,    1,          s.get("achieved_at") if has_all_items else None)
-        if aid == "double":     return (has_double,       1,          s.get("achieved_at") if has_double else None)
-        if aid == "week_champ": return (has_week_champ,   0,          s.get("achieved_at") if has_week_champ else None)
-        if aid == "full_month": return (has_full_month,   0,          s.get("achieved_at") if has_full_month else None)
+        cond = CONDITIONS.get(aid, "")
+
+        if aid == "streak_1":   return (streak >= 1,    streak,    None, s.get("achieved_at"), cond)
+        if aid == "streak_3":   return (streak >= 3,    streak,    None, s.get("achieved_at") if streak >= 3 else None, cond)
+        if aid == "streak_7":   return (streak >= 7,    streak,    None, s.get("achieved_at") if streak >= 7 else None, cond)
+        if aid == "streak_14":  return (streak >= 14,   streak,    None, s.get("achieved_at") if streak >= 14 else None, cond)
+        if aid == "streak_30":  return (streak >= 30,   streak,    None, s.get("achieved_at") if streak >= 30 else None, cond)
+        if aid == "streak_100": return (streak >= 100,  streak,    None, s.get("achieved_at") if streak >= 100 else None, cond)
+        if aid == "total_60":   return (total_mins >= 60,   total_mins, None, s.get("achieved_at") if total_mins >= 60 else None, cond)
+        if aid == "total_300":  return (total_mins >= 300,  total_mins, None, s.get("achieved_at") if total_mins >= 300 else None, cond)
+        if aid == "total_600":  return (total_mins >= 600,  total_mins, None, s.get("achieved_at") if total_mins >= 600 else None, cond)
+        if aid == "total_1000": return (total_mins >= 1000, total_mins, None, s.get("achieved_at") if total_mins >= 1000 else None, cond)
+        if aid == "first_log":  return (total_mins > 0,    total_mins, None, s.get("achieved_at") if total_mins > 0 else None, cond)
+        if aid == "all_items":  return (has_all_items,    1,          None, s.get("achieved_at") if has_all_items else None, cond)
+        if aid == "double":      return (has_double,       1,          None, s.get("achieved_at") if has_double else None, cond)
+        if aid == "week_champ": return (has_week_champ,   0,          None, s.get("achieved_at") if has_week_champ else None, cond)
+        if aid == "full_month": return (has_full_month,   0,          None, s.get("achieved_at") if has_full_month else None, cond)
         if aid in ("top1","top2","top3"):
             rank = int(aid[-1])
             ok = len(top_items) >= rank
-            return (ok, 0, s.get("achieved_at") if ok else None)
+            if ok:
+                items_summary = " / ".join([f"{n}({int(m)}分钟)" for n,m in top_items[:rank]])
+                cond = f"累计时长第 {rank}：{items_summary}"
+            else:
+                cond = f"累计时长第 {rank}"
+            return (ok, 0, None, s.get("achieved_at") if ok else None, cond)
         if aid.startswith("grade_"):
             row = astats.get(aid)
-            return (row["achieved"], row["val"], row["achieved_at"]) if row else (False, None, None)
-        return (False, 0, None)
+            return (row["achieved"], row["val"], None, row["achieved_at"], cond) if row else (False, None, None, None, cond)
+        return (False, 0, None, None, cond)
 
     # 构建 badge 列表，按已解锁/未解锁 + 最新获取时间降序
     badges = []
-    for (aid, name, ach_type, desc, condition) in ALL_ACHIEVEMENTS:
-        achieved, val, achieved_at = calc(aid)
+    for (aid, name, ach_type, desc, _) in ALL_ACHIEVEMENTS:
+        achieved, val, extra, achieved_at, condition = calc(aid)
         badges.append({
             "id": aid, "name": name, "typ": ach_type,
             "description": desc, "condition": condition,
