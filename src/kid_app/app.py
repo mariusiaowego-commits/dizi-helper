@@ -238,43 +238,55 @@ def _milestone_html():
     items_html = ""
 
     def _badge_img(bid: str) -> str:
-        return f"<img src='/static/badges/{bid}.png' alt='' style='width:40px;height:40px;object-fit:contain;'>"
+        return f"<img src='/static/badges/{bid}.png' alt=''>"
+
+    def _card(bid: str, label: str, value: str, desc: str) -> str:
+        return (
+            f"<div class='milestone-card' data-badge='{bid}'>"
+            f"  <div class='milestone-badge-wrap'>{_badge_img(bid)}</div>"
+            f"  <div class='milestone-info'>"
+            f"    <div class='milestone-label'>{label}</div>"
+            f"    <div class='milestone-value'>{value}</div>"
+            f"    <div class='milestone-desc'>{desc}</div>"
+            f"  </div>"
+            f"</div>"
+        )
 
     # 1. 变得更强
     h = total_mins // 60
     m = total_mins % 60
     label = f"{h}小时{m}分钟"
-    desc = "累计练习时长，笛子都为你骄傲！"
-    items_html += f"<div class='milestone-item'>{_badge_img('total_60')}<div><div class='milestone-label'>变得更强</div><div class='milestone-value'>{label}</div><div class='milestone-desc'>{desc}</div></div></div>"
+    desc = "一屁股坐下去，笛子都认识你了！"
+    items_html += _card('total_60', '变得更强', label, desc)
 
     # 2. 连续吹爆
     label2 = f"{streak}天"
-    desc2 = "最长连续练习天数，断掉也能接回来！"
-    items_html += f"<div class='milestone-item'>{_badge_img('streak_3')}<div><div class='milestone-label'>连续吹爆</div><div class='milestone-value'>{label2}</div><div class='milestone-desc'>{desc2}</div></div></div>"
+    desc2 = "连续打卡，笛子都被你吹服了！"
+    items_html += _card('streak_3', '连续吹爆', label2, desc2)
 
     # 3. 巅峰周
     if peak_week_mins > 0:
         label3 = f"{peak_week_mins}分钟"
     else:
         label3 = "暂无数据"
-    desc3 = "按练习周累计练习时长最高的那一周"
-    items_html += f"<div class='milestone-item'>{_badge_img('week_champ')}<div><div class='milestone-label'>巅峰周</div><div class='milestone-value'>{label3}</div><div class='milestone-desc'>{desc3}</div></div></div>"
+    desc3 = "那一周，你就是时间管理大师！"
+    items_html += _card('week_champ', '巅峰周', label3, desc3)
 
     # 4. 巅峰月
     if peak_month_mins > 0:
         label4 = f"{peak_month_mins}分钟"
     else:
         label4 = "暂无数据"
-    desc4 = "自然月纬度累计练习时长最高的那个月"
-    items_html += f"<div class='milestone-item'>{_badge_img('full_month')}<div><div class='milestone-label'>巅峰月</div><div class='milestone-value'>{label4}</div><div class='milestone-desc'>{desc4}</div></div></div>"
+    desc4 = "整月打卡，整条街最亮的笛子就是你！"
+    items_html += _card('full_month', '巅峰月', label4, desc4)
 
     # 5. 最熟悉的你 TOP3
     if top_items:
-        top_html = ", ".join([f"{n}({m}分钟)" for n, m in top_items])
+        top_html = ", ".join([f"{n}({mm}分钟)" for n, mm in top_items])
     else:
         top_html = "暂无数据"
-    desc5 = "累计练习时长最长的科目 TOP3"
-    items_html += f"<div class='milestone-item'>{_badge_img('top1')}<div><div class='milestone-label'>最熟悉的你</div><div class='milestone-value'>{top_html}</div><div class='milestone-desc'>{desc5}</div></div></div>"
+    desc5 = "你跟这些曲目最熟，它们也最想你！"
+    items_html += _card('top1', '最熟悉的你', top_html, desc5)
 
     return items_html
 

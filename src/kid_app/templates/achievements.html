@@ -71,16 +71,71 @@
     .board-diff { font-size: 11px; margin-top: 2px; color: #888; }
     .board-diff.up { color: #27AE60; }
 
-    /* ── 卡片3: 勋章展示 ── */
-    .milestone-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 0; border-bottom: 1px solid #f0f0f0;
+    /* ── 卡片3: 勋章展示（单列左右结构） ── */
+    .milestone-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
     }
-    .milestone-item:last-child { border-bottom: none; }
-    .milestone-icon { font-size: 28px; flex-shrink: 0; width: 44px; text-align: center; }
-    .milestone-label { font-size: 13px; font-weight: bold; color: #FF6B35; }
-    .milestone-value { font-size: 14px; color: #333; margin: 2px 0; }
-    .milestone-desc { font-size: 11px; color: #aaa; }
+
+    .milestone-card {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 22px 18px;
+      border-radius: 22px;
+      background: #fffdf8;
+      border: 2px solid #f5e8c0;
+      box-shadow: 0 4px 16px rgba(200,160,60,0.12);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .milestone-card::before {
+      content: '';
+      position: absolute;
+      top: -20px; left: -20px;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .milestone-card:hover {
+      box-shadow: 0 10px 32px rgba(200,160,60,0.26);
+      border-color: #f0c040;
+    }
+
+    .milestone-badge-wrap {
+      flex-shrink: 0;
+      width: 120px; height: 120px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      border-radius: 50%;
+      overflow: hidden;
+      box-shadow: 0 4px 14px rgba(180,140,20,0.3);
+    }
+    .milestone-badge-wrap img {
+      width: 120px; height: 120px;
+      object-fit: contain;
+    }
+    .milestone-info { flex: 1; min-width: 0; text-align: left; }
+    .milestone-label {
+      font-size: 18px; font-weight: 800; color: #c8860a;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .milestone-value { font-size: 16px; color: #333; margin-bottom: 6px; font-weight: 600; }
+    .milestone-desc { font-size: 13px; color: #a08060; font-style: italic; line-height: 1.4; }
+
+    .milestone-card .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,200,50,0.3);
+      transform: scale(0); animation: ripple-out 0.5s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes ripple-out {
+      to { transform: scale(4); opacity: 0; }
+    }
 
     /* ── 卡片4: 更多勋章入口 ── */
     .more-card {
@@ -146,8 +201,10 @@
 
   <!-- 卡片3: 勋章展示 -->
   <div class="ac-card" id="card-milestones">
-    <h3 style="font-size:15px;font-weight:bold;color:#333;margin:0 0 8px;">🏅 勋章展示</h3>
-    {{milestone_html}}
+    <h3 style="font-size:15px;font-weight:bold;color:#333;margin:0 0 10px;">🏅 勋章展示</h3>
+    <div class="milestone-grid">
+      {{milestone_html}}
+    </div>
   </div>
 
     <!-- 卡片4: 更多勋章入口 -->
@@ -170,6 +227,51 @@
         { opacity: 0, y: 20 },
         { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: "back.out(1.6)" }
       );
+
+      /* ── 勋章卡 GSAP 交互 ─────────────────────────── */
+      const milestoneCards = document.querySelectorAll('.milestone-card');
+
+      // hover: badge 弹跳 + 卡片微微上移
+      milestoneCards.forEach(card => {
+        const badgeWrap = card.querySelector('.milestone-badge-wrap');
+        if (!badgeWrap) return;
+
+        card.addEventListener('mouseenter', () => {
+          gsap.to(card, { y: -3, duration: 0.2, ease: 'power2.out' });
+          gsap.to(badgeWrap, {
+            scale: 1.15,
+            duration: 0.3,
+            ease: 'back.out(2.5)'
+          });
+        });
+
+        card.addEventListener('mouseleave', () => {
+          gsap.to(card, { y: 0, duration: 0.25, ease: 'power2.out' });
+          gsap.to(badgeWrap, {
+            scale: 1,
+            duration: 0.3,
+            ease: 'elastic.out(1, 0.5)'
+          });
+        });
+
+        // click: 涟漪扩散 + badge 快速缩放
+        card.addEventListener('click', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          const ripple = document.createElement('div');
+          ripple.className = 'ripple';
+          ripple.style.cssText = `left:${x - 20}px;top:${y - 20}px;width:40px;height:40px;`;
+          card.appendChild(ripple);
+          setTimeout(() => ripple.remove(), 600);
+
+          gsap.timeline()
+            .to(badgeWrap, { scale: 0.82, duration: 0.12, ease: 'power2.in' })
+            .to(badgeWrap, { scale: 1.12, duration: 0.18, ease: 'back.out(3)' })
+            .to(badgeWrap, { scale: 1, duration: 0.25, ease: 'elastic.out(1.2, 0.4)' });
+        });
+      });
     });
   </script>
 </body>
