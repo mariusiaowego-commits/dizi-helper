@@ -1,5 +1,25 @@
 # dizical vibe coding log
 
+## 2026-05-13 (Tue) — 勋章墙 v2 全部替换 Enamel Pin 风格
+
+### 本次完成
+- **FAL 生图修复**: Nous Portal 登录成功 + pip install fal_client，image_generate 工具恢复
+- **badge prompt 模板建立**: PRD 文档 `tqob/05-Coding/project-dizical/PRDs/勋章墙设计-生图prompt.md`，统一 Enamel Pin 风格
+- **20张 badge 全部重新生成**: 统一 Enamel Pin 3D 珐琅金属徽章风格（gold border + glossy enamel fills + 居中图标）
+- **prompt 记录规范化**: image-gen.md 记录 v1 废弃链 + v2 placeholder prompt + CDN URL + 本地路径
+- **PR #27 合并**: 22 files changed（20 PNG + image-gen.md 记录）
+
+### PR #27 内容
+1. `1261353` — SQLite并发修复 + achievements布局重构
+2. `2fe5a94` — 勋章墙 v2 Enamel Pin 风格全量替换（20 badge PNG）
+
+### 下次待办
+- 勋章可配置化（praise tab 勋章配置功能）
+- milestone 幽默描述优化
+- README 更新（badge 图床路径说明）
+
+---
+
 ## 2026-05-12 (Mon) — achievements 重构 + badge 生图
 
 ### 本次完成
