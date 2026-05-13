@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>成就卡片 v3 — 设计改进 Demo（保留动效）</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f0ede8; padding: 24px 12px 80px; }
+
+/* ── 页面结构 ── */
+.page-header { padding: 20px 4px 8px; font-size: 22px; font-weight: bold; color: #333; }
+.page-sub { font-size: 13px; color: #aaa; margin-bottom: 20px; padding: 0 4px; }
+.ac-card { background: #fff; border-radius: 20px; padding: 0; margin: 0 0 12px; }
+.section-label { font-size: 11px; font-weight: bold; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin: 28px 0 8px 4px; }
+
+/* ── 卡片主结构 ── */
+.card-v3 {
+  display: flex;
+  align-items: center;
+  padding: 28px 24px;
+  border-radius: 22px;
+  background: #fffdf8;
+  border: 2px solid #f5e8c0;
+  box-shadow: 0 4px 16px rgba(200,160,60,0.12);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  min-height: 180px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.card-v3:hover {
+  box-shadow: 0 10px 32px rgba(200,160,60,0.26);
+  border-color: #f0c040;
+}
+
+/* 已解锁：左上角光晕 */
+.card-v3.unlocked::before {
+  content: '';
+  position: absolute;
+  top: -20px; left: -20px;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* 未解锁：整体灰暗 + 锁图标 */
+.card-v3.locked {
+  border-color: #e8e4de;
+  background: #f8f6f2;
+  filter: saturate(0.35) brightness(0.95);
+}
+.card-v3.locked .badge-img { filter: grayscale(1) brightness(0.7); }
+.card-v3.locked .label-text { color: #bbb; }
+.card-v3.locked .value-num { color: #ccc; }
+.card-v3.locked .desc { color: #ccc; }
+
+.card-v3 .lock-icon {
+  position: absolute;
+  bottom: 14px; right: 16px;
+  width: 24px; height: 24px;
+  opacity: 0.5;
+}
+
+/* badge 容器 */
+.badge-wrap {
+  flex-shrink: 0;
+  width: 120px; height: 120px;
+  display: flex; align-items: center; justify-content: center;
+}
+.badge-img {
+  width: 120px; height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 10px rgba(180,140,20,0.4));
+  transition: filter 0.2s;
+}
+.card-v3:hover .badge-img {
+  filter: drop-shadow(0 6px 16px rgba(180,140,20,0.55));
+}
+
+/* 未解锁：整体灰化 */
+.card-v3.locked .badge-img {
+  filter: saturate(0) brightness(0.8) drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+  -webkit-filter: saturate(0) brightness(0.8) drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+}
+/* 未解锁 hover：恢复原色（稍暗） */
+.card-v3.locked:hover .badge-img {
+  filter: saturate(1) brightness(0.75) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+  -webkit-filter: saturate(1) brightness(0.75) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+}
+
+/* info 区 */
+.info {
+  flex: 1;
+  min-width: 0;
+  min-height: 120px;
+  max-width: 280px; /* 限制文字区最大宽度，避免在宽屏上拉得太开 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 40px;
+}
+
+/* 标签行 */
+.label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0;
+}
+.pill.type-突破 { background: linear-gradient(135deg, #FF6B35, #FF9B5A); }
+.pill.type-段位 { background: linear-gradient(135deg, #9b59b6, #c39bd3); }
+.pill.type-巅峰 { background: linear-gradient(135deg, #3498db, #85c1e9); }
+.pill.type-执着 { background: linear-gradient(135deg, #e67e22, #f0b27a); }
+.pill.type-神秘 { background: linear-gradient(135deg, #1abc9c, #76d7c4); }
+
+.label-text { font-size: 21px; font-weight: 800; color: #c8860a; letter-spacing: 0.5px; }
+
+/* 数字行 */
+.value-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+.value-num { font-size: 34px; font-weight: 900; color: #FF6B35; line-height: 1; letter-spacing: -0.5px; }
+.value-unit { font-size: 13px; color: #bbb; font-weight: 500; margin-right: 2px; }
+
+/* 列表型 */
+.value-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.item-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #fff8e8; border: 1.5px solid #f0c040;
+  border-radius: 20px; padding: 4px 10px;
+  font-size: 14px; color: #5a4020; font-weight: 600;
+}
+.item-pill .mins { font-size: 11px; color: #a08060; font-weight: 400; }
+
+/* 暂无数据 */
+.value-empty { font-size: 15px; color: #ccc; font-weight: 600; margin-bottom: 8px; }
+
+/* 描述 */
+.desc { font-size: 13px; color: #a08060; font-style: italic; line-height: 1.4; }
+
+/* ripple */
+.card-v3 .ripple {
+  position: absolute; border-radius: 50%;
+  background: rgba(255,200,50,0.3);
+  transform: scale(0);
+  animation: ripple-out 0.5s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes ripple-out { to { transform: scale(4); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="page-header">🏆 我的成就</div>
+<p class="page-sub">v3 — 金色光晕条 / 灰暗未解锁 / 120x120大徽章 / 保留生产动效</p>
+
+<!-- ══ 已解锁：累计型（display）══ -->
+<div class="section-label">已解锁 · 累计型（display）</div>
+<div class="ac-card">
+  <div class="card-v3 unlocked" data-id="total_60">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/total_60.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-突破">🏅 突破</span>
+        <span class="label-text">变得更强</span>
+      </div>
+      <div class="value-row">
+        <span class="value-num">92</span><span class="value-unit">小时</span>
+        <span class="value-num">46</span><span class="value-unit">分钟</span>
+      </div>
+      <div class="desc">一屁股坐下去，笛子都认识你了！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 已解锁：周冠军型（display）══ -->
+<div class="section-label">已解锁 · 巅峰周（display）</div>
+<div class="ac-card">
+  <div class="card-v3 unlocked" data-id="week_champ">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/week_champ.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-巅峰">🏅 巅峰</span>
+        <span class="label-text">巅峰周</span>
+      </div>
+      <div class="value-row">
+        <span class="value-num">251</span><span class="value-unit">分钟</span>
+      </div>
+      <div class="desc">那一周，你就是时间管理大师！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 已解锁：top1 列表型（display）══ -->
+<div class="section-label">已解锁 · 列表型（display）</div>
+<div class="ac-card">
+  <div class="card-v3 unlocked" data-id="top1">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/top1.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-突破">🏅 突破</span>
+        <span class="label-text">最熟悉的你</span>
+      </div>
+      <div class="value-list">
+        <span class="item-pill">基本功<span class="mins">(1245分钟)</span></span>
+        <span class="item-pill">歌曲 - 小节<span class="mins">(1199分钟)</span></span>
+        <span class="item-pill">歌曲 - 吹<span class="mins">(1052分钟)</span></span>
+      </div>
+      <div class="desc">你跟这些科目最熟，它们也最想你！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 已解锁：grade_1 段位型（milestone）══ -->
+<div class="section-label">已解锁 · 段位型（milestone）</div>
+<div class="ac-card">
+  <div class="card-v3 unlocked" data-id="grade_1">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/grade_1-u.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-段位">🏅 段位</span>
+        <span class="label-text">一级</span>
+      </div>
+      <div class="value-row">
+        <span class="value-num">2026</span><span class="value-unit">年</span>
+        <span class="value-num">07</span><span class="value-unit">月</span>
+        <span class="value-num">01</span><span class="value-unit">日</span>
+      </div>
+      <div class="desc">恭喜考取一级！竹笛之路，正式开始！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 未解锁：段位型 grade_5（milestone）══ -->
+<div class="section-label">未解锁 · 段位型（milestone）</div>
+<div class="ac-card">
+  <div class="card-v3 locked" data-id="grade_5">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/grade_5-u.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-段位">🏅 段位</span>
+        <span class="label-text">五级</span>
+      </div>
+      <div class="value-empty">暂未解锁</div>
+      <div class="desc">继续练习，下一个就是你！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 未解锁：累计型 first_log（milestone）══ -->
+<div class="section-label">未解锁 · 首次打卡型（milestone）</div>
+<div class="ac-card">
+  <div class="card-v3 locked" data-id="first_log">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/first_log.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-突破">🏅 突破</span>
+        <span class="label-text">第一声</span>
+      </div>
+      <div class="value-empty">暂未解锁</div>
+      <div class="desc">第一次吹响你的笛子！</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 未解锁：执着型 double（milestone）══ -->
+<div class="section-label">未解锁 · 执着型（milestone）</div>
+<div class="ac-card">
+  <div class="card-v3 locked" data-id="double">
+    <div class="badge-wrap">
+      <img class="badge-img" src="/static/badges/double.png" alt="">
+    </div>
+    <div class="info">
+      <div class="label-row">
+        <span class="pill type-执着">🏅 执着</span>
+        <span class="label-text">加练狂魔</span>
+      </div>
+      <div class="value-empty">暂未解锁</div>
+      <div class="desc">同一天两次练习，卷王诞生！</div>
+    </div>
+  </div>
+</div>
+
+<div style="height:80px"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // 卡片入场动画
+  const cards = document.querySelectorAll('.ac-card');
+  gsap.fromTo(cards,
+    { opacity: 0, y: 20 },
+    { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: 'back.out(1.6)' }
+  );
+
+  // 勋章卡交互
+  const milestoneCards = document.querySelectorAll('.card-v3');
+
+  milestoneCards.forEach(card => {
+    const badgeWrap = card.querySelector('.badge-wrap');
+    if (!badgeWrap) return;
+
+    // hover: 卡片上移 + badge 弹跳
+    card.addEventListener('mouseenter', () => {
+      gsap.to(card, { y: -3, duration: 0.2, ease: 'power2.out' });
+      gsap.to(badgeWrap, { scale: 1.15, duration: 0.3, ease: 'back.out(2.5)' });
+    });
+
+    card.addEventListener('mouseleave', () => {
+      gsap.to(card, { y: 0, duration: 0.25, ease: 'power2.out' });
+      gsap.to(badgeWrap, { scale: 1, duration: 0.3, ease: 'elastic.out(1, 0.5)' });
+    });
+
+    // click: 涟漪 + badge 挤压弹回
+    card.addEventListener('click', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      ripple.style.cssText = `left:${x - 20}px;top:${y - 20}px;width:40px;height:40px;`;
+      card.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+
+      gsap.timeline()
+        .to(badgeWrap, { scale: 0.82, duration: 0.12, ease: 'power2.in' })
+        .to(badgeWrap, { scale: 1.12, duration: 0.18, ease: 'back.out(3)' })
+        .to(badgeWrap, { scale: 1, duration: 0.25, ease: 'elastic.out(1.2, 0.4)' });
+    });
+  });
+});
+</script>
+</body>
+</html>
