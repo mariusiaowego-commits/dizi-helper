@@ -294,7 +294,11 @@ def _milestone_html():
 
     # 5. 最熟悉的你 TOP3 — 突破
     if top_items:
-        value5 = ", ".join([f"{n}({mm}分钟)" for n, mm in top_items])
+        pills = "".join(
+            f"<span class='item-pill'>{n}<span class='item-pill-mins'>{mm}分钟</span></span>"
+            for n, mm in top_items
+        )
+        value5 = f"<div class='item-pill-row'>{pills}</div>"
     else:
         value5 = "暂无数据"
     desc5 = "你跟这些曲目最熟，它们也最想你！"

@@ -138,6 +138,15 @@
     .milestone-value { font-size: 16px; color: #333; margin-bottom: 6px; font-weight: 600; }
     .milestone-desc { font-size: 13px; color: #a08060; font-style: italic; line-height: 1.4; }
 
+    .item-pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .item-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #fff8e8; border: 1.5px solid #f0c040;
+      border-radius: 20px; padding: 4px 10px;
+      font-size: 14px; color: #5a4020; font-weight: 600;
+    }
+    .item-pill-mins { font-size: 11px; color: #a08060; font-weight: 400; }
+
     .milestone-card .ripple {
       position: absolute; border-radius: 50%;
       background: rgba(255,200,50,0.3);
@@ -212,7 +221,7 @@
 
   <!-- 卡片3: 勋章展示 -->
   <div class="ac-card" id="card-milestones">
-    <h3 style="font-size:15px;font-weight:bold;color:#333;margin:0 0 10px;">🏅 勋章展示</h3>
+    <h3 style="font-size:15px;font-weight:bold;color:#333;margin:0 0 10px;">🏅 成就展示</h3>
     <div class="milestone-grid">
       {{milestone_html}}
     </div>

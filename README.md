@@ -58,11 +58,12 @@ dizical kid start
 
 **老科目归档**：已归档的小科目默认隐藏，可点击归档区按钮单独选择
 
-**成就徽章**：连续练习/累计时长达成后自动解锁，共 20 种 Enamel Pin 风格徽章：
+**成就徽章**：连续练习/累计时长/段位达成后自动解锁，共 30 种 Enamel Pin 风格徽章：
 - 连击系：`streak_1/3/7/14/30/100`（1天～100天）
 - 累计系：`total_60/300/600/1000`（60分钟起）
-- 特殊徽章：`first_log` 首次打卡、`double` 双倍练习、`week_champ` 本周冠军、`full_month` 全勤月、`all_items` 全部科目、`night_owl` 夜猫子、`one_breath` 一口气、`comeback` 回归练习、`song_end` 曲目完成
+- 段位系：`grade_1`～`grade_10`（一级～十级考级成就，已解锁一级）
 - 排行系：`top1/top2/top3` 练习时长前三
+- 特殊徽章：`first_log` 首次打卡、`double` 双倍练习、`week_champ` 本周冠军、`full_month` 全勤月、`all_items` 全部科目
 
 ```bash
 # 启动儿童界面（CLI 方式也可用）
