@@ -815,33 +815,32 @@ def achievements_page():
 
 @app.get("/badges", response_class=HTMLResponse)
 def badges_page():
-    """勋章墙完整页 — v3 卡片样式"""
+    """勋章墙完整页 — 音乐之旅成就"""
+    import json as _json
+
     today = dt.date.today()
     conn = db._get_connection()
 
-    # ── 统计数据 ──────────────────────────────────────────────
+    # ── 预取所有统计数据（单次查询）───────────────────────────
     # 连续天数
-    cur = conn.execute(
-        "SELECT date FROM daily_practices ORDER BY date DESC")
+    cur = conn.execute("SELECT date FROM daily_practices ORDER BY date DESC")
     dates = [r[0] for r in cur.fetchall()]
     streak = 0
     check = today
     for d in dates:
         if d == check.isoformat():
-            streak += 1
-            check -= dt.timedelta(days=1)
-        else:
-            break
+            streak += 1; check -= dt.timedelta(days=1)
+        else: break
 
     # 累计分钟
-    cur = conn.execute("SELECT SUM(total_minutes) FROM daily_practices")
-    total_mins = cur.fetchone()[0] or 0
+    cur = conn.execute("SELECT COALESCE(SUM(total_minutes),0) FROM daily_practices")
+    total_mins = cur.fetchone()[0]
 
     # TOP 科目
     cur = conn.execute("""
-        SELECT pi.name, SUM(json_each.value->'$.minutes') as m
+        SELECT pi.name, SUM(json_each.value->>'$.minutes') as m
         FROM daily_practices dp, json_each(dp.items)
-        JOIN practice_items pi ON pi.item_id = json_each.value->'$.item_id'
+        JOIN practice_items pi ON pi.item_id = json_each.value->>'$.item_id'
         GROUP BY pi.name ORDER BY m DESC LIMIT 3
     """)
     top_items = [(r[0], int(r[1])) for r in cur.fetchall()]
@@ -853,181 +852,143 @@ def badges_page():
     all_item_ids = set(r[0] for r in cur.fetchall())
     has_all_items = False
     if all_item_ids:
-        cur = conn.execute("SELECT date, json_each.value->'$.item_id' FROM daily_practices dp, json_each(dp.items)")
+        cur = conn.execute(
+            "SELECT date, json_each.value->>'$.item_id' FROM daily_practices dp, json_each(dp.items)")
         day_items = {}
         for day, item_id in cur.fetchall():
-            iid = item_id if isinstance(item_id, int) else None
-            if iid:
-                day_items.setdefault(day, set()).add(iid)
+            if item_id: day_items.setdefault(day, set()).add(item_id)
         has_all_items = any(day_items.get(d, set()) == all_item_ids for d in all_dates)
 
-    # 加练（同日≥2次）
-    cur = conn.execute("SELECT COUNT(*) FROM (SELECT date FROM daily_practices GROUP BY date HAVING COUNT(*)>=2)")
+    # 加练
+    cur = conn.execute(
+        "SELECT COUNT(*) FROM (SELECT date FROM daily_practices GROUP BY date HAVING COUNT(*)>=2)")
     has_double = cur.fetchone()[0] > 0
 
     # 满月
     has_full_month = False
-    cur = conn.execute("SELECT strftime('%Y-%m', date) as ym FROM daily_practices GROUP BY ym ORDER BY ym DESC LIMIT 1")
+    cur = conn.execute(
+        "SELECT strftime('%Y-%m', date) as ym FROM daily_practices GROUP BY ym ORDER BY ym DESC LIMIT 1")
     row = cur.fetchone()
     if row:
-        import calendar
+        import calendar as _cal
         y, m = map(int, row[0].split('-'))
-        _, days_in_month = calendar.monthrange(y, m)
-        cur = conn.execute("SELECT COUNT(DISTINCT date) FROM daily_practices WHERE strftime('%Y-%m', date)=?", (row[0],))
+        _, days_in_month = _cal.monthrange(y, m)
+        cur = conn.execute(
+            "SELECT COUNT(DISTINCT date) FROM daily_practices WHERE strftime('%Y-%m', date)=?",
+            (row[0],))
         has_full_month = cur.fetchone()[0] >= days_in_month
 
-    # 本周满5天（每天≥10分钟）
+    # 本周满5天
     week_start = today - dt.timedelta(days=today.weekday())
     cur = conn.execute("""
         SELECT COUNT(DISTINCT dp.date) FROM daily_practices dp, json_each(dp.items) je
-        WHERE dp.date >= ? AND dp.date <= ?
-        AND je.value->>'$.minutes' >= 10
+        WHERE dp.date >= ? AND dp.date <= ? AND je.value->>'$.minutes' >= 10
     """, (week_start.isoformat(), today.isoformat()))
     has_week_champ = cur.fetchone()[0] >= 5
 
-    # ── 预取 grade 数据（连接关闭前）───────────────────────────
+    # grade + 所有成就的达成状态和达成时间
     cur = conn.execute(
-        "SELECT achievement_id, achieved, computed_value FROM achievement_stats WHERE achievement_id LIKE 'grade_%'")
-    grade_stats = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
-    # 注意：不关闭 conn，因为它是单例共享连接
+        "SELECT achievement_id, achieved, achieved_at, computed_value FROM achievement_stats")
+    astats = {r[0]: {"achieved": r[1] == "Y", "achieved_at": r[2], "val": r[3]}
+              for r in cur.fetchall()}
 
-    # ── 28 个成就定义 ─────────────────────────────────────────
+    # ── 28 个成就定义 ────────────────────────────────────────
     ALL_ACHIEVEMENTS = [
-        # id, name, type, placeholder, condition, display_format, badge_file
-        ("streak_1",    "初试啼声",   "突破", "开始你的练习之旅！",           "连续 ≥ 1 天",   "days",         "streak_1.png"),
-        ("streak_3",    "小火焰",     "执着", "连续打卡，笛子都被你吹服了！",   "连续 ≥ 3 天",   "days",         "streak_3.png"),
-        ("streak_7",    "周冠军",     "执着", "坚持一周，你就是时间管理大师！",  "连续 ≥ 7 天",   "days",         "streak_7.png"),
-        ("streak_14",   "双周传说",   "执着", "两周坚持，传说初现！",           "连续 ≥ 14 天",  "days",         "streak_14.png"),
-        ("streak_30",   "月度王者",   "晋级", "整月打卡，王者风范！",           "连续 ≥ 30 天",  "days",         "streak_30.png"),
-        ("streak_100",  "百日传奇",   "晋级", "百日坚持，传奇诞生！",           "连续 ≥ 100 天", "days",         "streak_100.png"),
-        ("total_60",    "初露锋芒",   "突破", "一屁股坐下去，笛子都认识你了！", "累计 ≥ 60 分钟","time_hours",   "total_60.png"),
-        ("total_300",   "五小时战士", "突破", "五小时积累，小试牛刀！",         "累计 ≥ 300 分钟","time_hours",  "total_300.png"),
-        ("total_600",   "十小时大师", "巅峰", "十小时磨砺，大师初成！",         "累计 ≥ 600 分钟","time_hours",  "total_600.png"),
-        ("total_1000",  "千分钟传奇", "巅峰", "千分钟传奇前无古人！",           "累计 ≥ 1000 分钟","time_hours", "total_1000.png"),
-        ("first_log",   "第一声",     "突破", "第一次吹响你的笛子！",           "完成第一次练习","flag",         "first_log.png"),
-        ("all_items",   "全能选手",   "神秘", "全能选手，样样精通！",           "同一天练所有科目","flag",        "all_items.png"),
-        ("double",      "加练狂魔",   "执着", "同一天两次练习，卷王诞生！",     "同日 ≥ 2 次打卡","flag",        "double.png"),
-        ("week_champ",  "周末冠军",   "巅峰", "那一周，你就是时间管理大师！",    "本周 ≥ 5 天","minutes",       "week_champ.png"),
-        ("full_month",  "满月战士",   "巅峰", "整月打卡，整条街最亮的笛子！",   "当月每天打卡","flag",           "full_month.png"),
-        ("top1",        "TOP1 之王",  "突破", "你跟这些科目最熟，它们也最想你！","累计时长第 1","top_items",    "top1.png"),
-        ("top2",        "TOP2 卷王",  "突破", "练习时长第二多，同样出色！",     "累计时长第 2","top_items",    "top2.png"),
-        ("top3",        "TOP3 新星",  "突破", "练习时长第三名，新星升起！",     "累计时长第 3","top_items",    "top3.png"),
-        ("grade_1",     "一级",       "段位", "恭喜考取一级！竹笛之路，正式开始！","考取一级","date",        "grade_1-u.png"),
-        ("grade_2",     "二级",       "段位", "恭喜考取二级！",                  "考取二级","date",        "grade_2-u.png"),
-        ("grade_3",     "三级",       "段位", "恭喜考取三级！",                  "考取三级","date",        "grade_3-u.png"),
-        ("grade_4",     "四级",       "段位", "恭喜考取四级！",                  "考取四级","date",        "grade_4-u.png"),
-        ("grade_5",     "五级",       "段位", "恭喜考取五级！",                  "考取五级","date",        "grade_5-u.png"),
-        ("grade_6",     "六级",       "段位", "恭喜考取六级！",                  "考取六级","date",        "grade_6-u.png"),
-        ("grade_7",     "七级",       "段位", "恭喜考取七级！",                  "考取七级","date",        "grade_7-u.png"),
-        ("grade_8",     "八级",       "段位", "恭喜考取八级！",                  "考取八级","date",        "grade_8-u.png"),
-        ("grade_9",     "九级",       "段位", "恭喜考取九级！",                  "考取九级","date",        "grade_9-u.png"),
-        ("grade_10",    "十级",       "段位", "恭喜考取十级！",                 "考取十级","date",        "grade_10-u.png"),
+        # id, name, type, desc, condition
+        ("streak_1",   "初试啼声",  "突破", "开始你的练习之旅！",           "连续 ≥ 1 天"),
+        ("streak_3",   "小火焰",    "执着", "连续打卡，笛子都被你吹服了！",   "连续 ≥ 3 天"),
+        ("streak_7",   "周冠军",    "执着", "坚持一周，你就是时间管理大师！",  "连续 ≥ 7 天"),
+        ("streak_14",  "双周传说",  "执着", "两周坚持，传说初现！",            "连续 ≥ 14 天"),
+        ("streak_30",  "月度王者",  "晋级", "整月打卡，王者风范！",            "连续 ≥ 30 天"),
+        ("streak_100", "百日传奇",  "晋级", "百日坚持，传奇诞生！",            "连续 ≥ 100 天"),
+        ("total_60",   "初露锋芒",  "突破", "一屁股坐下去，笛子都认识你了！",  "累计 ≥ 60 分钟"),
+        ("total_300",  "五小时战士","突破", "五小时积累，小试牛刀！",          "累计 ≥ 300 分钟"),
+        ("total_600",  "十小时大师","巅峰", "十小时磨砺，大师初成！",          "累计 ≥ 600 分钟"),
+        ("total_1000", "千分钟传奇","巅峰", "千分钟传奇前无古人！",            "累计 ≥ 1000 分钟"),
+        ("first_log",  "第一声",    "突破", "第一次吹响你的笛子！",            "完成第一次练习"),
+        ("all_items",  "全能选手",  "神秘", "全能选手，样样精通！",            "同一天练所有科目"),
+        ("double",     "加练狂魔",  "执着", "同一天两次练习，卷王诞生！",      "同日 ≥ 2 次打卡"),
+        ("week_champ", "周末冠军",  "巅峰", "那一周，你就是时间管理大师！",     "本周 ≥ 5 天"),
+        ("full_month", "满月战士",  "巅峰", "整月打卡，整条街最亮的笛子！",    "当月每天打卡"),
+        ("top1",       "TOP1 之王","突破", "你跟这些科目最熟，它们也最想你！","累计时长第 1"),
+        ("top2",       "TOP2 卷王","突破", "练习时长第二多，同样出色！",        "累计时长第 2"),
+        ("top3",       "TOP3 新星","突破", "练习时长第三名，新星升起！",        "累计时长第 3"),
+        ("grade_1",   "一级",      "段位", "恭喜考取一级！竹笛之路，正式开始！","考取一级"),
+        ("grade_2",   "二级",      "段位", "恭喜考取二级！",                   "考取二级"),
+        ("grade_3",   "三级",      "段位", "恭喜考取三级！",                   "考取三级"),
+        ("grade_4",   "四级",      "段位", "恭喜考取四级！",                   "考取四级"),
+        ("grade_5",   "五级",      "段位", "恭喜考取五级！",                   "考取五级"),
+        ("grade_6",   "六级",      "段位", "恭喜考取六级！",                   "考取六级"),
+        ("grade_7",   "七级",      "段位", "恭喜考取七级！",                   "考取七级"),
+        ("grade_8",   "八级",      "段位", "恭喜考取八级！",                   "考取八级"),
+        ("grade_9",   "九级",      "段位", "恭喜考取九级！",                   "考取九级"),
+        ("grade_10",  "十级",      "段位", "恭喜考取十级！",                   "考取十级"),
     ]
 
-    # ── 计算每个成就的达成状态 + 数值 ─────────────────────────
-    def check_achievement(aid, display_fmt):
-        if aid == "streak_1":    return (streak >= 1,    streak,    None)
-        if aid == "streak_3":    return (streak >= 3,    streak,    None)
-        if aid == "streak_7":    return (streak >= 7,    streak,    None)
-        if aid == "streak_14":   return (streak >= 14,   streak,    None)
-        if aid == "streak_30":   return (streak >= 30,   streak,    None)
-        if aid == "streak_100":  return (streak >= 100,  streak,    None)
-        if aid == "total_60":    return (total_mins >= 60,  total_mins, None)
-        if aid == "total_300":   return (total_mins >= 300, total_mins, None)
-        if aid == "total_600":   return (total_mins >= 600, total_mins, None)
-        if aid == "total_1000":  return (total_mins >= 1000,total_mins, None)
-        if aid == "first_log":   return (total_mins > 0,  total_mins, None)
-        if aid == "all_items":   return (has_all_items,   1 if has_all_items else 0, None)
-        if aid == "double":      return (has_double,      1 if has_double else 0, None)
-        if aid == "week_champ":  return (has_week_champ,  0, None)
-        if aid == "full_month":  return (has_full_month,  0, None)
+    # badge 文件映射
+    BADGE_FILES = {
+        **{f"streak_{n}": f"streak_{n}.png" for n in [1,3,7,14,30,100]},
+        "total_60": "total_60.png", "total_300": "total_300.png",
+        "total_600": "total_600.png", "total_1000": "total_1000.png",
+        "first_log": "first_log.png", "all_items": "all_items.png",
+        "double": "double.png", "week_champ": "week_champ.png",
+        "full_month": "full_month.png",
+        "top1": "top1.png", "top2": "top2.png", "top3": "top3.png",
+        **{f"grade_{n}": f"grade_{n}-u.png" for n in range(1, 11)},
+    }
+
+    def calc(aid):
+        s = astats.get(aid, {})
+        if aid == "streak_1":   return (streak >= 1,    streak,    s.get("achieved_at"))
+        if aid == "streak_3":   return (streak >= 3,    streak,    s.get("achieved_at") if streak >= 3 else None)
+        if aid == "streak_7":   return (streak >= 7,    streak,    s.get("achieved_at") if streak >= 7 else None)
+        if aid == "streak_14":  return (streak >= 14,   streak,    s.get("achieved_at") if streak >= 14 else None)
+        if aid == "streak_30":  return (streak >= 30,   streak,    s.get("achieved_at") if streak >= 30 else None)
+        if aid == "streak_100": return (streak >= 100,  streak,    s.get("achieved_at") if streak >= 100 else None)
+        if aid == "total_60":   return (total_mins >= 60,   total_mins, s.get("achieved_at") if total_mins >= 60 else None)
+        if aid == "total_300":  return (total_mins >= 300,  total_mins, s.get("achieved_at") if total_mins >= 300 else None)
+        if aid == "total_600":  return (total_mins >= 600,  total_mins, s.get("achieved_at") if total_mins >= 600 else None)
+        if aid == "total_1000": return (total_mins >= 1000, total_mins, s.get("achieved_at") if total_mins >= 1000 else None)
+        if aid == "first_log":  return (total_mins > 0,    total_mins, s.get("achieved_at") if total_mins > 0 else None)
+        if aid == "all_items":  return (has_all_items,    1,          s.get("achieved_at") if has_all_items else None)
+        if aid == "double":     return (has_double,       1,          s.get("achieved_at") if has_double else None)
+        if aid == "week_champ": return (has_week_champ,   0,          s.get("achieved_at") if has_week_champ else None)
+        if aid == "full_month": return (has_full_month,   0,          s.get("achieved_at") if has_full_month else None)
         if aid in ("top1","top2","top3"):
             rank = int(aid[-1])
-            if len(top_items) >= rank:
-                return (True, 0, top_items[:rank])
-            return (False, 0, None)
-        # grade: 查预取的 grade_stats
+            ok = len(top_items) >= rank
+            return (ok, 0, s.get("achieved_at") if ok else None)
         if aid.startswith("grade_"):
-            row2 = grade_stats.get(aid)
-            if row2:
-                return (row2[0] == "Y", row2[1], None)
-            return (False, None, None)
+            row = astats.get(aid)
+            return (row["achieved"], row["val"], row["achieved_at"]) if row else (False, None, None)
         return (False, 0, None)
 
-    # ── 渲染单个卡片 ─────────────────────────────────────────
-    def render_card(aid, name, ach_type, desc, badge_file, display_fmt, achieved, val, extra):
-        cls = "card-v3 unlocked" if achieved else "card-v3 locked"
-        badge_url = f"/static/badges/{badge_file}"
-        pill_cls = f"pill type-{ach_type}"
-        pill_icon = {"突破":"🏅","执着":"🔥","巅峰":"🏆","神秘":"🌈","段位":"🎓","晋级":"⭐"}.get(ach_type,"🏅")
-        pill_html = f"<span class='{pill_cls}'>{pill_icon} {ach_type}</span>"
-        label_html = f"<span class='label-text'>{name}</span>"
+    # 构建 badge 列表，按已解锁/未解锁 + 最新获取时间降序
+    badges = []
+    for (aid, name, ach_type, desc, condition) in ALL_ACHIEVEMENTS:
+        achieved, val, achieved_at = calc(aid)
+        badges.append({
+            "id": aid, "name": name, "typ": ach_type,
+            "description": desc, "condition": condition,
+            "achieved": achieved, "achieved_at": achieved_at,
+            "badge_url": f"/static/badges/{BADGE_FILES.get(aid, 'medal_badge.png')}",
+        })
 
-        # 数值渲染
-        value_html = ""
-        if display_fmt == "days":
-            value_html = f"<span class='value-num'>{val}</span><span class='value-unit'>天</span>"
-        elif display_fmt == "time_hours":
-            h = val // 60
-            m = val % 60
-            if h > 0:
-                value_html = f"<span class='value-num'>{h}</span><span class='value-unit'>小时</span>"
-            if m > 0 or not value_html:
-                value_html += f"<span class='value-num'>{m}</span><span class='value-unit'>分钟</span>"
-        elif display_fmt == "minutes":
-            value_html = f"<span class='value-num'>{val}</span><span class='value-unit'>分钟</span>"
-        elif display_fmt == "date":
-            if val:
-                try:
-                    d = dt.date.fromisoformat(str(val))
-                    value_html = f"<span class='value-num'>{d.year}</span><span class='value-unit'>年</span><span class='value-num'>{d.month:02d}</span><span class='value-unit'>月</span><span class='value-num'>{d.day:02d}</span><span class='value-unit'>日</span>"
-                except:
-                    value_html = ""
-            else:
-                value_html = "<span class='value-empty'>—</span>"
-        elif display_fmt == "top_items" and extra:
-            items_html = "".join(
-                f"<span class='item-pill'>{name}<span class='mins'>({mins}分钟)</span></span>"
-                for name, mins in extra
-            )
-            value_html = f"<div class='value-list'>{items_html}</div>"
-        elif display_fmt == "flag":
-            value_html = "<span class='value-empty'>✓ 已达成</span>" if achieved else "<span class='value-empty'>—</span>"
+    # 分离已解锁/未解锁，各按 achieved_at 降序（None排最后）
+    def sort_key(b):
+        if b["achieved_at"] is None: return (1, "")  # 未解锁排后
+        return (0, b["achieved_at"])  # 已解锁按时间降序
 
-        if not value_html:
-            value_html = "<span class='value-empty'>—</span>"
+    unlocked = sorted([b for b in badges if b["achieved"]], key=sort_key, reverse=True)
+    locked   = sorted([b for b in badges if not b["achieved"]], key=sort_key, reverse=True)
+    sorted_badges = unlocked + locked
 
-        lock_icon = "<svg class='lock-icon' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='11' width='18' height='11' rx='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/></svg>" if not achieved else ""
+    total_count   = len(badges)
+    earned_count = len(unlocked)
 
-        return f"""
-    <div class="{cls}" data-id="{aid}">
-      <div class="badge-wrap">
-        <img class="badge-img" src="{badge_url}" alt="{name}" onerror="this.src='/static/badges/medal_badge.png'">
-      </div>
-      <div class="info">
-        <div class="label-row">{pill_html}{label_html}</div>
-        <div class="value-row">{value_html}</div>
-        <div class="desc">{desc}</div>
-      </div>
-      {lock_icon}
-    </div>"""
-
-    # ── 渲染全部卡片 ─────────────────────────────────────────
-    cards_html = []
-    earned_count = 0
-    for (aid, name, ach_type, desc, condition, display_fmt, badge_file) in ALL_ACHIEVEMENTS:
-        achieved, val, extra = check_achievement(aid, display_fmt)
-        if achieved:
-            earned_count += 1
-        cards_html.append(render_card(aid, name, ach_type, desc, badge_file, display_fmt, achieved, val, extra))
-
-    body_html = "\n".join(cards_html)
-    total_count = len(ALL_ACHIEVEMENTS)
-
-    return render(
-        "badges",
+    return render("badges",
         child_name=child_name(),
-        body_html=body_html,
+        data_json=_json.dumps(sorted_badges, ensure_ascii=False),
         total_count=total_count,
         earned_count=earned_count,
     )
