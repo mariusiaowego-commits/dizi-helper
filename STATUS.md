@@ -1,7 +1,9 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
 **最后更新**: 2026-05-13
-**当前阶段**: achievements 勋章卡重构完成（单列左右结构 + GSAP 交互 + spotlight 样式）
+**当前阶段**: achievements 勋章卡 v3 设计完成，待合并到生产模板
+
+## 阶段记录
 
 **历史分支**:
 - `feat/kid-ui-refresh` — Kid UI Phase 1: badge图片/praise返回按钮/练习记录删除，已合并
