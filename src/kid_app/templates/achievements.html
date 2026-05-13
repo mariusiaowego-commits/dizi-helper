@@ -71,74 +71,104 @@
     .board-diff { font-size: 11px; margin-top: 2px; color: #888; }
     .board-diff.up { color: #27AE60; }
 
-    /* ── 卡片3: 勋章展示（单列左右结构） ── */
+    /* ── 卡片3: 勋章展示（v3 单列左右结构） ── */
     .milestone-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
     }
 
-    .milestone-card {
+    /* v3 成就卡 */
+    .card-v3 {
       display: flex;
       align-items: center;
-      gap: 18px;
-      padding: 30px 22px;
+      padding: 28px 24px;
       border-radius: 22px;
       background: #fffdf8;
       border: 2px solid #f5e8c0;
       box-shadow: 0 4px 16px rgba(200,160,60,0.12);
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
       position: relative;
       overflow: hidden;
       min-height: 180px;
+      transition: box-shadow 0.2s, border-color 0.2s;
     }
-    .milestone-card::before {
+    .card-v3:hover {
+      box-shadow: 0 10px 32px rgba(200,160,60,0.26);
+      border-color: #f0c040;
+    }
+    /* 已解锁：左上角金色光晕 */
+    .card-v3.unlocked::before {
       content: '';
       position: absolute;
       top: -20px; left: -20px;
       width: 80px; height: 80px;
-      background: radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
       pointer-events: none;
     }
-    .milestone-card:hover {
-      box-shadow: 0 10px 32px rgba(200,160,60,0.26);
-      border-color: #f0c040;
+    /* 未解锁：整体灰暗 */
+    .card-v3.locked {
+      border-color: #e8e4de;
+      background: #f8f6f2;
+      filter: saturate(0.35) brightness(0.95);
     }
-
-    .milestone-badge-wrap {
+    .card-v3.locked .label-text,
+    .card-v3.locked .value-num,
+    .card-v3.locked .desc { color: #ccc; }
+    .card-v3 .lock-icon {
+      position: absolute;
+      bottom: 14px; right: 16px;
+      width: 24px; height: 24px;
+      opacity: 0.5;
+    }
+    /* badge 容器 */
+    .badge-wrap {
       flex-shrink: 0;
       width: 120px; height: 120px;
       display: flex; align-items: center; justify-content: center;
-      position: relative;
     }
-    .milestone-badge-wrap img {
+    .badge-img {
       width: 120px; height: 120px;
       object-fit: contain;
       filter: drop-shadow(0 4px 10px rgba(180,140,20,0.4));
+      transition: filter 0.2s;
     }
-    .milestone-info {
-      flex: 2; min-width: 0; text-align: left;
-      padding-left: 20px;
+    .card-v3:hover .badge-img {
+      filter: drop-shadow(0 6px 16px rgba(180,140,20,0.55));
     }
-    .milestone-label-row {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 10px;
+    /* 未解锁：灰化 */
+    .card-v3.locked .badge-img {
+      filter: saturate(0) brightness(0.8) drop-shadow(0 2px 6px rgba(0,0,0,0.15));
+      -webkit-filter: saturate(0) brightness(0.8) drop-shadow(0 2px 6px rgba(0,0,0,0.15));
     }
-    .milestone-pill {
-      display: inline-block;
-      background: linear-gradient(135deg, #FF6B35, #FF8C5A);
-      color: #fff; font-size: 11px; font-weight: 700;
-      padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0;
+    /* 未解锁 hover：恢复原色 */
+    .card-v3.locked:hover .badge-img {
+      filter: saturate(1) brightness(0.75) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+      -webkit-filter: saturate(1) brightness(0.75) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
     }
-    .milestone-label {
-      font-size: 21px; font-weight: 800; color: #c8860a;
-      letter-spacing: 0.5px;
+    /* info 区 */
+    .info {
+      flex: 1; min-width: 0;
+      min-height: 120px;
+      max-width: 280px;
+      display: flex; flex-direction: column; justify-content: center;
+      padding-left: 40px;
     }
-    .milestone-value { font-size: 16px; color: #333; margin-bottom: 6px; font-weight: 600; }
-    .milestone-desc { font-size: 13px; color: #a08060; font-style: italic; line-height: 1.4; }
-
-    .item-pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .type-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: #fff; font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0;
+    }
+    .type-pill.突破  { background: linear-gradient(135deg, #FF6B35, #FF9B5A); }
+    .type-pill.段位  { background: linear-gradient(135deg, #9b59b6, #c39bd3); }
+    .type-pill.巅峰  { background: linear-gradient(135deg, #3498db, #85c1e9); }
+    .type-pill.执着  { background: linear-gradient(135deg, #e67e22, #f0b27a); }
+    .type-pill.神秘  { background: linear-gradient(135deg, #1abc9c, #76d7c4); }
+    .label-text { font-size: 21px; font-weight: 800; color: #c8860a; letter-spacing: 0.5px; }
+    .value-num { font-size: 34px; font-weight: 900; color: #FF6B35; line-height: 1; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .value-unit { font-size: 13px; color: #bbb; font-weight: 500; margin-right: 2px; }
+    .value-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
     .item-pill {
       display: inline-flex; align-items: center; gap: 4px;
       background: #fff8e8; border: 1.5px solid #f0c040;
@@ -146,8 +176,8 @@
       font-size: 14px; color: #5a4020; font-weight: 600;
     }
     .item-pill-mins { font-size: 11px; color: #a08060; font-weight: 400; }
-
-    .milestone-card .ripple {
+    .desc { font-size: 13px; color: #a08060; font-style: italic; line-height: 1.4; }
+    .card-v3 .ripple {
       position: absolute; border-radius: 50%;
       background: rgba(255,200,50,0.3);
       transform: scale(0); animation: ripple-out 0.5s ease-out forwards;
@@ -248,12 +278,12 @@
         { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: "back.out(1.6)" }
       );
 
-      /* ── 勋章卡 GSAP 交互 ─────────────────────────── */
-      const milestoneCards = document.querySelectorAll('.milestone-card');
+      /* ── 勋章卡 GSAP 交互（v3） ─────────────────────────── */
+      const milestoneCards = document.querySelectorAll('.card-v3');
 
       // hover: badge 弹跳 + 卡片微微上移
       milestoneCards.forEach(card => {
-        const badgeWrap = card.querySelector('.milestone-badge-wrap');
+        const badgeWrap = card.querySelector('.badge-wrap');
         if (!badgeWrap) return;
 
         card.addEventListener('mouseenter', () => {

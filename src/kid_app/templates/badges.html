@@ -6,93 +6,197 @@
   <title>勋章墙 - 竹笛助手</title>
   <link rel="stylesheet" href="/static/style.css">
   <style>
-    body { padding-bottom: 30px; }
+    body { padding-bottom: 60px; }
     .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 12px 16px;
-      font-size: 16px;
-      color: #FF6B35;
-      text-decoration: none;
-      font-weight: bold;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 12px 16px; font-size: 16px; color: #FF6B35;
+      text-decoration: none; font-weight: bold;
     }
     .back-btn:active { opacity: 0.7; }
     .page-title {
-      padding: 0 16px 16px;
-      font-size: 24px;
-      font-weight: bold;
-      color: #333;
+      padding: 0 16px 20px; font-size: 28px; font-weight: bold; color: #333;
     }
-    .badge-section {
-      padding: 0 16px 20px;
+    .page-sub {
+      padding: 0 16px 24px; font-size: 13px; color: #aaa;
     }
-    .section-title {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 12px;
-      padding-bottom: 6px;
-      border-bottom: 2px solid transparent;
-    }
-    .section-title.common { color: #555; border-color: #ddd; }
-    .section-title.rare   { color: #7B68EE; border-color: #7B68EE; }
-    .section-title.legendary { color: #FF6B35; border-color: #FF6B35; }
 
-    .badge-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
+    /* ── 响应式网格 ── */
+    .badge-wall {
+      display: flex; flex-wrap: wrap;
+      gap: 14px; padding: 0 16px;
+    }
+
+    /* ── v3 卡片（勋章墙版：固定宽度方块）── */
+    .card-v3 {
+      flex: 1 0 calc(50% - 7px);
+      max-width: calc(50% - 7px);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 18px 12px 14px;
+      border-radius: 18px;
+      background: #fffdf8;
+      border: 2px solid #f5e8c0;
+      box-shadow: 0 3px 12px rgba(200,160,60,0.1);
+      cursor: pointer; position: relative; overflow: hidden;
+      min-height: 200px;
+      transition: box-shadow 0.2s, border-color 0.2s;
     }
     @media (min-width: 500px) {
-      .badge-grid { grid-template-columns: repeat(3, 1fr); }
+      .card-v3 { flex: 1 0 calc(33.33% - 10px); max-width: calc(33.33% - 10px); }
     }
     @media (min-width: 800px) {
-      .badge-grid { grid-template-columns: repeat(4, 1fr); }
+      .card-v3 { flex: 1 0 calc(25% - 11px); max-width: calc(25% - 11px); }
+    }
+    .card-v3:hover {
+      box-shadow: 0 8px 24px rgba(200,160,60,0.22);
+      border-color: #f0c040;
     }
 
-    .badge-cell {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      padding: 12px 6px;
-      border-radius: 16px;
-      background: #f9f9f9;
-      transition: transform 0.2s;
+    /* 已解锁：左上角光晕 */
+    .card-v3.unlocked::before {
+      content: '';
+      position: absolute; top: -20px; left: -20px;
+      width: 80px; height: 80px;
+      background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
+      pointer-events: none;
     }
-    .badge-cell.earned {
-      background: linear-gradient(135deg, #FFF8F0, #FFF0E0);
-      border: 2px solid #FFD700;
+
+    /* 未解锁：灰暗 */
+    .card-v3.locked {
+      border-color: #e8e4de; background: #f8f6f2;
+      filter: saturate(0.35) brightness(0.95);
     }
-    .badge-cell.locked {
-      opacity: 0.45;
-      filter: grayscale(0.6);
+    .card-v3.locked .label-text,
+    .card-v3.locked .value-num,
+    .card-v3.locked .desc { color: #bbb; }
+
+    /* badge 容器 */
+    .badge-wrap {
+      width: 88px; height: 88px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
     }
-    .badge-icon {
-      font-size: 36px;
-      line-height: 1;
-      margin-bottom: 6px;
+    .badge-img {
+      width: 88px; height: 88px; object-fit: contain;
+      filter: drop-shadow(0 3px 8px rgba(180,140,20,0.4));
+      transition: filter 0.2s;
     }
-    .badge-name {
-      font-size: 12px;
-      font-weight: bold;
-      color: #333;
-      margin-bottom: 3px;
+    .card-v3:hover .badge-img {
+      filter: drop-shadow(0 5px 14px rgba(180,140,20,0.55));
     }
-    .badge-cond {
-      font-size: 10px;
-      color: #999;
-      line-height: 1.3;
+    .card-v3.locked .badge-img {
+      filter: saturate(0) brightness(0.75) drop-shadow(0 2px 5px rgba(0,0,0,0.15));
+      -webkit-filter: saturate(0) brightness(0.75) drop-shadow(0 2px 5px rgba(0,0,0,0.15));
     }
-    .earned .badge-name { color: #FF6B35; }
+    .card-v3.locked:hover .badge-img {
+      filter: saturate(1) brightness(0.72) drop-shadow(0 2px 7px rgba(0,0,0,0.18));
+      -webkit-filter: saturate(1) brightness(0.72) drop-shadow(0 2px 7px rgba(0,0,0,0.18));
+    }
+
+    /* info 区 */
+    .info { width: 100%; text-align: center; }
+
+    /* 标签行 */
+    .label-row { display: flex; justify-content: center; align-items: center; gap: 5px; margin-bottom: 6px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 3px;
+      color: #fff; font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0;
+    }
+    .pill.type-突破 { background: linear-gradient(135deg, #FF6B35, #FF9B5A); }
+    .pill.type-段位 { background: linear-gradient(135deg, #9b59b6, #c39bd3); }
+    .pill.type-巅峰 { background: linear-gradient(135deg, #3498db, #85c1e9); }
+    .pill.type-执着 { background: linear-gradient(135deg, #e67e22, #f0b27a); }
+    .pill.type-神秘 { background: linear-gradient(135deg, #1abc9c, #76d7c4); }
+    .pill.type-晋级 { background: linear-gradient(135deg, #e74c3c, #f1948a); }
+
+    .label-text { font-size: 17px; font-weight: 800; color: #c8860a; letter-spacing: 0.5px; }
+
+    /* 数字行 */
+    .value-row { display: flex; justify-content: center; align-items: baseline; gap: 3px; margin-bottom: 5px; flex-wrap: wrap; }
+    .value-num { font-size: 26px; font-weight: 900; color: #FF6B35; line-height: 1; letter-spacing: -0.5px; }
+    .value-unit { font-size: 11px; color: #bbb; font-weight: 500; }
+
+    /* 列表型 */
+    .value-list { display: flex; flex-direction: column; gap: 3px; margin-bottom: 5px; }
+    .item-pill {
+      display: inline-flex; align-items: center; justify-content: space-between; gap: 4px;
+      background: #fff8e8; border: 1.5px solid #f0c040;
+      border-radius: 20px; padding: 3px 8px;
+      font-size: 11px; color: #5a4020; font-weight: 600;
+    }
+    .item-pill .mins { font-size: 10px; color: #a08060; font-weight: 400; white-space: nowrap; }
+
+    /* 暂无数据 */
+    .value-empty { font-size: 13px; color: #ccc; font-weight: 600; margin-bottom: 5px; }
+
+    /* 描述 */
+    .desc { font-size: 11px; color: #a08060; font-style: italic; line-height: 1.35; }
+
+    /* ripple */
+    .card-v3 .ripple {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,200,50,0.3);
+      transform: scale(0);
+      animation: ripple-out 0.5s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes ripple-out { to { transform: scale(4); opacity: 0; } }
+
+    /* 锁图标 */
+    .lock-icon {
+      position: absolute; bottom: 10px; right: 10px;
+      width: 20px; height: 20px; opacity: 0.4;
+    }
   </style>
 </head>
 <body>
   <a href="/achievements" class="back-btn">← 返回成就</a>
   <div class="page-title">🏅 勋章墙</div>
+  <div class="page-sub">共 {{total_count}} 枚勋章 · 已获得 {{earned_count}} 枚</div>
 
-  <div class="badge-section">
+  <div class="badge-wall">
     {{body_html}}
   </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const cards = document.querySelectorAll('.card-v3');
+    // 入场动画
+    gsap.fromTo(cards,
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.4, stagger: 0.04, ease: 'back.out(1.6)' }
+    );
+
+    cards.forEach(card => {
+      const badgeWrap = card.querySelector('.badge-wrap');
+
+      card.addEventListener('mouseenter', () => {
+        gsap.to(card, { y: -3, duration: 0.2, ease: 'power2.out' });
+        if (badgeWrap) gsap.to(badgeWrap, { scale: 1.15, duration: 0.3, ease: 'back.out(2.5)' });
+      });
+      card.addEventListener('mouseleave', () => {
+        gsap.to(card, { y: 0, duration: 0.25, ease: 'power2.out' });
+        if (badgeWrap) gsap.to(badgeWrap, { scale: 1, duration: 0.3, ease: 'elastic.out(1, 0.5)' });
+      });
+
+      card.addEventListener('click', (e) => {
+        const rect = card.getBoundingClientRect();
+        const ripple = document.createElement('div');
+        ripple.className = 'ripple';
+        ripple.style.cssText = `left:${e.clientX - rect.left - 20}px;top:${e.clientY - rect.top - 20}px;width:40px;height:40px;`;
+        card.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+
+        if (badgeWrap) {
+          gsap.timeline()
+            .to(badgeWrap, { scale: 0.82, duration: 0.12, ease: 'power2.in' })
+            .to(badgeWrap, { scale: 1.12, duration: 0.18, ease: 'back.out(3)' })
+            .to(badgeWrap, { scale: 1, duration: 0.25, ease: 'elastic.out(1.2, 0.4)' });
+        }
+      });
+    });
+  });
+  </script>
 </body>
 </html>
