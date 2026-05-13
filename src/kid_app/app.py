@@ -973,8 +973,8 @@ def badges_page():
             rank = int(aid[-1])
             ok = len(top_items) >= rank
             if ok:
-                items_summary = " / ".join([f"{n}({int(m)}分钟)" for n,m in top_items[:rank]])
-                cond = f"累计时长第 {rank}：{items_summary}"
+                name, mins = top_items[rank - 1]
+                cond = f"累计时长第 {rank}：{name}({int(mins)}分钟)"
             else:
                 cond = f"累计时长第 {rank}"
             return (ok, 0, None, s.get("achieved_at") if ok else None, cond)
