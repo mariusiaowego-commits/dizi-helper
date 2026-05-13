@@ -1,6 +1,32 @@
 # dizical vibe coding log
 
-## 2026-05-13 (Tue) — 勋章墙 v2 全部替换 Enamel Pin 风格
+## 2026-05-13 (Wed) — achievements 重构 + badge 文件损坏修复
+
+### 本次完成
+- **README 更新**：badge 列表 + kid_app 架构说明，补 PR #27 漏掉的文档
+- **milestone 俏皮描述**：5个 milestone 描述改为得瑟语气（"笛子都认识你了"/"时间管理大师"等）
+- **achievements 卡片重构**：单列左右结构 + 120×120 圆形 badge + GSAP hover弹跳/click缩放动画 + 金色 spotlight 样式
+
+
+- **PNG 文件损坏 + 修复**：`PR #27 squash merge` 导致 22 个 badge PNG blob 损坏存成旧丑版；从 `feat/achievements-badge-refresh` 分支 `2fe5a94` 强制覆盖修复；commit `8fadc8a`
+- **prompt 文档化**：`docs/badge-prompts.md` 记录 22 条 prompt（ID + CDN URL + placeholder）
+- **PNG 三地备份**：dev/ + iCloud TQ目录/ + iCloud Obsidian tqob/00-Artifacts/
+
+### Git Log（本次 session）
+| Commit | 内容 |
+|--------|------|
+| `47ff64c` | docs: update STATUS.md |
+| `5ff33d6` | docs: add handoff-2026-05-13 |
+| `8fffcd8` | docs: add enamel badge prompts v2 |
+| `c47365e` | feat(kid-ui): achievements milestone redesign |
+| `8fadc8a` | fix(kid-ui): restore enamel badge PNGs from PR branch |
+| `c253c24` | docs: update README badge list + kid_app architecture |
+
+### 下次待办
+- **transparency**：badge PNG 白底去背（PIL 去背，白→透明 RGBA）— 图片现在还是有白底
+- **勋章可配置化**：praise tab 勋章配置功能
+
+---
 
 ### 本次完成
 - **FAL 生图修复**: Nous Portal 登录成功 + pip install fal_client，image_generate 工具恢复
