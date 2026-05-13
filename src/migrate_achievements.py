@@ -202,6 +202,119 @@ ACHIEVEMENTS = [
         "display_format": "top_items",
         "threshold": 3,
     },
+    # ── 段位系（milestone）───────────────────────────────────────────
+    {
+        "id": "grade_1",
+        "name": "一级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过一级竹笛考级",
+        "description": "恭喜考取一级！",
+        "display_format": "achieved_flag",
+        "threshold": 1,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 1 on it, confetti and musical notes floating around, celebratory mood",
+        "achieved": "Y",
+        "achieved_at": "2026-07-01 00:00:00",
+    },
+    {
+        "id": "grade_2",
+        "name": "二级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过二级竹笛考级",
+        "description": "恭喜考取二级！",
+        "display_format": "achieved_flag",
+        "threshold": 2,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 2 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_3",
+        "name": "三级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过三级竹笛考级",
+        "description": "恭喜考取三级！",
+        "display_format": "achieved_flag",
+        "threshold": 3,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 3 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_4",
+        "name": "四级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过四级竹笛考级",
+        "description": "恭喜考取四级！",
+        "display_format": "achieved_flag",
+        "threshold": 4,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 4 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_5",
+        "name": "五级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过五级竹笛考级",
+        "description": "恭喜考取五级！",
+        "display_format": "achieved_flag",
+        "threshold": 5,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 5 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_6",
+        "name": "六级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过六级竹笛考级",
+        "description": "恭喜考取六级！",
+        "display_format": "achieved_flag",
+        "threshold": 6,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 6 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_7",
+        "name": "七级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过七级竹笛考级",
+        "description": "恭喜考取七级！",
+        "display_format": "achieved_flag",
+        "threshold": 7,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 7 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_8",
+        "name": "八级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过八级竹笛考级",
+        "description": "恭喜考取八级！",
+        "display_format": "achieved_flag",
+        "threshold": 8,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 8 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_9",
+        "name": "九级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过九级竹笛考级",
+        "description": "恭喜考取九级！",
+        "display_format": "achieved_flag",
+        "threshold": 9,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 9 on it, confetti and musical notes floating around, celebratory mood",
+    },
+    {
+        "id": "grade_10",
+        "name": "十级",
+        "type": "段位",
+        "category": "milestone",
+        "stat_logic": "通过十级竹笛考级",
+        "description": "恭喜考取十级！",
+        "display_format": "achieved_flag",
+        "threshold": 10,
+        "placeholder": "a cute Asian child with dark black hair, straight bangs, hair braided into buns on top sides with two short strands hanging down near ears, round face with baby fat, very fair porcelain skin, large expressive eyes looking at viewer, slight gentle smile, wearing a white polo shirt with pink collar and pink placket with white buttons, school uniform style, proudly holding a bamboo flute with red tassels, a golden certificate with the number 10 on it, confetti and musical notes floating around, celebratory mood",
+    },
 ]
 
 
@@ -258,25 +371,39 @@ def migrate():
         )
     """)
 
+    UNLOCKED_TPL = "An emoji-adjacent 3D enamel pin of [PLACEHOLDER]. Polished gold metal borders enclose flat, glossy enamel fills. The design is a centered, iconic illustration with a smooth, friendly silhouette and vibrant colors, matching a child achievement badge style. Studio lighting reflects off the reflective enamel and raised gold metal edges. Orthographic, straight-on view, high quality, isolated on a clean white background."
+    LOCKED_TPL = "An emoji-adjacent 3D enamel pin of [PLACEHOLDER]. Made of heavy dark brushed iron, monochromatic charcoal grey, non-reflective matte finish, rustic metal texture, no vibrant colors. The design is a centered, iconic illustration with a smooth, friendly silhouette. Orthographic, straight-on view, high quality, isolated on a clean white background."
+
     # ─── 写入 achievements ────────────────────────────────────────────
     for idx, a in enumerate(ACHIEVEMENTS, 1):
+        placeholder = a.get("placeholder", "")
         cur.execute("""
             INSERT INTO achievements
                 (id, name, type, category, stat_logic, description,
-                 display_format, threshold, sort_order)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 display_format, threshold,
+                 unlocked_template, placeholder, locked_template,
+                 sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             a["id"], a["name"], a["type"], a["category"],
             a["stat_logic"], a["description"], a["display_format"],
-            a["threshold"], idx,
+            a["threshold"],
+            UNLOCKED_TPL if placeholder else None,
+            placeholder if placeholder else None,
+            LOCKED_TPL if placeholder else None,
+            idx,
         ))
 
     # ─── 初始化 achievement_stats ────────────────────────────────────
     for a in ACHIEVEMENTS:
+        achieved = a.get("achieved", "N")
+        achieved_at = a.get("achieved_at")
+        computed = "1" if achieved == "Y" else None
         cur.execute("""
-            INSERT INTO achievement_stats (achievement_id, achieved, raw_stats, computed_value)
-            VALUES (?, 'N', '{}', NULL)
-        """, (a["id"],))
+            INSERT INTO achievement_stats
+                (achievement_id, achieved, achieved_at, raw_stats, computed_value)
+            VALUES (?, ?, ?, '{}', ?)
+        """, (a["id"], achieved, achieved_at, computed))
 
     # ─── 迁移现有 badge URL 到 achievement_badges ─────────────────────
     # 当前 achievements.unlocked_url / locked_url 的值全部迁入 achievement_badges
