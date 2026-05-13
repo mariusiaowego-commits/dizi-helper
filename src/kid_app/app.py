@@ -889,8 +889,7 @@ def badges_page():
     cur = conn.execute(
         "SELECT achievement_id, achieved, computed_value FROM achievement_stats WHERE achievement_id LIKE 'grade_%'")
     grade_stats = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
-
-    conn.close()
+    # 注意：不关闭 conn，因为它是单例共享连接
 
     # ── 28 个成就定义 ─────────────────────────────────────────
     ALL_ACHIEVEMENTS = [
