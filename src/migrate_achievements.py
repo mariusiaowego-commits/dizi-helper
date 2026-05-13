@@ -372,7 +372,7 @@ def migrate():
     """)
 
     UNLOCKED_TPL = "An emoji-adjacent 3D enamel pin of [PLACEHOLDER]. Polished gold metal borders enclose flat, glossy enamel fills. The design is a centered, iconic illustration with a smooth, friendly silhouette and vibrant colors, matching a child achievement badge style. Studio lighting reflects off the reflective enamel and raised gold metal edges. Orthographic, straight-on view, high quality, isolated on a clean white background."
-    LOCKED_TPL = "An emoji-adjacent 3D enamel pin of [PLACEHOLDER]. Made of heavy dark brushed iron, monochromatic charcoal grey, non-reflective matte finish, rustic metal texture, no vibrant colors. The design is a centered, iconic illustration with a smooth, friendly silhouette. Orthographic, straight-on view, high quality, isolated on a clean white background."
+    LOCKED_TPL = "An emoji-adjacent 3D enamel pin of a child figure silhouette, hair braided into buns on top, round head outline, holding a bamboo flute outline, certificate shape outline nearby, floating musical notes and confetti outlines around. Made of heavy dark brushed iron, monochromatic charcoal grey, non-reflective matte finish, rustic metal texture, no vibrant colors, no facial features, no body details, just smooth silhouette contours with subtle ambient occlusion at edges and periphery. The design is a centered, iconic outline illustration. Orthographic, straight-on view, high quality, isolated on a clean white background."
 
     # ─── 写入 achievements ────────────────────────────────────────────
     for idx, a in enumerate(ACHIEVEMENTS, 1):
