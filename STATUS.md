@@ -1,11 +1,12 @@
 # 🎵 dizical 竹笛课程管理助手 - 当前开发状态
 
-**最后更新**: 2026-05-13 22:45
-**当前阶段**: 勋章墙 v4 重构完成，弹窗/标签/列表排序/TOP科目展示全部上线
+**最后更新**: 2026-05-14 11:15
+**当前阶段**: achievements 锁卡灰化修复 + badges 入场动画 + items JSON 防御
 
 ## 阶段记录
 
-**今日提交 (2026-05-13)**:
+**今日提交 (2026-05-14)**:
+- `2da33a3` — fix: achievements locked card overlay - SVG b-lock sizing + grey mask; badges GSAP entrance; practice items JSON robustness
 - `c9d6c09` — feat: 勋章墙重构 - 音乐之旅成就/弹窗详情/克制标签/简化卡片/解锁排序
 - `b8c11dd` — fix: top2只展示第2名科目/top3只展示第3名科目
 - `3e0e7f2` — feat: 勋章墙标签样式/段位金/巅峰紫/突破红/执着蓝/晋级绿细体胶囊
