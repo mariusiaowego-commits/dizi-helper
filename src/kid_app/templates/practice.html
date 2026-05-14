@@ -8,13 +8,13 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
-    body { padding-bottom: 80px; }
+    body { padding-bottom: 0; }
 
     /* 固定底部导航 - 与 prepare 风格一致 */
     .nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       display: flex; gap: 4px;
-      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      padding: 8px 8px calc(env(safe-area-inset-bottom));
       background: var(--card, #fff); box-shadow: 0 -2px 12px rgba(0,0,0,0.1); z-index: 100;
     }
     .nav a {
@@ -179,11 +179,11 @@
       gap: 10px;
     }
     .item-btn {
-      width: 100%; min-width: 0; height: 56px; border: none;
+      width: 100%; min-width: 0; min-height: 60px; height: 60px; border: none;
       border-radius: 16px; font-size: 13px; font-weight: 700;
       font-family: inherit; color: white; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      text-align: center; padding: 0 4px; white-space: nowrap;
+      text-align: center; padding: 0 6px; white-space: normal;
       overflow: hidden; text-overflow: ellipsis;
       transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
       position: relative; overflow: visible;
@@ -225,7 +225,7 @@
     .archived-item-btn.selected { background: #FF6B6B; color: white; }
 
     /* 今日记录 */
-    .today-records { margin-top: 8px; }
+    .today-records { margin-top: 8px; padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
     .today-records h3 { font-size: 18px; color: #4ECDC4; margin-bottom: 10px; }
     .record-item { display: flex; align-items: center; justify-content: space-between; background: #FFF; border: 2px solid #E0E0E0; border-radius: 12px; padding: 12px 16px; margin-bottom: 8px; }
     .record-item .item-name { font-size: 16px; font-weight: bold; color: #333; }
@@ -339,7 +339,8 @@
         <button class="extra-btn" onclick="addExtraMins(30)">+30</button>
       </div>
       <div class="extra-custom">
-        <input type="number" id="extraCustomMins" placeholder="分钟" min="1" max="480">
+        <input type="number" id="extraCustomMins" min="1" max="480" value="10"
+          style="width:64px;padding:8px 10px;border:2px solid #7CB87C;border-radius:16px;font-size:15px;text-align:center;font-family:inherit;">
         <button class="extra-btn" onclick="addExtraFromInput()">添加</button>
       </div>
       <div id="extraLogList"></div>
@@ -403,6 +404,7 @@
     let timerRunning = false;
     let quickDuration = 10;
     let todayDate = "{{today_date}}";
+    let enterTime = new Date().toISOString();  // 行为日志：进入时间
 
     // ── 实时时钟 ──
     function updateClock() {
@@ -459,7 +461,7 @@
     function updateReqPanel(reqText) {
       const tip = document.getElementById('reqTip');
       if (reqText) {
-        tip.innerHTML = '<div class="req-label">🎯 老师要求</div><div class="req-highlight">' + reqText + '</div>';
+        tip.innerHTML = '<div class="req-label"></div><div class="req-highlight">' + reqText + '</div>';
       } else {
         tip.innerHTML = '<div class="req-empty">暂无老师要求<br>直接开始练习吧！</div>';
       }
@@ -523,7 +525,7 @@
       let res = await fetch('/api/log', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: quickDuration, log: ''})
+        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: quickDuration, log: '', behavior_log: [{enter_time: enterTime, item: selectedItem, minutes: quickDuration}]})
       });
       let json = await res.json();
       if (json.ok) {
@@ -573,7 +575,6 @@
       document.getElementById('startBtn').textContent = '开始';
       document.getElementById('confirmArea').classList.remove('show');
       document.getElementById('quickAddSection').classList.remove('open');
-      updateReqPanel('');
     }
 
     function toggleTimer() {
@@ -625,7 +626,7 @@
       let res = await fetch('/api/log', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: finalMins, log: ''})
+        body: JSON.stringify({date: todayDate, item: selectedItem, minutes: finalMins, log: '', behavior_log: [{enter_time: enterTime, item: selectedItem, minutes: finalMins}]})
       });
       let json = await res.json();
       if (json.ok) {
@@ -672,7 +673,7 @@
         let res = await fetch('/api/log', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({date: todayDate, item: selectedItem, minutes: mins, log: '', is_extra: true})
+          body: JSON.stringify({date: todayDate, item: selectedItem, minutes: mins, log: '', is_extra: true, behavior_log: [{enter_time: enterTime, item: selectedItem, minutes: mins}]})
         });
         let json = await res.json();
         if (json.ok) {

@@ -730,6 +730,28 @@ class Database:
                 ''', (date.isoformat(), json.dumps(items, ensure_ascii=False), total_minutes, log, practiced))
             conn.commit()
 
+    def append_behavior_log(self, date: dt.date, entry: Dict) -> None:
+        """追加一条行为日志到当天的 behavior_log JSON 数组（无记录则新建）"""
+        import json
+        if isinstance(date, str):
+            date = dt.date.fromisoformat(date)
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT behavior_log FROM daily_practices WHERE date = ?', (date.isoformat(),))
+            row = cursor.fetchone()
+            if row:
+                log_list = json.loads(row[0]) if row[0] else []
+            else:
+                log_list = []
+            log_list.append(entry)
+            # 无记录时 INSERT，有记录时 UPDATE
+            cursor.execute('''
+                INSERT INTO daily_practices (date, items, total_minutes, log, practiced, behavior_log)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(date) DO UPDATE SET behavior_log = excluded.behavior_log
+            ''', (date.isoformat(), '[]', 0, '', 'Y', json.dumps(log_list, ensure_ascii=False)))
+            conn.commit()
+
     @staticmethod
     def _normalize_items(raw) -> List[Dict]:
         """
@@ -800,7 +822,8 @@ class Database:
                     'items': self._normalize_items(row['items']),
                     'total_minutes': row['total_minutes'],
                     'log': row['log'],
-                    'practiced': row['practiced'] if 'practiced' in row.keys() else 'Y'
+                    'practiced': row['practiced'] if 'practiced' in row.keys() else 'Y',
+                    'behavior_log': json.loads(row['behavior_log']) if 'behavior_log' in row.keys() else [],
                 }
             return None
 
@@ -819,7 +842,8 @@ class Database:
                 'items': self._normalize_items(row['items']),
                 'total_minutes': row['total_minutes'],
                 'log': row['log'],
-                'practiced': row['practiced'] if 'practiced' in row.keys() else 'Y'
+                'practiced': row['practiced'] if 'practiced' in row.keys() else 'Y',
+                'behavior_log': json.loads(row['behavior_log']) if 'behavior_log' in row.keys() else [],
             } for row in cursor.fetchall()]
 
     # ─── Progress → daily_practices.log ───────────────────────────────────────

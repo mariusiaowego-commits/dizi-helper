@@ -490,7 +490,8 @@ def api_practice_day(date_str: str):
         "id": practice.get("id"),
         "items": practice.get("items", []),
         "total_minutes": practice.get("total_minutes", 0),
-        "log": practice.get("log", "")
+        "log": practice.get("log", ""),
+        "behavior_log": practice.get("behavior_log", []),
     })
 
 # ─── API: 练习项目列表 ─────────────────────────────────────────────────────
@@ -523,6 +524,7 @@ async def api_log(request: Request):
         minutes = int(body.get("minutes", 0))
         log_note = body.get("log", "")
         is_extra = body.get("is_extra", False)
+        behavior_entries = body.get("behavior_log", [])  # [{enter_time, item, minutes}, ...]
 
         date = dt.date.fromisoformat(date_str) if date_str else dt.date.today()
 
@@ -551,6 +553,11 @@ async def api_log(request: Request):
         items = [{"item": item_name, "minutes": minutes}]
         total = minutes  # save_daily_practice 会重新计算，这里只作返回值参考
         db.save_daily_practice(date, items, total, log_note)
+
+        # 打卡成功后，追加行为日志（在 save_daily_practice 之后）
+        for entry in behavior_entries:
+            db.append_behavior_log(date, entry)
+
         return JSONResponse({"ok": True, "total": total})
 
     except Exception as e:
@@ -611,7 +618,6 @@ def gsap_demo():
 
 ENCOURAGEMENTS = [
     "今天也要加油哦！💪",
-    "练习是最好的礼物 🎁",
     "吹笛子真好听 🎵",
     "坚持就是胜利 🏆",
     "爸爸相信你！🌟",
@@ -755,6 +761,7 @@ def prepare_page():
         weekday=weekday_names[today.weekday()],
         streak=streak_days(),
         encouragement=_daily_encouragement(),
+        enc_list_json=json.dumps(_get_bless_pool()),
         steps_html=_build_steps_html(PREPARE_STEPS),
         assign_eyebrow=assign_eyebrow,
         assign_title=assign_title,
@@ -1135,16 +1142,16 @@ def report_page():
         mins = p["total_minutes"] if p else 0
         if mins == 0:
             cls = "cal-day"
-            label = str(d)
+            label = '<span class="day-num">' + str(d) + '</span><span class="sel-bar"></span>'
         elif mins < 20:
             cls = "cal-day low"
-            label = str(d) + "<br><small>" + str(mins) + "m</small>"
+            label = '<span class="day-num">' + str(d) + '<br><small>' + str(mins) + 'm</small></span><span class="sel-bar"></span>'
         elif mins < 40:
             cls = "cal-day mid"
-            label = str(d) + "<br><small>" + str(mins) + "m</small>"
+            label = '<span class="day-num">' + str(d) + '<br><small>' + str(mins) + 'm</small></span><span class="sel-bar"></span>'
         else:
             cls = "cal-day high"
-            label = str(d) + "<br><small>" + str(mins) + "m</small>"
+            label = '<span class="day-num">' + str(d) + '<br><small>' + str(mins) + 'm</small></span><span class="sel-bar"></span>'
         if day_date == today:
             cls += " today"
         cal_html += "<div class='" + cls + "' data-date='" + key + "'>" + label + "</div>"

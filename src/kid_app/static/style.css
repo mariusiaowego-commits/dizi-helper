@@ -188,12 +188,49 @@ body {
   border-radius: 8px;
   font-size: 14px;
   min-height: 50px;
+  position: relative;
+  transition: background 0.15s;
 }
 .cal-day.empty { background: transparent; }
 .cal-day.low { background: #E8F5E9; color: var(--success); }
 .cal-day.mid { background: #FFF8E1; color: #F57C00; }
 .cal-day.high { background: #FFEBEE; color: var(--primary); }
-.cal-day.today { border: 3px solid var(--primary); font-weight: bold; }
+.cal-day.today::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: #00695C;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+/* 已选中格子：背景提亮 + 左侧竖条 */
+.cal-day.selected {
+  background: #FFFDE7 !important;
+  color: #E65100 !important;
+  font-weight: bold;
+}
+/* 竖条：默认隐藏（scaleY=0），selected 时显示 */
+.sel-bar {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #FF6B6B;
+  border-radius: 3px 0 0 3px;
+  z-index: 2;
+  transform: scaleY(0);
+  transform-origin: top center;
+  transition: none; /* GSAP 接管 */
+}
+.cal-day.selected .sel-bar {
+  transform: scaleY(1);
+}
 
 /* 表扬海报页 */
 .praise-type {

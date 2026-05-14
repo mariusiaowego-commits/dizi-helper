@@ -95,14 +95,20 @@
 
   .hero-meta {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-size: 0.95rem;
+    gap: 8px;
     color: var(--text-light);
     margin-bottom: 24px;
     opacity: 0;
     transform: translateY(16px);
+  }
+
+  .hero-date {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.02em;
   }
 
   .hero-meta .streak-badge {
@@ -123,6 +129,22 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
+  .hero-quick-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    text-decoration: none;
+    opacity: 0.5;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: opacity 0.2s;
+    z-index: 10;
+  }
+  .hero-quick-btn:hover { opacity: 1; }
+  .hero-quick-btn:active { opacity: 0.7; }
 
   /* ── tap-scroll hint (hero only) ─────────────── */
   .tap-hint {
@@ -159,7 +181,7 @@
 
   /* ── steps section ──────────────────────────────── */
   .steps-section {
-    padding: 72px 24px 100px;
+    padding: 36px 24px 24px;
     max-width: 680px;
     margin: 0 auto;
   }
@@ -184,10 +206,10 @@
 
   .step-card {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     align-items: center;
-    margin-bottom: 20px;
-    padding: 24px 28px;
+    margin-bottom: 16px;
+    padding: 16px 20px;
     background: var(--white);
     border-radius: var(--radius-lg);
     box-shadow: 0 2px 16px rgba(0,0,0,0.06);
@@ -258,7 +280,7 @@
 
   /* ── assignment reveal ──────────────────────────── */
   .assignment-section {
-    padding: 0 24px 80px;
+    padding: 0 24px 16px;
     max-width: 680px;
     margin: 0 auto;
   }
@@ -380,6 +402,31 @@
   .btn-start .arrow { font-size: 1.2rem; transition: transform 0.2s ease; }
   .btn-start:hover .arrow { transform: translateX(4px); }
 
+  /* ── cta float button (sticky at bottom of assignment card) ── */
+  .cta-float-wrap {
+    padding: 0 24px 16px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .cta-float-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 14px 24px;
+    background: var(--rose, #e8a4ac);
+    color: var(--white);
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 50px;
+    text-decoration: none;
+    box-shadow: 0 2px 12px rgba(232,180,188,0.35);
+    cursor: pointer;
+    border: none;
+    margin-top: 12px;
+    visibility: hidden;
+  }
+  .cta-float-btn:active { opacity: 0.85; }
+
   /* ── 全局浮动 tap 提示 ─────────────────────────── */
   #floatingTap {
     position: fixed;
@@ -484,14 +531,18 @@
 
 <!-- ── HERO ─────────────────────────────────── -->
 <section class="hero" id="hero">
+  <a href="/practice" class="hero-quick-btn" title="直达练习">开始练习 →</a>
+
   <p class="hero-eyebrow">{{eyebrow}}</p>
 
-  <h1 class="hero-bless" id="heroBless">
+  <h1 class="hero-bless" id="heroBless"
+     data-enc-list='{{enc_list_json}}'
+     onclick="cycleEncouragement()">
     {{bless_main}}<br><span class="accent">{{bless_accent}}</span>
   </h1>
 
   <div class="hero-meta">
-    <span>{{weekday}} · {{today_str}}</span>
+    <span class="hero-date">{{weekday}} · {{today_str}}</span>
     <span class="streak-badge">🔥 {{streak}}天连续</span>
   </div>
 
@@ -527,18 +578,6 @@
   </div>
 </section>
 
-<!-- ── CTA ─────────────────────────────────── -->
-<section class="cta-section" id="ctaSection">
-  <div class="cta-content">
-    <h2 class="cta-title">{{cta_title}}</h2>
-    <p class="cta-sub">{{cta_sub}}</p>
-    <a href="/practice" class="btn-start" id="btnStart">
-      {{cta_btn_text}}
-      <span class="arrow">→</span>
-    </a>
-  </div>
-</section>
-
 <!-- ── 全局浮动 tap 提示 ─────────────────────── -->
 <div id="floatingTap" onclick="scrollToNextSection()">
   <span>点击继续</span>
@@ -547,6 +586,13 @@
     <div class="chevron"></div>
     <div class="chevron"></div>
   </div>
+</div>
+
+<!-- ── CTA 浮动按钮 ─────────────────────────── -->
+<div class="cta-float-wrap">
+  <a href="/practice" class="cta-float-btn" id="ctaFloatBtn">
+    {{cta_btn_text}} →
+  </a>
 </div>
 
 <script>
@@ -559,6 +605,7 @@ heroTl
   .to('.hero-bless',   { opacity: 1, y: 0, duration: 0.85, ease: 'power3.out' }, '-=0.4')
   .to('.hero-meta',    { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.5')
   .to('.hero-sub',     { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.4')
+  .to('.hero-quick-btn', { opacity: 0.5, duration: 0.4 }, '-=0.3')
   .to('.tap-hint',     { opacity: 1, duration: 0.5, ease: 'power2.out' }, '-=0.2');
 
 // ── Section labels ────────────────────────────
@@ -607,14 +654,19 @@ gsap.to('.assignment-card', {
   },
 });
 
-// ── CTA ──────────────────────────────────────
-gsap.to('.cta-content', {
-  opacity: 1, y: 0, duration: 0.8, ease: 'power3.out',
-  scrollTrigger: { trigger: '.cta-section', start: 'top 76%' },
-});
-gsap.to('#btnStart', {
-  opacity: 1, y: 0, duration: 0.7, ease: 'back.out(1.4)',
-  scrollTrigger: { trigger: '.cta-section', start: 'top 72%' },
+// ── CTA 浮动按钮：滚动到 steps 后延迟 2s 再滑入 ──
+ScrollTrigger.create({
+  trigger: '.steps-section',
+  start: 'top 60%',
+  once: true,
+  onEnter: () => {
+    setTimeout(() => {
+      gsap.fromTo('#ctaFloatBtn',
+        { y: 30, visibility: 'visible' },
+        { y: 0, duration: 0.45, ease: 'back.out(1.7)' }
+      );
+    }, 2000);
+  },
 });
 
 // ── 点击 step card → 切换勾选状态 ─────────────
@@ -701,6 +753,7 @@ document.addEventListener('click', (e) => {
   if (tag === 'A' || tag === 'BUTTON' || e.target.closest('button') || e.target.closest('a')) return;
   if (e.target.closest('.step-card')) return;
   if (e.target.closest('#floatingTap')) return;
+  if (e.target.closest('.hero-bless')) return;
   scrollToNextSection();
 }, { passive: true });
 
@@ -712,5 +765,32 @@ document.addEventListener('keydown', (e) => {
   }
 });
 </script>
+
+<script>
+// 鼓励语点击切换
+let _encIdx = 0;
+function cycleEncouragement() {
+  const el = document.getElementById('heroBless');
+  if (!el) return;
+  const list = JSON.parse(el.dataset.encList || '[]');
+  if (list.length < 2) return;
+  _encIdx = (_encIdx + 1) % list.length;
+  const b = list[_encIdx];
+
+  gsap.to(el, {
+    scale: 1.12,
+    duration: 0.08,
+    ease: 'power2.in',
+    onComplete: () => {
+      el.innerHTML = b.main + '<br><span class="accent">' + b.accent + '</span>';
+      gsap.fromTo(el,
+        { scale: 0.88, opacity: 0.6 },
+        { scale: 1, opacity: 1, duration: 0.38, ease: 'back.out(2.2)' }
+      );
+    }
+  });
+}
+</script>
+
 </body>
 </html>
