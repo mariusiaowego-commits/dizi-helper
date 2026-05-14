@@ -134,26 +134,14 @@
       background: #fffdf8;
       border: 1.5px solid #ece8e0;
     }
-    /* 锁卡：灰色置灰遮罩盖住徽章区域 */
-    .b-card.locked .b-img-wrap::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 0;
-      background: rgba(200, 195, 185, 0.55);
-      z-index: 1;
-      pointer-events: none;
-    }
+    /* 锁卡：CSS filter 直接灰化原图，简单可靠 */
     .b-card.locked .b-name { color: #bbb; }
-    /* 锁卡：原图展示，仅降低不透明度表明未解锁 */
-    .b-card.locked .b-img-wrap {
-      background-color: #fffdf8;  /* 盖住图片边缘半透明像素 */
-    }
     .b-card.locked .b-img {
-      opacity: 0.55;
-      filter: none;
-      position: relative;
-      z-index: 2;
+      opacity: 0.65;
+      filter: grayscale(1) brightness(1.05);
+    }
+    .b-card.locked .b-img-wrap {
+      background-color: #fffdf8;
     }
 
     /* 120×120徽章 */
