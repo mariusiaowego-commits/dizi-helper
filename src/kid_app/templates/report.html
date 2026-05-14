@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
-    body { padding-bottom: 80px; }
+    body { padding-bottom: 0; }
     .nav {
       position: fixed; bottom: 0; left: 0; right: 0;
       display: flex; gap: 4px;
@@ -25,6 +25,7 @@
   </style>
 </head>
 <body>
+<div class="page-content" style="padding-bottom: calc(60px + env(safe-area-inset-bottom));">
   <div class="nav">
     <a href="/prepare" class="nav-item"><span class="nav-icon">🏠</span><span>准备</span></a>
     <a href="/practice" class="nav-item"><span class="nav-icon">🎵</span><span>练习</span></a>
@@ -45,7 +46,7 @@
         <div style="font-size:13px;color:#7F8C8D;">练习天数</div>
       </div>
     </div>
-    <div style="margin-bottom:8px;font-weight:bold;color:#7F8C8D;">日</div>
+    <div style="margin-bottom:8px;color:#7F8C8D;">日</div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;margin-bottom:4px;font-size:13px;color:#7F8C8D;font-weight:bold;">
       <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
     </div>
@@ -72,9 +73,25 @@ document.addEventListener('DOMContentLoaded', function() {
     cell.addEventListener('click', function() {
       var date = this.getAttribute('data-date');
       if (!date) return;
-      // 移除其他选中态
+      // 选中态切换
+      var prev = document.querySelector('.cal-day.selected');
       document.querySelectorAll('.cal-day.selected').forEach(function(c){ c.classList.remove('selected'); });
       this.classList.add('selected');
+
+      // 清除旧 bar 的 GSAP inline transform（让 CSS scaleY(0) 生效）
+      if (prev) {
+        var oldBar = prev.querySelector('.sel-bar');
+        if (oldBar) {
+          gsap.killTweensOf(oldBar);
+          oldBar.style.transform = 'scaleY(0)';
+        }
+      }
+
+      // 新格子竖条弹入
+      var bar = this.querySelector('.sel-bar');
+      if (bar) {
+        gsap.fromTo(bar, { scaleY: 0 }, { scaleY: 1, duration: 0.22, ease: 'back.out(2.2)' });
+      }
       // 加载明细
       var detailDiv = document.getElementById('dayDetail');
       detailDiv.style.display = 'block';
@@ -82,23 +99,162 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('detailItems').innerHTML = '';
       document.getElementById('detailLog').textContent = '';
       document.getElementById('detailEmpty').textContent = '加载中...';
-      fetch('/api/practices/' + date)
-        .then(function(r){ return r.json(); })
-        .then(function(data) {
-          if (data.total_minutes === 0 || (Array.isArray(data.items) && data.items.length === 0)) {
-            document.getElementById('detailEmpty').textContent = '这一天没有练习记录';
-            document.getElementById('detailItems').innerHTML = '';
-            document.getElementById('detailLog').textContent = '';
-          } else {
-            document.getElementById('detailEmpty').textContent = '';
-            var itemsHtml = '';
-            data.items.forEach(function(it) {
-              itemsHtml += '<span style="background:#E8F5E9;padding:6px 12px;border-radius:20px;font-size:14px;">' + it.item + ' ' + it.minutes + '分钟</span>';
+      var prevDate = new Date(date);
+      prevDate.setDate(prevDate.getDate() - 1);
+      var prevDateStr = prevDate.toISOString().split('T')[0];
+      var isToday = (date === new Date().toISOString().split('T')[0]);
+
+      Promise.all([
+        fetch('/api/practices/' + date).then(function(r){ return r.json(); }),
+        isToday ? Promise.resolve({items: [], total_minutes: 0}) : fetch('/api/practices/' + prevDateStr).then(function(r){ return r.json(); })
+      ]).then(function(results) {
+        var data = results[0];
+        var prevData = results[1];
+        var prevItemsMap = {};
+        (prevData.items || []).forEach(function(it){ prevItemsMap[it.item] = it.minutes; });
+        var prevOrder = (prevData.items || []).map(function(it){ return it.item; });
+
+        // 今天无数据时显示提示
+        if (isToday && (data.total_minutes === 0 || (Array.isArray(data.items) && data.items.length === 0))) {
+          document.getElementById('detailEmpty').textContent = '今天还没过完，明天来看';
+          document.getElementById('detailItems').innerHTML = '';
+          document.getElementById('detailLog').textContent = '';
+          var behDiv = document.getElementById('detailBehaviorLog');
+          if (behDiv) behDiv.remove();
+          var compDiv = document.getElementById('detailComparison');
+          if (compDiv) compDiv.remove();
+          return;
+        }
+
+        // 有数据但今天无对比时，直接显示记录+轨迹，skip对比部分
+        if (isToday) {
+          document.getElementById('detailEmpty').textContent = '';
+          var itemsHtml = '';
+          (data.items || []).forEach(function(it) {
+            itemsHtml += '<span style="background:#E8F5E9;padding:6px 12px;border-radius:20px;font-size:14px;">' + it.item + ' ' + it.minutes + '分钟</span>';
+          });
+          document.getElementById('detailItems').innerHTML = itemsHtml;
+          document.getElementById('detailLog').textContent = data.log || '';
+          var behLog = data.behavior_log || [];
+          var behDiv = document.getElementById('detailBehaviorLog');
+          if (behDiv) behDiv.remove();
+          if (behLog.length > 0) {
+            var behHtml = '<div id="detailBehaviorLog" style="margin-top:14px;padding:16px;background:#FFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">';
+            behHtml += '<div style="font-size:13px;color:#888;margin-bottom:12px;">📍 今日练习轨迹</div>';
+            behLog.forEach(function(entry) {
+              var t = entry.enter_time || '';
+              var timeStr = t ? t.split('T')[1].substring(0, 5) : '--:--';
+              behHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:14px;">';
+              behHtml += '<span style="color:#999;font-size:12px;min-width:36px;">' + timeStr + '</span>';
+              behHtml += '<span style="background:#E3F2FD;padding:3px 10px;border-radius:12px;color:#1565C0;font-size:13px;">' + (entry.item || '未知') + '</span>';
+              behHtml += '<span style="color:#888;font-size:12px;">' + (entry.minutes || 0) + '分钟</span>';
+              behHtml += '</div>';
             });
-            document.getElementById('detailItems').innerHTML = itemsHtml;
-            document.getElementById('detailLog').textContent = data.log || '';
+            behHtml += '</div>';
+            document.getElementById('detailItems').insertAdjacentHTML('afterend', behHtml);
           }
-        })
+          var compDiv = document.getElementById('detailComparison');
+          if (compDiv) compDiv.remove();
+          document.getElementById('detailLog').textContent = data.log || '';
+          return;
+        }
+
+        if ((data.total_minutes === 0 || (Array.isArray(data.items) && data.items.length === 0))
+            && (prevData.total_minutes === 0 || (Array.isArray(prevData.items) && prevData.items.length === 0))) {
+          document.getElementById('detailEmpty').textContent = '这两天都没有练习记录';
+          document.getElementById('detailItems').innerHTML = '';
+          document.getElementById('detailLog').textContent = '';
+          var behDiv = document.getElementById('detailBehaviorLog');
+          if (behDiv) behDiv.remove();
+          return;
+        }
+
+        document.getElementById('detailEmpty').textContent = '';
+
+        // 总时长对比
+        var totalDiff = data.total_minutes - prevData.total_minutes;
+        var totalDiffStr = totalDiff > 0 ? '+' + totalDiff : String(totalDiff);
+        var totalDiffColor = totalDiff > 0 ? '#27AE60' : totalDiff < 0 ? '#E74C3C' : '#999';
+
+        // 行为日志轨迹
+        var behLog = data.behavior_log || [];
+        var behDiv = document.getElementById('detailBehaviorLog');
+        if (behDiv) behDiv.remove();
+        if (behLog.length > 0) {
+          var behHtml = '<div id="detailBehaviorLog" style="margin-top:14px;padding:16px;background:#FFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">';
+          behHtml += '<div style="font-size:13px;color:#888;margin-bottom:12px;">📍 练习轨迹</div>';
+          behLog.forEach(function(entry, idx) {
+            var t = entry.enter_time || '';
+            var timeStr = t ? t.split('T')[1].substring(0, 5) : '--:--';
+            var item = entry.item || '未知';
+            var mins = entry.minutes || 0;
+            behHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:14px;">';
+            behHtml += '<span style="color:#999;font-size:12px;min-width:36px;">' + timeStr + '</span>';
+            behHtml += '<span style="background:#E3F2FD;padding:3px 10px;border-radius:12px;color:#1565C0;font-size:13px;">' + item + '</span>';
+            behHtml += '<span style="color:#888;font-size:12px;">' + mins + '分钟</span>';
+            behHtml += '</div>';
+          });
+          behHtml += '</div>';
+          document.getElementById('detailItems').insertAdjacentHTML('afterend', behHtml);
+        }
+
+        // 逐科目对比
+        var compDiv = document.getElementById('detailComparison');
+        if (compDiv) compDiv.remove();
+        var compHtml = '<div id="detailComparison" style="margin-top:14px;padding:16px;background:#FFF;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">';
+        compHtml += '<div style="font-size:13px;color:#888;margin-bottom:14px;">📊 ' + date + ' vs ' + prevDateStr + '</div>';
+
+        // 总时长对比行
+        compHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #EEE;margin-bottom:10px;">';
+        compHtml += '<span style="font-size:14px;color:#333;">总时长</span>';
+        compHtml += '<div><span style="font-size:14px;font-weight:bold;color:#333;">' + data.total_minutes + '分钟</span>';
+        compHtml += '<span style="font-size:12px;color:' + totalDiffColor + ';margin-left:6px;">' + totalDiffStr + '分钟</span></div>';
+        compHtml += '</div>';
+
+        // 当天每个科目
+        var curOrder = (data.items || []).map(function(it){ return it.item; });
+        (data.items || []).forEach(function(it) {
+          var itemName = it.item;
+          var curMins = it.minutes || 0;
+          var prevMins = prevItemsMap[itemName] || 0;
+          var diff = curMins - prevMins;
+          var diffStr = diff > 0 ? '+' + diff : String(diff);
+          var diffColor = diff > 0 ? '#27AE60' : diff < 0 ? '#E74C3C' : '#999';
+          var prevIdx = prevOrder.indexOf(itemName);
+          var curIdx = curOrder.indexOf(itemName);
+          var orderChange = '';
+          if (prevIdx >= 0 && curIdx >= 0) {
+            if (curIdx < prevIdx) orderChange = '↑ 前移' + (prevIdx - curIdx);
+            else if (curIdx > prevIdx) orderChange = '↓ 后移' + (curIdx - prevIdx);
+            else orderChange = '＝ 顺序不变';
+          } else if (prevIdx < 0) {
+            orderChange = '🆕 新科目';
+          }
+          compHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F5F5F5;">';
+          compHtml += '<div>';
+          compHtml += '<div style="font-size:14px;color:#333;">' + itemName + '</div>';
+          compHtml += '<div style="font-size:11px;color:#AAA;">' + orderChange + '</div>';
+          compHtml += '</div>';
+          compHtml += '<div><span style="font-size:14px;color:#333;">' + curMins + '分钟</span>';
+          compHtml += '<span style="font-size:12px;color:' + diffColor + ';margin-left:6px;">' + diffStr + '分钟</span></div>';
+          compHtml += '</div>';
+        });
+
+        // 前一天有但当天没有的科目
+        (prevData.items || []).forEach(function(it) {
+          if (!curOrder.includes(it.item)) {
+            compHtml += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;opacity:0.5;">';
+            compHtml += '<div><div style="font-size:14px;color:#999;text-decoration:line-through;">' + it.item + '</div>';
+            compHtml += '<div style="font-size:11px;color:#BBB;">前一天 ' + it.minutes + '分钟（今日未练）</div></div>';
+            compHtml += '<span style="font-size:12px;color:#E74C3C;">-' + it.minutes + '分钟</span>';
+            compHtml += '</div>';
+          }
+        });
+
+        compHtml += '</div>';
+        document.getElementById('detailItems').insertAdjacentHTML('afterend', compHtml);
+        document.getElementById('detailLog').textContent = data.log || '';
+      })
         .catch(function() {
           document.getElementById('detailEmpty').textContent = '加载失败';
         });
@@ -114,4 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
   );
 });
 </script>
+</div><!-- .page-content -->
 </body>
+</html>
