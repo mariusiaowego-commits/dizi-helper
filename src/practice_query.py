@@ -395,7 +395,7 @@ class PracticeQueryTUI:
             for rec in page:
                 d = rec['date']
                 total = rec['total_minutes']
-                items_str = ' '.join(f"{x['item']}{x['minutes']}分" for x in rec.get('items', [])[:5])
+                items_str = ' '.join(f"{x['item']}{x['minutes']}分" for x in rec.get('items', []))
                 is_today = (d == self.today)
                 lbl = f"{d.isoformat()}  {total:>4}分"
                 attr = Colors.TODAY if is_today else Colors.HIGHLIGHT if total > 0 else Colors.DIM

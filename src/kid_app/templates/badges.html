@@ -340,6 +340,35 @@ function closeModal() {
 document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
 
 buildUI();
+
+// 入场动画：section + badge-card 依次淡入上浮
+document.addEventListener('DOMContentLoaded', () => {
+  // 先让 app（#app）淡入
+  const app = document.getElementById('app');
+  gsap.set(app, { opacity: 0 });
+  gsap.to(app, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+
+  // 逐 section 动画
+  const sections = document.querySelectorAll('.section');
+  sections.forEach((section, si) => {
+    gsap.fromTo(section,
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.6)',
+        delay: si * 0.12, scrollTrigger: undefined }
+    );
+
+    // section 内的 badge-card 依次出现
+    const cards = section.querySelectorAll('.badge-card');
+    cards.forEach((card, ci) => {
+      gsap.fromTo(card,
+        { opacity: 0, scale: 0.88, y: 10 },
+        { opacity: 1, scale: 1, y: 0,
+          duration: 0.32, ease: 'back.out(1.8)',
+          delay: si * 0.12 + ci * 0.06 + 0.15 }
+      );
+    });
+  });
+});
 </script>
 </body>
 </html>

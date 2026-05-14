@@ -317,10 +317,14 @@ def get_week_summary(week_start: dt.date) -> Dict:
     for p in practices:
         total_minutes += p['total_minutes']
         practice_days.append(p['date'])
-        for item in p['items']:
+        items_raw = p['items']
+        if isinstance(items_raw, str):
+            import json
+            items_raw = json.loads(items_raw)
+        for item in (items_raw or []):
             name = item['item']
             item_totals[name] = item_totals.get(name, 0) + item['minutes']
-    
+
     return {
         'week_start': week_start,
         'week_end': week_end,
@@ -362,7 +366,12 @@ def get_week_days(week_start: dt.date) -> Dict[str, Dict]:
         if key in days:
             days[key]['has_practice'] = True
             days[key]['total_minutes'] = p['total_minutes']
-            days[key]['items'] = p['items']
+            # 确保 items 是 list 而非 JSON 字符串（防御旧数据或异常路径）
+            items_raw = p['items']
+            if isinstance(items_raw, str):
+                import json
+                items_raw = json.loads(items_raw)
+            days[key]['items'] = items_raw if items_raw else []
 
     for key, note in progress.items():
         if key in days:
@@ -390,7 +399,11 @@ def get_month_summary(year: int, month: int) -> Dict:
     for p in practices:
         total_minutes += p['total_minutes']
         practice_days.add(p['date'])
-        for item in p['items']:
+        items_raw = p['items']
+        if isinstance(items_raw, str):
+            import json
+            items_raw = json.loads(items_raw)
+        for item in (items_raw or []):
             name = item['item']
             item_totals[name] = item_totals.get(name, 0) + item['minutes']
     

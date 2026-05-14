@@ -26,6 +26,7 @@
     .page-header {
       padding: 20px 16px 8px;
       font-size: 22px; font-weight: bold; color: #333;
+      display: flex; align-items: center; justify-content: space-between;
     }
 
     /* 通用全宽卡片 */
@@ -71,133 +72,136 @@
     .board-diff { font-size: 11px; margin-top: 2px; color: #888; }
     .board-diff.up { color: #27AE60; }
 
-    /* ── 卡片3: 勋章展示（v3 单列左右结构） ── */
-    .milestone-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 14px;
-    }
-
-    /* v3 成就卡 */
-    .card-v3 {
+    /* ── 成就展示（与badges页面一致的结构） ── */
+    .section-header {
       display: flex;
       align-items: center;
-      padding: 28px 24px;
-      border-radius: 22px;
-      background: #fffdf8;
-      border: 2px solid #f5e8c0;
-      box-shadow: 0 4px 16px rgba(200,160,60,0.12);
+      gap: 10px;
+      margin: 18px 0 12px;
+    }
+    .section-header h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #333;
+    }
+    .section-count {
+      font-size: 12px;
+      color: #fff;
+      background: #FF6B35;
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-weight: 600;
+    }
+
+    /* 2列固定网格 */
+    .badge-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    /* 统一卡片 */
+    .b-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 18px 12px 14px;
+      border-radius: 16px;
       cursor: pointer;
       position: relative;
       overflow: hidden;
-      min-height: 180px;
-      transition: box-shadow 0.2s, border-color 0.2s;
+      transition: box-shadow 0.2s, transform 0.2s;
     }
-    .card-v3:hover {
-      box-shadow: 0 10px 32px rgba(200,160,60,0.26);
-      border-color: #f0c040;
+    .b-card.unlocked {
+      background: #fffdf8;
+      border: 1.5px solid #f0e0a0;
+      box-shadow: 0 2px 10px rgba(200,160,40,0.1);
     }
-    /* 已解锁：左上角金色光晕 */
-    .card-v3.unlocked::before {
+    .b-card.unlocked::before {
       content: '';
       position: absolute;
-      top: -20px; left: -20px;
-      width: 80px; height: 80px;
-      background: radial-gradient(circle, rgba(255,215,0,0.25) 0%, transparent 70%);
+      top: -10px; left: -10px;
+      width: 70px; height: 70px;
+      background: radial-gradient(circle, rgba(255,215,0,0.22) 0%, transparent 70%);
       pointer-events: none;
     }
-    /* 未解锁：整体灰暗 */
-    .card-v3.locked {
-      border-color: #e8e4de;
-      background: #f8f6f2;
-      filter: saturate(0.35) brightness(0.95);
+    .b-card.unlocked:hover {
+      box-shadow: 0 6px 20px rgba(200,160,40,0.22);
+      transform: translateY(-2px);
     }
-    .card-v3.locked .label-text,
-    .card-v3.locked .value-num,
-    .card-v3.locked .desc { color: #ccc; }
-    .card-v3 .lock-icon {
+    .b-card.locked {
+      background: #fffdf8;
+      border: 1.5px solid #ece8e0;
+    }
+    /* 锁卡：灰色置灰遮罩盖住徽章区域 */
+    .b-card.locked .b-img-wrap::after {
+      content: '';
       position: absolute;
-      bottom: 14px; right: 16px;
-      width: 24px; height: 24px;
-      opacity: 0.5;
-    }
-    /* badge 容器 */
-    .badge-wrap {
-      flex-shrink: 0;
-      width: 120px; height: 120px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .badge-img {
-      width: 120px; height: 120px;
-      object-fit: contain;
-      filter: drop-shadow(0 4px 10px rgba(180,140,20,0.4));
-      transition: filter 0.2s;
-    }
-    .card-v3:hover .badge-img {
-      filter: drop-shadow(0 6px 16px rgba(180,140,20,0.55));
-    }
-    /* 未解锁：灰化 */
-    .card-v3.locked .badge-img {
-      filter: saturate(0) brightness(0.8) drop-shadow(0 2px 6px rgba(0,0,0,0.15));
-      -webkit-filter: saturate(0) brightness(0.8) drop-shadow(0 2px 6px rgba(0,0,0,0.15));
-    }
-    /* 未解锁 hover：恢复原色 */
-    .card-v3.locked:hover .badge-img {
-      filter: saturate(1) brightness(0.75) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
-      -webkit-filter: saturate(1) brightness(0.75) drop-shadow(0 2px 8px rgba(0,0,0,0.2));
-    }
-    /* info 区 */
-    .info {
-      flex: 1; min-width: 0;
-      min-height: 120px;
-      max-width: 280px;
-      display: flex; flex-direction: column; justify-content: center;
-      padding-left: 40px;
-    }
-    .label-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .type-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      color: #fff; font-size: 10px; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px; letter-spacing: 0.5px; flex-shrink: 0;
-    }
-    .type-pill.突破  { background: linear-gradient(135deg, #FF6B35, #FF9B5A); }
-    .type-pill.段位  { background: linear-gradient(135deg, #9b59b6, #c39bd3); }
-    .type-pill.巅峰  { background: linear-gradient(135deg, #3498db, #85c1e9); }
-    .type-pill.执着  { background: linear-gradient(135deg, #e67e22, #f0b27a); }
-    .type-pill.神秘  { background: linear-gradient(135deg, #1abc9c, #76d7c4); }
-    .label-text { font-size: 21px; font-weight: 800; color: #c8860a; letter-spacing: 0.5px; }
-    .value-num { font-size: 34px; font-weight: 900; color: #FF6B35; line-height: 1; letter-spacing: -0.5px; margin-bottom: 8px; }
-    .value-unit { font-size: 13px; color: #bbb; font-weight: 500; margin-right: 2px; }
-    .value-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-    .item-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: #fff8e8; border: 1.5px solid #f0c040;
-      border-radius: 20px; padding: 4px 10px;
-      font-size: 14px; color: #5a4020; font-weight: 600;
-    }
-    .item-pill-mins { font-size: 11px; color: #a08060; font-weight: 400; }
-    .desc { font-size: 13px; color: #a08060; font-style: italic; line-height: 1.4; }
-    .card-v3 .ripple {
-      position: absolute; border-radius: 50%;
-      background: rgba(255,200,50,0.3);
-      transform: scale(0); animation: ripple-out 0.5s ease-out forwards;
+      inset: 0;
+      border-radius: 0;
+      background: rgba(200, 195, 185, 0.55);
+      z-index: 1;
       pointer-events: none;
     }
-    @keyframes ripple-out {
-      to { transform: scale(4); opacity: 0; }
+    .b-card.locked .b-name { color: #bbb; }
+    /* 锁卡：原图展示，仅降低不透明度表明未解锁 */
+    .b-card.locked .b-img-wrap {
+      background-color: #fffdf8;  /* 盖住图片边缘半透明像素 */
+    }
+    .b-card.locked .b-img {
+      opacity: 0.55;
+      filter: none;
+      position: relative;
+      z-index: 2;
     }
 
-    /* ── 卡片4: 更多勋章入口 ── */
-    .more-card {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; text-decoration: none; color: inherit; cursor: pointer;
-      padding: 12px;
+    /* 120×120徽章 */
+    .b-img-wrap {
+      width: 120px; height: 120px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
     }
-    .more-card:active { transform: scale(0.97); }
-    .more-icons { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; }
-    .more-icon-chip { font-size: 24px; }
-    .more-arrow { font-size: 20px; color: #FF6B35; }
-    .more-label { font-size: 14px; color: #7F8C8D; margin-top: 4px; }
+    .b-img {
+      max-width: 120px; max-height: 120px;
+      width: auto; height: auto;
+      filter: drop-shadow(0 4px 10px rgba(180,140,20,0.4));
+      transition: filter 0.2s, transform 0.2s;
+    }
+    .b-card.unlocked:hover .b-img {
+      filter: drop-shadow(0 8px 16px rgba(180,140,20,0.55));
+      transform: scale(1.06);
+    }
+
+    .b-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: #c8860a;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+    .b-card.locked .b-name { color: #bbb; }
+
+    .b-tag {
+      font-size: 11px;
+      font-weight: 500;
+      color: #aaa;
+      background: rgba(240,235,225,0.6);
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 20px;
+      padding: 2px 10px;
+      display: inline-flex; align-items: center;
+    }
+    .b-tag.突破 { background: rgba(255,210,210,0.5); border-color: rgba(220,120,120,0.25); color: #c0504d; }
+    .b-tag.巅峰 { background: rgba(230,210,255,0.5); border-color: rgba(180,130,230,0.25); color: #8060c0; }
+    .b-tag.段位 { background: rgba(255,240,180,0.5); border-color: rgba(220,180,60,0.30); color: #a08020; }
+    .b-tag.执着 { background: rgba(210,230,255,0.5); border-color: rgba(120,170,220,0.25); color: #4070a0; }
+    .b-card.locked .b-lock {
+      position: absolute;
+      bottom: 10px; right: 12px;
+      width: 20px; height: 20px;
+      font-size: 14px; opacity: 0.55;
+    }
   </style>
 </head>
 <body>
@@ -209,7 +213,9 @@
     <a href="/praise" class="nav-item"><span class="nav-icon">⭐</span><span>表扬</span></a>
   </div>
 
-  <div class="page-header">🏆 我的成就</div>
+    <div class="page-header">
+      <span>🏆 我的成就</span>
+    </div>
 
   <!-- 卡片1: 本周目标 -->
   <div class="ac-card" id="card-week">
@@ -249,28 +255,178 @@
     </div>
   </div>
 
-  <!-- 卡片3: 勋章展示 -->
+  <!-- 卡片3: 成就展示（2列网格，与badges页面结构一致） -->
   <div class="ac-card" id="card-milestones">
-    <h3 style="font-size:15px;font-weight:bold;color:#333;margin:0 0 10px;">🏅 成就展示</h3>
-    <div class="milestone-grid">
-      {{milestone_html}}
+    <div class="page-header" style="padding:0 0 4px;">
+      <span>🏅 成就展示</span>
+      <a href="/badges" style="font-size:13px;font-weight:600;color:#FF6B35;text-decoration:none;">显示全部 →</a>
+    </div>
+
+    <div class="section-header">
+      <h3>已解锁</h3>
+      <span class="section-count" id="unlocked-count">9</span>
+    </div>
+    <div class="badge-grid" id="unlocked-grid">{{milestone_html}}</div>
+
+    <div class="section-header" style="margin-top:20px;">
+      <h3>未解锁</h3>
+      <span class="section-count" id="locked-count">1</span>
+    </div>
+    <div class="badge-grid" id="locked-grid"></div>
+  </div>
+
+
+
+  <!-- 弹窗（照搬 badges 页面） -->
+  <div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div id="modal-box">
+      <div id="modal-close" onclick="closeModal()">×</div>
+      <div id="modal-img-wrap">
+        <img id="modal-img" src="" alt="">
+      </div>
+      <div id="modal-name"></div>
+      <div id="modal-tag"></div>
+      <div class="modal-divider"></div>
+      <div id="modal-cond"></div>
+      <div id="modal-date"></div>
+      <div id="modal-desc"></div>
+      <div id="modal-hint"></div>
     </div>
   </div>
 
-    <!-- 卡片4: 更多勋章入口 -->
-  <div class="ac-card" id="card-more" style="padding:8px;">
-    <a href="/badges" class="more-card">
-      <div class="more-icons">
-        <img src="/static/badges/streak_3.png" style="width:32px;height:32px;object-fit:contain;">
-        <img src="/static/badges/total_60.png" style="width:32px;height:32px;object-fit:contain;">
-        <img src="/static/badges/first_log.png" style="width:32px;height:32px;object-fit:contain;">
-      </div>
-      <div class="more-arrow">→</div>
-      <div class="more-label">查看全部勋章墙</div>
-    </a>
-  </div>
+  <style>
+    /* 弹窗 */
+    #modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 1000;
+      align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    #modal-overlay.active { display: flex; }
+    #modal-box {
+      background: #fffdf8;
+      border-radius: 24px;
+      border: 2.5px solid #f0c040;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      width: 100%; max-width: 310px;
+      padding: 30px 26px 24px;
+      display: flex; flex-direction: column; align-items: center;
+      position: relative;
+    }
+    #modal-close {
+      position: absolute; top: -10px; right: -10px;
+      width: 36px; height: 36px;
+      background: #fff; border: 2px solid #f0c040;
+      border-radius: 50%;
+      font-size: 20px; color: #c8860a; line-height: 32px; text-align: center;
+      cursor: pointer; font-weight: 900;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    #modal-close:active { transform: scale(0.9); }
+    #modal-img-wrap {
+      width: 156px; height: 156px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px;
+    }
+    #modal-img { width: 156px; height: 156px; object-fit: contain; }
+    #modal-name {
+      font-size: 26px; font-weight: 900; color: #c8860a;
+      text-align: center; margin-bottom: 8px; letter-spacing: 0.5px;
+    }
+    #modal-tag {
+      font-size: 12px; font-weight: 700;
+      color: #ccc; letter-spacing: 0.8px;
+      margin-bottom: 18px;
+    }
+    .modal-divider {
+      width: 40px; height: 2px; background: #f0c040;
+      border-radius: 2px; margin-bottom: 16px;
+    }
+    #modal-cond {
+      font-size: 16px; color: #666; text-align: center;
+      margin-bottom: 6px; font-weight: 600;
+    }
+    #modal-date {
+      font-size: 13px; color: #ccc; margin-bottom: 16px;
+    }
+    #modal-desc {
+      font-size: 16px; color: #a08060;
+      text-align: center; font-style: italic;
+      line-height: 1.6;
+      border-top: 1px solid #f0e8d0;
+      padding-top: 16px; width: 100%;
+    }
+    #modal-hint {
+      font-size: 13px; color: #bbb; text-align: center; margin-top: 10px;
+    }
+  </style>
 
   <script>
+    // ── 弹窗 ───────────────────────────────────────────────────────
+    function openModal(card) {
+      const locked  = card.dataset.locked === 'yes';
+      const overlay = document.getElementById('modal-overlay');
+      const box     = document.getElementById('modal-box');
+
+      document.getElementById('modal-img').src = card.dataset.img;
+      document.getElementById('modal-img').style.filter =
+        locked ? 'saturate(0) brightness(0.7)' : '';
+      document.getElementById('modal-name').textContent = card.dataset.name;
+      document.getElementById('modal-tag').textContent  = card.dataset.tag;
+      document.getElementById('modal-cond').textContent = card.dataset.cond;
+
+      const dateEl = document.getElementById('modal-date');
+      const dateVal = card.dataset.date;
+      if (dateVal) {
+        try {
+          const d = new Date(dateVal);
+          dateEl.textContent = d.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric'});
+        } catch(e) { dateVal = ''; }
+        dateEl.style.display = dateVal ? '' : 'none';
+      } else {
+        dateEl.style.display = 'none';
+      }
+
+      document.getElementById('modal-desc').textContent = card.dataset.desc;
+      document.getElementById('modal-hint').textContent =
+        locked ? '继续加油，下一个成就在等你！' : '';
+
+      overlay.classList.add('active');
+
+      const cr = card.getBoundingClientRect();
+      const mr = box.getBoundingClientRect();
+      const fromX = cr.left + cr.width/2  - (mr.left + mr.width/2);
+      const fromY = cr.top  + cr.height/2 - (mr.top  + mr.height/2);
+
+      gsap.set(box, { x: fromX*0.6, y: fromY*0.6, scale: 0.5, opacity: 0 });
+      gsap.set(overlay, { backgroundColor: 'rgba(0,0,0,0)' });
+
+      const tl = gsap.timeline();
+      tl.to(overlay, { backgroundColor: 'rgba(0,0,0,0.45)', duration: 0.15, ease:'power2.out' })
+        .to(box, { x:0, y:0, scale:1, opacity:1, duration:0.22, ease:'back.out(1.5)' }, 0)
+        .from('#modal-img-wrap', { opacity:0, y:6, duration:0.12, ease:'power2.out' }, 0.14)
+        .from('#modal-name',    { opacity:0, y:4, duration:0.12, ease:'power2.out' }, 0.17)
+        .from('#modal-tag',     { opacity:0, y:4, duration:0.12, ease:'power2.out' }, 0.19)
+        .from('.modal-divider', { opacity:0, scaleX:0, duration:0.1,  ease:'back.out(2)' }, 0.21)
+        .from('#modal-cond',    { opacity:0, y:4, duration:0.12, ease:'power2.out' }, 0.23)
+        .from('#modal-date',    { opacity:0, y:4, duration:0.12, ease:'power2.out' }, 0.25)
+        .from('#modal-desc',    { opacity:0, y:4, duration:0.12, ease:'power2.out' }, 0.27)
+        .from('#modal-hint',    { opacity:0, y:4, duration:0.12, ease:'power2.out' }, 0.29);
+    }
+
+    function closeModal() {
+      const overlay = document.getElementById('modal-overlay');
+      const box     = document.getElementById('modal-box');
+      gsap.to(box, { scale: 0.8, opacity: 0, duration: 0.15, ease:'power2.in',
+        onComplete: () => overlay.classList.remove('active') });
+      gsap.to(overlay, { backgroundColor: 'rgba(0,0,0,0)', duration: 0.15 });
+    }
+
+    document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+    // ── 页面初始化 ────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', () => {
       const cards = document.querySelectorAll('.ac-card');
       gsap.fromTo(cards,
@@ -278,48 +434,34 @@
         { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: "back.out(1.6)" }
       );
 
-      /* ── 勋章卡 GSAP 交互（v3） ─────────────────────────── */
-      const milestoneCards = document.querySelectorAll('.card-v3');
+      // 拆分已解锁/未解锁到两个网格
+      const unlockedGrid = document.getElementById('unlocked-grid');
+      const lockedGrid   = document.getElementById('locked-grid');
+      const allCards     = unlockedGrid.querySelectorAll('.b-card');
 
-      // hover: badge 弹跳 + 卡片微微上移
-      milestoneCards.forEach(card => {
-        const badgeWrap = card.querySelector('.badge-wrap');
-        if (!badgeWrap) return;
+      const lockedCards    = [...allCards].filter(c => c.classList.contains('locked'));
+      const unlockedCards   = [...allCards].filter(c => !c.classList.contains('locked'));
 
+      lockedCards.forEach(c => lockedGrid.appendChild(c));
+      document.getElementById('unlocked-count').textContent = unlockedCards.length;
+      document.getElementById('locked-count').textContent   = lockedCards.length;
+
+      // GSAP 入场动画
+      const allBCards = document.querySelectorAll('.b-card');
+      gsap.fromTo(allBCards,
+        { opacity: 0, scale: 0.88, y: 12 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.38, stagger: 0.07, ease: 'back.out(1.7)' }
+      );
+
+      // hover: badge弹跳
+      allBCards.forEach(card => {
+        const imgWrap = card.querySelector('.b-img-wrap');
+        if (!imgWrap) return;
         card.addEventListener('mouseenter', () => {
-          gsap.to(card, { y: -3, duration: 0.2, ease: 'power2.out' });
-          gsap.to(badgeWrap, {
-            scale: 1.15,
-            duration: 0.3,
-            ease: 'back.out(2.5)'
-          });
+          gsap.to(imgWrap, { scale: 1.1, duration: 0.25, ease: 'back.out(2.2)' });
         });
-
         card.addEventListener('mouseleave', () => {
-          gsap.to(card, { y: 0, duration: 0.25, ease: 'power2.out' });
-          gsap.to(badgeWrap, {
-            scale: 1,
-            duration: 0.3,
-            ease: 'elastic.out(1, 0.5)'
-          });
-        });
-
-        // click: 涟漪扩散 + badge 快速缩放
-        card.addEventListener('click', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-
-          const ripple = document.createElement('div');
-          ripple.className = 'ripple';
-          ripple.style.cssText = `left:${x - 20}px;top:${y - 20}px;width:40px;height:40px;`;
-          card.appendChild(ripple);
-          setTimeout(() => ripple.remove(), 600);
-
-          gsap.timeline()
-            .to(badgeWrap, { scale: 0.82, duration: 0.12, ease: 'power2.in' })
-            .to(badgeWrap, { scale: 1.12, duration: 0.18, ease: 'back.out(3)' })
-            .to(badgeWrap, { scale: 1, duration: 0.25, ease: 'elastic.out(1.2, 0.4)' });
+          gsap.to(imgWrap, { scale: 1, duration: 0.3, ease: 'elastic.out(1, 0.5)' });
         });
       });
     });

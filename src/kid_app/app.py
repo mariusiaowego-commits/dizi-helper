@@ -228,153 +228,251 @@ def _ring_diff(current, previous):
 
 
 def _milestone_html():
-    """生成勋章展示区 HTML（v3: 全部成就，含未解锁）
-    输出: .card-v3 (unlocked/locked) + .badge-wrap + .info + .type-pill
+    """生成勋章展示区 HTML（v3 精简版）
+    - display 类型：只展示已解锁的
+    - milestone 类型：已解锁全部展示，未解锁只展示最接近达成的 1 个
+    实时计算成就状态（不走 stale 的 achievement_stats 表）。
     """
     from src.database import db as _db
+    import src.practice as _pm
 
-    streak = streak_days()
-    total_mins = total_practice_minutes()
-    peak_week_mins, _ = _calc_peak_week()
-    peak_month_mins, _ = _calc_peak_month()
+    today = dt.date.today()
+
+    # ── 实时统计数据（与 badges_page 同步）──────────────────────────
+    conn = db._get_connection()
+
+    # 连续天数
+    cur = conn.execute("SELECT date FROM daily_practices ORDER BY date DESC")
+    dates = [r[0] for r in cur.fetchall()]
+    streak = 0
+    check = today
+    while True:
+        ds = check.isoformat()
+        if ds in dates:
+            streak += 1
+            check -= dt.timedelta(days=1)
+        else:
+            break
+    streak = min(streak, 100)
+
+    # 累计时长
+    cur = conn.execute("SELECT SUM(total_minutes) FROM daily_practices")
+    total_mins = cur.fetchone()[0] or 0
+
+    # 全部小科目（未归档）
+    cur = conn.execute("SELECT item_id FROM practice_items WHERE is_archived=0")
+    all_item_ids = {r[0] for r in cur.fetchall()}
+
+    # has_all_items：某天练了所有未归档科目
+    has_all_items = False
+    cur = conn.execute("SELECT date, items FROM daily_practices ORDER BY date DESC LIMIT 90")
+    for row in cur.fetchall():
+        practiced_ids = {it["item_id"] for it in (json.loads(row[1]) or []) if it.get("item_id")}
+        if practiced_ids and practiced_ids.issubset(all_item_ids):
+            has_all_items = True
+            break
+
+    # has_double：某天打卡 2 次
+    cur = conn.execute("SELECT date FROM daily_practices GROUP BY date HAVING COUNT(*) >= 2")
+    has_double = cur.fetchone() is not None
+
+    # has_week_champ：本周 ≥ 5 天
+    week_start = today - dt.timedelta(days=today.weekday())
+    cur = conn.execute(
+        "SELECT COUNT(DISTINCT date) FROM daily_practices WHERE date >= ? AND date <= ?",
+        (week_start.isoformat(), today.isoformat()))
+    has_week_champ = cur.fetchone()[0] >= 5
+
+    # has_full_month：本月每天都有练习记录
+    has_full_month = False
+    month_start = dt.date(today.year, today.month, 1)
+    if today >= month_start + dt.timedelta(days=27):
+        days_in_month = (dt.date(today.year, today.month + 1, 1) - month_start).days if today.month < 12 else 31
+        cur = conn.execute(
+            "SELECT COUNT(DISTINCT date) FROM daily_practices WHERE date >= ? AND date <= ?",
+            (month_start.isoformat(), today.isoformat()))
+        if cur.fetchone()[0] >= days_in_month:
+            has_full_month = True
+
+    # top 科目
     top_items = _calc_top_items()
 
-    # 查询 achievements 全部数据（按 sort_order 排序）
-    with _db._get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT id, name, type, category, display_format, description, threshold FROM achievements ORDER BY sort_order, id")
-        all_achievements = [dict(zip([c[0] for c in cur.description], row)) for row in cur.fetchall()]
+    # grade 成就：查 lessons 表
+    cur = conn.execute("SELECT notes FROM lessons WHERE status='attended' AND notes LIKE '考级%' ORDER BY date DESC LIMIT 10")
+    passed_grades = set()
+    for row in cur.fetchall():
+        m = re.search(r'考级[^\d]*(\d+)', row[0] or '')
+        if m:
+            passed_grades.add(int(m.group(1)))
+    def calc(aid):
+        achieved = False
+        cv = None
+        achieved_at = None
 
-    # 查询 achievement_stats（achieved 状态）
-    with _db._get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT achievement_id, achieved, computed_value FROM achievement_stats")
-        stats = {row[0]: {"achieved": row[1], "computed_value": row[2]} for row in cur.fetchall()}
+        if aid == "streak_1":
+            achieved = streak >= 1; cv = streak
+        elif aid == "streak_3":
+            achieved = streak >= 3; cv = streak
+        elif aid == "streak_7":
+            achieved = streak >= 7; cv = streak
+        elif aid == "streak_14":
+            achieved = streak >= 14; cv = streak
+        elif aid == "streak_30":
+            achieved = streak >= 30; cv = streak
+        elif aid == "streak_100":
+            achieved = streak >= 100; cv = streak
+        elif aid == "total_60":
+            achieved = total_mins >= 60; cv = total_mins
+        elif aid == "total_300":
+            achieved = total_mins >= 300; cv = total_mins
+        elif aid == "total_600":
+            achieved = total_mins >= 600; cv = total_mins
+        elif aid == "total_1000":
+            achieved = total_mins >= 1000; cv = total_mins
+        elif aid == "first_log":
+            achieved = total_mins > 0; cv = total_mins
+        elif aid == "all_items":
+            achieved = has_all_items; cv = 1 if has_all_items else 0
+        elif aid == "double":
+            achieved = has_double; cv = 1 if has_double else 0
+        elif aid == "week_champ":
+            achieved = has_week_champ; cv = 1 if has_week_champ else 0
+        elif aid == "full_month":
+            achieved = has_full_month; cv = 1 if has_full_month else 0
+        elif aid in ("top1", "top2", "top3"):
+            rank = int(aid[-1])
+            achieved = len(top_items) >= rank
+            cv = top_items[rank - 1][1] if achieved else 0
+        elif aid.startswith("grade_"):
+            g = int(aid.split("_")[1])
+            achieved = g in passed_grades
+            cv = g if achieved else 0
 
-    # 查询 badge URL（is_current=1）
-    with _db._get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute("""
-            SELECT b.achievement_id, b.url, b.is_locked
-            FROM achievement_badges b WHERE b.is_current=1
-        """)
-        badge_rows = cur.fetchall()
-    # 按 (achievement_id, is_locked) 索引
-    badge_map = {}  # (achievement_id, is_locked=0/1) -> url
-    for row in badge_rows:
-        bid, url, is_locked = row
-        badge_map[(bid, is_locked)] = url
+        return achieved, cv
 
-    # 分离 display 类型和 milestone 类型
-    display_items = [a for a in all_achievements if a.get("category") == "display"]
-    milestone_items = [a for a in all_achievements if a.get("category") == "milestone"]
+    # ── 成就定义（6元组: id, name, type, threshold, desc, condition）───
 
-    html_parts = []
+    BADGE_URLS = {
+        **{f"streak_{n}": f"/static/badges/streak_{n}.png" for n in [1,3,7,14,30,100]},
+        "total_60": "/static/badges/total_60.png",
+        "total_300": "/static/badges/total_300.png",
+        "total_600": "/static/badges/total_600.png",
+        "total_1000": "/static/badges/total_1000.png",
+        "first_log": "/static/badges/first_log.png",
+        "all_items": "/static/badges/all_items.png",
+        "double": "/static/badges/double.png",
+        "week_champ": "/static/badges/week_champ.png",
+        "full_month": "/static/badges/full_month.png",
+        "top1": "/static/badges/top1.png",
+        "top2": "/static/badges/top2.png",
+        "top3": "/static/badges/top3.png",
+        **{f"grade_{n}": f"/static/badges/grade_{n}-u.png" for n in range(1, 11)},
+    }
 
-    def _fmt_value(ach, stats_rec):
-        """根据 display_format 格式化数值"""
-        dfmt = ach.get("display_format", "minutes")
-        achieved = stats_rec.get("achieved") == "Y" if stats_rec else False
+    # ── 分离已解锁 / 未解锁 ──────────────────────────────────────
+    unlocked_list = []
+    locked_list = []  # (ratio, ach_id, name, ach_type, desc, cv)
 
-        if dfmt == "time_hours_minutes":
-            if not achieved:
-                return None
-            # 用 computed_value 或重新计算
-            cv = stats_rec.get("computed_value") if stats_rec else None
-            if cv:
-                try:
-                    total = int(cv)
-                except:
-                    total = total_mins
-            else:
-                total = total_mins
-            h = total // 60
-            m = total % 60
-            if h > 0:
-                return f"<span class='value-num'>{h}</span><span class='value-unit'>小时</span><span class='value-num'>{m}</span><span class='value-unit'>分钟</span>"
-            else:
-                return f"<span class='value-num'>{m}</span><span class='value-unit'>分钟</span>"
+    # ACH_DEFS: (ach_id, name, ach_type, threshold, desc, condition)
+    ACH_DEFS_FULL = [
+        ("streak_1",   "初试啼声",  "突破", None, "开始你的练习之旅！",            "连续 ≥ 1 天"),
+        ("streak_3",   "小火焰",    "执着", 3,    "连续打卡，笛子都被你吹服了！",    "连续 ≥ 3 天"),
+        ("streak_7",   "周冠军",    "执着", 7,    "坚持一周，你就是时间管理大师！",   "连续 ≥ 7 天"),
+        ("streak_14",  "双周传说",  "执着", 14,   "两周坚持，传说初现！",             "连续 ≥ 14 天"),
+        ("streak_30",  "月度王者",  "晋级", 30,   "整月打卡，王者风范！",             "连续 ≥ 30 天"),
+        ("streak_100", "百日传奇",  "晋级", 100,  "百日坚持，传奇诞生！",             "连续 ≥ 100 天"),
+        ("total_60",   "初露锋芒",  "突破", 60,   "一屁股坐下去，笛子都认识你了！",   "累计 ≥ 60 分钟"),
+        ("total_300",  "五小时战士","突破", 300,   "五小时积累，小试牛刀！",           "累计 ≥ 300 分钟"),
+        ("total_600",  "十小时大师","巅峰", 600,   "十小时磨砺，大师初成！",           "累计 ≥ 600 分钟"),
+        ("total_1000", "千分钟传奇","巅峰", 1000,  "千分钟传奇前无古人！",             "累计 ≥ 1000 分钟"),
+        ("first_log",  "第一声",    "突破", 1,     "第一次吹响你的笛子！",             "完成第一次练习"),
+        ("all_items",  "全能选手",  "神秘", 1,     "全能选手，样样精通！",             "同一天练所有科目"),
+        ("double",     "加练狂魔",  "执着", 2,     "同一天两次练习，卷王诞生！",       "同日 ≥ 2 次打卡"),
+        ("week_champ", "周末冠军",  "巅峰", 5,     "那一周，你就是时间管理大师！",      "本周 ≥ 5 天"),
+        ("full_month", "满月战士",  "巅峰", 1,     "整月打卡，整条街最亮的笛子！",     "当月每天打卡"),
+        ("top1",       "TOP1之王", "突破", None,  "你跟这些科目最熟，它们也最想你！",  "累计时长第 1"),
+        ("top2",       "TOP2卷王", "突破", None,  "练习时长第二多，同样出色！",       "累计时长第 2"),
+        ("top3",       "TOP3新星", "突破", None,  "练习时长第三名，新星升起！",        "累计时长第 3"),
+        ("grade_1",   "一级",      "段位", 1,     "恭喜考取一级！竹笛之路，正式开始！","考取一级"),
+        ("grade_2",   "二级",      "段位", 2,     "恭喜考取二级！",                   "考取二级"),
+        ("grade_3",   "三级",      "段位", 3,     "恭喜考取三级！",                   "考取三级"),
+        ("grade_4",   "四级",      "段位", 4,     "恭喜考取四级！",                   "考取四级"),
+        ("grade_5",   "五级",      "段位", 5,     "恭喜考取五级！",                   "考取五级"),
+        ("grade_6",   "六级",      "段位", 6,     "恭喜考取六级！",                   "考取六级"),
+        ("grade_7",   "七级",      "段位", 7,     "恭喜考取七级！",                   "考取七级"),
+        ("grade_8",   "八级",      "段位", 8,     "恭喜考取八级！",                   "考取八级"),
+        ("grade_9",   "九级",      "段位", 9,     "恭喜考取九级！",                   "考取九级"),
+        ("grade_10",  "十级",      "段位", 10,    "恭喜考取十级！",                   "考取十级"),
+    ]
 
-        elif dfmt == "minutes":
-            val = peak_week_mins if "week" in ach["id"] else (peak_month_mins if "month" in ach["id"] else total_mins)
-            if not achieved or val == 0:
-                return "<span class='value-num'>暂无数据</span>"
-            return f"<span class='value-num'>{val}</span><span class='value-unit'>分钟</span>"
+    # top N 动态 condition
+    _TOP_CONDS = {}
+    for rank, (item_name, mins) in enumerate(top_items, 1):
+        _TOP_CONDS[f"top{rank}"] = f"累计时长第 {rank}：{item_name}({mins}分钟)"
 
-        elif dfmt == "days":
-            val = streak
-            if not achieved:
-                return None
-            return f"<span class='value-num'>{val}</span><span class='value-unit'>天</span>"
+    for (ach_id, name, ach_type, threshold, desc, cond) in ACH_DEFS_FULL:
+        achieved, cv = calc(ach_id)
+        badge_url = BADGE_URLS.get(ach_id, "/static/badges/medal_badge.png")
+        final_cond = _TOP_CONDS.get(ach_id, cond)
 
-        elif dfmt == "top_items":
-            if not top_items:
-                return "<span class='value-num'>暂无数据</span>"
-            pills = "".join(
-                f"<span class='item-pill'>{n}<span class='item-pill-mins'>{mm}分钟</span></span>"
-                for n, mm in top_items
-            )
-            return f"<div class='value-list'>{pills}</div>"
+        if threshold and threshold > 0 and cv is not None:
+            ratio = cv / threshold if not achieved else 1.0
+        elif achieved:
+            ratio = 1.0
+        else:
+            ratio = 0.0
 
-        elif dfmt == "achieved_flag":
-            if not achieved:
-                return None
-            return "<span class='value-num'>✓</span>"
-
-        return "<span class='value-num'>-</span>"
-
-    def _card_v3(ach, stats_rec):
-        ach_id = ach["id"]
-        ach_type = ach.get("type", "突破")
-        achieved = stats_rec.get("achieved") == "Y" if stats_rec else False
-
-        # 选择 badge URL（locked 也用 unlocked 图，CSS 灰化处理）
-        unlocked_url = badge_map.get((ach_id, 0)) or f"/static/badges/{ach_id}.png"
-        badge_url = unlocked_url
-
-        # v3 class
-        state_cls = "unlocked" if achieved else "locked"
-        type_cls = ach_type  # 用于 .type-pill.段位 等
-
-        # type-pill（无 emoji 前缀）
-        pill_html = f"<span class='type-pill {type_cls}'>{ach_type}</span>"
-
-        # 数值
-        value_html = _fmt_value(ach, stats_rec)
-        if value_html is None:
-            value_html = f"<span class='value-num'>{ach.get('threshold', '-')}</span>"
-
-        # 描述
-        desc = ach.get("description", "")
-
-        # HTML 结构
-        lock_html = "" if achieved else "<svg class='lock-icon' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='11' width='18' height='11' rx='2' ry='2'/><path d='M7 11V7a5 5 0 0 1 10 0v4'/></svg>"
-
-        return (
-            f"<div class='card-v3 {state_cls}' data-badge='{ach_id}' data-type='{ach_type}'>"
-            f"  <div class='badge-wrap'><img class='badge-img' src='{badge_url}' alt='{ach['name']}'></div>"
-            f"  <div class='info'>"
-            f"    <div class='label-row'>{pill_html}<span class='label-text'>{ach['name']}</span></div>"
-            f"    <div class='value-row'>{value_html}</div>"
-            f"    <div class='desc'>{desc}</div>"
-            f"  </div>"
-            f"  {lock_html}"
-            f"</div>"
+        card_html = _build_milestone_card(
+            ach_id, name, ach_type, desc, badge_url,
+            achieved, cv, threshold, final_cond
         )
 
-    # display 类型（已解锁的才有意义）
-    for ach in display_items:
-        stats_rec = stats.get(ach["id"])
-        achieved = stats_rec.get("achieved") == "Y" if stats_rec else False
         if achieved:
-            html_parts.append(_card_v3(ach, stats_rec))
+            unlocked_list.append(card_html)
+        else:
+            locked_list.append((ratio, card_html))
 
-    # milestone 类型（全部显示，含未解锁）
-    for ach in milestone_items:
-        stats_rec = stats.get(ach["id"])
-        html_parts.append(_card_v3(ach, stats_rec))
+    # 未解锁中取进度最高的
+    nearest_html = ""
+    if locked_list:
+        locked_list.sort(key=lambda x: x[0], reverse=True)
+        nearest_html = locked_list[0][1]
 
-    return "".join(html_parts)
+    return "".join(unlocked_list) + nearest_html
+
+
+def _build_milestone_card(ach_id, name, ach_type, desc, badge_url, achieved, cv, threshold, condition=""):
+    """生成单个 milestone 卡片 HTML（对应 .b-card 结构，与 badges 页面一致）"""
+    import html as _html
+    state_cls = "unlocked" if achieved else "locked"
+    locked_flag = "yes" if not achieved else "no"
+    cond_safe = _html.escape(condition or "")
+    desc_safe = _html.escape(desc or "")
+
+    # 徽章统一用原图，灰化由 CSS .b-card.locked .b-img { grayscale(1) } 处理
+    card_badge_url = badge_url
+
+    pill_html = f"<span class='b-tag {ach_type}'>{ach_type}</span>"
+    lock_icon = "" if achieved else (
+        "<img class='b-lock' src=\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2z'/%3E%3C/svg%3E\" alt='🔒'>"
+    )
+
+    return (
+        f"<div class='b-card {state_cls}' "
+        f"data-id='{_html.escape(ach_id)}' "
+        f"data-name='{_html.escape(name)}' "
+        f"data-tag='{_html.escape(ach_type)}' "
+        f"data-cond=\"{cond_safe}\" "
+        f"data-desc=\"{desc_safe}\" "
+        f"data-img='{_html.escape(card_badge_url)}' "
+        f"data-locked='{locked_flag}' "
+        f"onclick='openModal(this)'>"
+        f"  <div class='b-img-wrap'><img class='b-img' src='{_html.escape(card_badge_url)}' alt='{_html.escape(name)}' onerror=\"this.style.display='none'\"></div>"
+        f"  <div class='b-name'>{_html.escape(name)}</div>"
+        f"  {pill_html}"
+        f"  {lock_icon}"
+        f"</div>"
+    )
 
 # ─── API: 某日练习明细 ─────────────────────────────────────────────────────
 @app.get("/api/practices/{date_str}")
